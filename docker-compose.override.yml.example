@@ -1,0 +1,8 @@
+# Copie este arquivo para docker-compose.override.yml e ajuste conforme necessário.
+# NÃO commitar o arquivo override com valores reais.
+version: '3.9'
+
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: local_dev_password_change_me

@@ -1,0 +1,342 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Usuários e relacionamentos sociais
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  bio          String?
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  following    Follow[] @relation("Follower")
+  followers    Follow[] @relation("Following")
+
+  subscriptions     UserShowSubscription[]
+  watchProgresses   WatchProgress[]
+  movieWatches      MovieWatch[]
+  customLists       CustomList[]
+  comments          Comment[]
+  notifications     Notification[]
+  refreshTokens     RefreshToken[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Séries, temporadas, episódios
+// ---------------------------------------------------------------------------
+
+model Show {
+  id             String   @id @default(uuid())
+  tmdbId         Int      @unique
+  name           String
+  originalName   String?
+  overview       String?
+  posterPath     String?
+  backdropPath   String?
+  firstAirDate   DateTime?
+  lastAirDate    DateTime?
+  status         String?  // Returning Series, Ended, Canceled...
+  network        String?
+  genres         String[] // Array de nomes de gênero
+  voteAverage    Float    @default(0)
+  voteCount      Int      @default(0)
+  episodeRuntime Int?     // minutos
+  lastSyncedAt   DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  seasons       Season[]
+  showCasts     ShowCast[]
+  subscriptions UserShowSubscription[]
+
+  @@map("shows")
+}
+
+model Season {
+  id           String   @id @default(uuid())
+  showId       String
+  tmdbId       Int      @unique
+  seasonNumber Int
+  name         String
+  overview     String?
+  posterPath   String?
+  airDate      DateTime?
+  episodeCount Int      @default(0)
+  lastSyncedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  show     Show      @relation(fields: [showId], references: [id], onDelete: Cascade)
+  episodes Episode[]
+
+  @@unique([showId, seasonNumber])
+  @@map("seasons")
+}
+
+model Episode {
+  id            String   @id @default(uuid())
+  seasonId      String
+  tmdbId        Int      @unique
+  episodeNumber Int
+  name          String
+  overview      String?
+  stillPath     String?
+  airDate       DateTime?
+  runtime       Int?     // minutos
+  lastSyncedAt  DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  season          Season          @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  watchProgresses WatchProgress[]
+
+  @@unique([seasonId, episodeNumber])
+  @@map("episodes")
+}
+
+// ---------------------------------------------------------------------------
+// Elenco
+// ---------------------------------------------------------------------------
+
+model Cast {
+  id           String   @id @default(uuid())
+  tmdbId       Int      @unique
+  name         String
+  profilePath  String?
+  lastSyncedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  showCasts ShowCast[]
+
+  @@map("casts")
+}
+
+model ShowCast {
+  id          String  @id @default(uuid())
+  showId      String
+  castId      String
+  character   String?
+  order       Int     @default(0)
+
+  show Show @relation(fields: [showId], references: [id], onDelete: Cascade)
+  cast Cast @relation(fields: [castId], references: [id], onDelete: Cascade)
+
+  @@unique([showId, castId])
+  @@map("show_casts")
+}
+
+// ---------------------------------------------------------------------------
+// Filmes
+// ---------------------------------------------------------------------------
+
+model Movie {
+  id            String   @id @default(uuid())
+  tmdbId        Int      @unique
+  title         String
+  originalTitle String?
+  overview      String?
+  posterPath    String?
+  backdropPath  String?
+  releaseDate   DateTime?
+  runtime       Int?     // minutos
+  genres        String[]
+  voteAverage   Float    @default(0)
+  voteCount     Int      @default(0)
+  lastSyncedAt  DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  movieWatches MovieWatch[]
+
+  @@map("movies")
+}
+
+// ---------------------------------------------------------------------------
+// Progresso de watch
+// ---------------------------------------------------------------------------
+
+model WatchProgress {
+  id         String   @id @default(uuid())
+  userId     String
+  episodeId  String
+  watchedAt  DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  episode Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, episodeId])
+  @@map("watch_progresses")
+}
+
+model MovieWatch {
+  id        String          @id @default(uuid())
+  userId    String
+  movieId   String
+  status    MovieWatchStatus @default(WATCHLIST)
+  watchedAt DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@map("movie_watches")
+}
+
+enum MovieWatchStatus {
+  WATCHLIST
+  WATCHED
+}
+
+model UserShowSubscription {
+  id        String             @id @default(uuid())
+  userId    String
+  showId    String
+  status    ShowSubscriptionStatus @default(WATCHING)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  show Show @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, showId])
+  @@map("user_show_subscriptions")
+}
+
+enum ShowSubscriptionStatus {
+  WATCHING
+  REWATCHING
+  PAUSED
+  STOPPED
+  PLAN_TO_WATCH
+  NOT_WATCHING_FOR_A_WHILE
+}
+
+// ---------------------------------------------------------------------------
+// Listas customizadas
+// ---------------------------------------------------------------------------
+
+model CustomList {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  coverUrl    String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CustomListItem[]
+
+  @@map("custom_lists")
+}
+
+model CustomListItem {
+  id         String   @id @default(uuid())
+  listId     String
+  showId     String?
+  movieId    String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  list CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@map("custom_list_items")
+}
+
+// ---------------------------------------------------------------------------
+// Comentários
+// ---------------------------------------------------------------------------
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  showId    String?
+  movieId   String?
+  episodeId String?
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+// ---------------------------------------------------------------------------
+// Notificações
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  readAt    DateTime?
+  data      Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  NEW_EPISODE
+  FOLLOW
+  COMMENT
+  SYSTEM
+}
