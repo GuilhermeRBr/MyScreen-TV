@@ -1,0 +1,150 @@
+.container {
+  padding-bottom: calc(var(--nav-height) + var(--space-6));
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.searchIcon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.tabsRow {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabsRow::-webkit-scrollbar {
+  display: none;
+}
+
+.tabPill {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  transition: background-color 0.15s;
+}
+
+.tabPillActive {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.feedCard {
+  position: relative;
+  background-color: var(--color-bg-card);
+}
+
+.feedBackdrop {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--color-bg-elevated);
+}
+
+.feedBackdropImage {
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+
+.feedCard:hover .feedBackdropImage {
+  transform: scale(1.02);
+}
+
+.playButton {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addButton {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 36px;
+  height: 36px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--color-accent);
+  color: var(--color-accent);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.feedInfo {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-bg-secondary);
+}
+
+.feedMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.feedTypeIcon {
+  color: var(--color-text-secondary);
+}
+
+.feedTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.feedSubtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.feedOverview {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

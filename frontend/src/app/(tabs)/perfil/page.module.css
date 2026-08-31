@@ -1,0 +1,249 @@
+.container {
+  padding-bottom: calc(var(--nav-height) + var(--space-6));
+}
+
+.header {
+  position: relative;
+}
+
+.backdrop {
+  width: 100%;
+  height: 160px;
+  background-color: var(--color-bg-elevated);
+  overflow: hidden;
+  position: relative;
+}
+
+.backdropImage {
+  object-fit: cover;
+}
+
+.topBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.bellButton {
+  width: 36px;
+  height: 36px;
+  background-color: var(--color-accent);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-on-accent);
+}
+
+.profileSection {
+  padding: var(--space-4);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-top: calc(-36px);
+  position: relative;
+  z-index: 2;
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background-color: var(--color-bg-elevated);
+  border: 3px solid var(--color-bg-primary);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.avatarImage {
+  object-fit: cover;
+}
+
+.profileInfo {
+  flex: 1;
+}
+
+.username {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.editBadge {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.stats {
+  display: flex;
+  gap: var(--space-6);
+  padding: var(--space-2) var(--space-4) var(--space-4);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.statValue {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.statLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 0 var(--space-4);
+}
+
+.section {
+  padding: var(--space-4);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.sectionLink {
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+}
+
+.watchTimeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.watchTimeCard {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.watchTimeCardTitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.watchTimeNumbers {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.watchTimeBig {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.watchTimeUnit {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.episodesCount {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.listCarousel {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.listCarousel::-webkit-scrollbar {
+  display: none;
+}
+
+.listCard {
+  flex-shrink: 0;
+  width: 180px;
+  height: 100px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  background-color: var(--color-bg-elevated);
+}
+
+.listCardImage {
+  object-fit: cover;
+}
+
+.listCardOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-2);
+}
+
+.listCardName {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: white;
+}
+
+.showsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+
+.tmdbAttribution {
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-4);
+}
+
+.tmdbLogo {
+  font-weight: 700;
+  color: var(--color-accent);
+}

@@ -1,0 +1,75 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  position: sticky;
+  top: 0;
+  background-color: var(--color-bg-primary);
+  z-index: 10;
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.controls {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.iconButton {
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  transition: background-color 0.15s;
+}
+
+.iconButton:hover {
+  background-color: var(--color-bg-elevated);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 0 3px var(--space-4);
+}
+
+.filterBar {
+  position: fixed;
+  bottom: calc(var(--nav-height) + var(--space-4));
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-md);
+  letter-spacing: 0.05em;
+}
+
+.sectionLabel {
+  text-align: center;
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-full);
+  margin: var(--space-4) auto var(--space-2);
+  max-width: 200px;
+}
