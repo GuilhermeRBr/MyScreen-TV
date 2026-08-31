@@ -1,0 +1,162 @@
+.container {
+  padding-bottom: calc(var(--nav-height) + var(--space-6));
+}
+
+.continueSection {
+  padding: var(--space-4);
+}
+
+.continueSectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+
+.continueScroll {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: var(--space-2);
+}
+
+.continueScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.continueCard {
+  flex-shrink: 0;
+  width: 200px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  position: relative;
+}
+
+.continueStill {
+  width: 70px;
+  height: 50px;
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.continueStillImage {
+  object-fit: cover;
+}
+
+.continueInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.continueCode {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.continueName {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checkCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.checkCircleWatched {
+  background-color: var(--color-progress);
+  border-color: var(--color-progress);
+  color: white;
+}
+
+.allEpisodesSection {
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.allEpisodesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.allEpisodesTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.seasonAccordion {
+  border-top: 1px solid var(--color-border);
+}
+
+.seasonRow {
+  display: flex;
+  align-items: center;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+  gap: var(--space-3);
+  cursor: pointer;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: var(--color-text-primary);
+}
+
+.seasonName {
+  flex: 1;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.seasonCount {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-right: var(--space-2);
+}
+
+.seasonCheckCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-progress);
+  color: white;
+  flex-shrink: 0;
+}
+
+.progressBarSeason {
+  height: 3px;
+  background-color: var(--color-border);
+  border-radius: var(--radius-full);
+  margin-top: -1px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: var(--color-progress);
+  border-radius: var(--radius-full);
+}
