@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    name: Backend — lint, type-check, test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: backend/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: backend
+
+      - name: Type check
+        run: yarn tsc --noEmit
+        working-directory: backend
+
+      - name: Lint
+        run: yarn lint
+        working-directory: backend
+
+      - name: Audit
+        run: yarn audit --level moderate
+        working-directory: backend
+        continue-on-error: true
+
+      - name: Generate Prisma client
+        run: yarn prisma generate
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://tvtime_app:ci_password@localhost:5432/tvtime
+
+      - name: Tests
+        run: yarn test --passWithNoTests
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://tvtime_app:ci_password@localhost:5432/tvtime
+          JWT_SECRET: ci-jwt-secret-long-enough-for-validation-32chars
+          JWT_EXPIRATION: 15m
+          JWT_REFRESH_SECRET: ci-refresh-secret-long-enough-for-validation
+          JWT_REFRESH_EXPIRATION: 7d
+          FRONTEND_URL: http://localhost:3000
+          TMDB_API_KEY: ci-placeholder-key
+          TMDB_BASE_URL: https://api.themoviedb.org/3
+          TMDB_IMAGE_BASE_URL: https://image.tmdb.org/t/p
+          PORT: "3001"
+          NODE_ENV: test
+
+  frontend:
+    name: Frontend — type-check, lint, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Type check
+        run: yarn type-check
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_TMDB_IMAGE_BASE_URL: https://image.tmdb.org/t/p
+
+      - name: Lint
+        run: yarn lint
+        working-directory: frontend
+
+      - name: Audit
+        run: yarn audit --level moderate
+        working-directory: frontend
+        continue-on-error: true
+
+      - name: Build
+        run: yarn build
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_TMDB_IMAGE_BASE_URL: https://image.tmdb.org/t/p
