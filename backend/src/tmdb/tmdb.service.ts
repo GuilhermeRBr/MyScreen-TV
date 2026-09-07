@@ -80,38 +80,40 @@ export class TmdbService {
       },
     });
 
-    // Upsert elenco (top 20)
+    // Upsert elenco (top 20) em paralelo
     const topCast = tmdbCredits.cast.slice(0, 20);
-    for (const member of topCast) {
-      const cast = await this.prisma.cast.upsert({
-        where: { tmdbId: member.id },
-        create: {
-          tmdbId: member.id,
-          name: member.name,
-          profilePath: member.profile_path,
-          lastSyncedAt: new Date(),
-        },
-        update: {
-          name: member.name,
-          profilePath: member.profile_path,
-          lastSyncedAt: new Date(),
-        },
-      });
+    await Promise.all(
+      topCast.map(async (member) => {
+        const cast = await this.prisma.cast.upsert({
+          where: { tmdbId: member.id },
+          create: {
+            tmdbId: member.id,
+            name: member.name,
+            profilePath: member.profile_path,
+            lastSyncedAt: new Date(),
+          },
+          update: {
+            name: member.name,
+            profilePath: member.profile_path,
+            lastSyncedAt: new Date(),
+          },
+        });
 
-      await this.prisma.showCast.upsert({
-        where: { showId_castId: { showId: show.id, castId: cast.id } },
-        create: {
-          showId: show.id,
-          castId: cast.id,
-          character: member.character,
-          order: member.order,
-        },
-        update: {
-          character: member.character,
-          order: member.order,
-        },
-      });
-    }
+        await this.prisma.showCast.upsert({
+          where: { showId_castId: { showId: show.id, castId: cast.id } },
+          create: {
+            showId: show.id,
+            castId: cast.id,
+            character: member.character,
+            order: member.order,
+          },
+          update: {
+            character: member.character,
+            order: member.order,
+          },
+        });
+      }),
+    );
 
     // Upsert temporadas e episódios em paralelo
     await Promise.all(

@@ -55,11 +55,20 @@ export class AuthService {
         passwordHash,
         displayName: dto.displayName,
       },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { passwordHash: _hash, ...safeUser } = user;
-    return safeUser;
+    return user;
   }
 
   async login(dto: LoginDto): Promise<TokenPair> {

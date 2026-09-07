@@ -90,7 +90,18 @@ export class FeedService {
       },
     });
 
-    const result = [];
+    const result: Array<{
+      showId: string;
+      showName: string;
+      posterPath: string | null;
+      nextEpisode: {
+        episodeId: string;
+        seasonNumber: number;
+        episodeNumber: number;
+        episodeName: string;
+        stillPath: string | null;
+      };
+    }> = [];
 
     for (const sub of subscriptions) {
       // Encontra o próximo episódio não assistido
