@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ShowSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface SeasonProgress {
@@ -238,12 +239,12 @@ export class WatchService {
   async upsertShowSubscription(
     userId: string,
     showId: string,
-    status: string,
+    status: ShowSubscriptionStatus,
   ) {
     return this.prisma.userShowSubscription.upsert({
       where: { userId_showId: { userId, showId } },
-      create: { userId, showId, status: status as never },
-      update: { status: status as never },
+      create: { userId, showId, status },
+      update: { status },
     });
   }
 }

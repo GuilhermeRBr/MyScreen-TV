@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
@@ -9,6 +9,7 @@ import { Env } from './env.validation';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
 
   const config = app.get(ConfigService<Env>);
   const frontendUrl = config.get<string>('FRONTEND_URL', { infer: true })!;
@@ -41,7 +42,7 @@ async function bootstrap(): Promise<void> {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   await app.listen(port);
-  console.log(`Backend rodando em http://localhost:${port}`);
+  logger.log(`Backend rodando em http://localhost:${port}`);
 }
 
 bootstrap();
