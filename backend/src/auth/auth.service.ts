@@ -19,8 +19,6 @@ interface TokenPair {
   refreshToken: string;
 }
 
-type SafeUser = Omit<User, 'passwordHash'>;
-
 @Injectable()
 export class AuthService {
   private readonly BCRYPT_ROUNDS = 12;
@@ -31,7 +29,7 @@ export class AuthService {
     private readonly config: ConfigService<Env>,
   ) {}
 
-  async register(dto: RegisterDto): Promise<SafeUser> {
+  async register(dto: RegisterDto): Promise<TokenPair> {
     const existing = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: dto.email }, { username: dto.username }],
@@ -58,17 +56,11 @@ export class AuthService {
       select: {
         id: true,
         email: true,
-        username: true,
-        displayName: true,
-        avatarUrl: true,
-        bio: true,
         role: true,
-        createdAt: true,
-        updatedAt: true,
       },
     });
 
-    return user;
+    return this.generateTokenPair(user.id, user.email, user.role);
   }
 
   async login(dto: LoginDto): Promise<TokenPair> {

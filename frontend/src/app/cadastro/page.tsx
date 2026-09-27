@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import styles from './page.module.css';
 
-export default function CadastroPage() {
+function CadastroForm() {
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -27,9 +27,9 @@ export default function CadastroPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         setError(
-          err.status === 409
-            ? 'Email ou username já cadastrado.'
-            : err.message,
+          err.status === 400 || err.status === 409
+            ? err.message
+            : 'Erro ao criar conta. Tente novamente.',
         );
       } else {
         setError('Erro ao conectar com o servidor. Tente novamente.');
@@ -40,95 +40,103 @@ export default function CadastroPage() {
   }
 
   return (
+    <form onSubmit={handleSubmit} className={styles.form} noValidate>
+      <div className={styles.field}>
+        <label htmlFor="email" className={styles.label}>
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={styles.input}
+          placeholder="seu@email.com"
+          disabled={loading}
+        />
+      </div>
+
+      <div className={styles.field}>
+        <label htmlFor="username" className={styles.label}>
+          Username
+        </label>
+        <input
+          id="username"
+          type="text"
+          autoComplete="username"
+          required
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className={styles.input}
+          placeholder="meu_usuario"
+          disabled={loading}
+        />
+      </div>
+
+      <div className={styles.field}>
+        <label htmlFor="displayName" className={styles.label}>
+          Nome de exibicao
+        </label>
+        <input
+          id="displayName"
+          type="text"
+          autoComplete="name"
+          required
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          className={styles.input}
+          placeholder="Seu Nome"
+          disabled={loading}
+        />
+      </div>
+
+      <div className={styles.field}>
+        <label htmlFor="password" className={styles.label}>
+          Senha
+        </label>
+        <input
+          id="password"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={styles.input}
+          placeholder="Minimo 8 caracteres"
+          disabled={loading}
+        />
+      </div>
+
+      {error && (
+        <p role="alert" className={styles.error}>
+          {error}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        className={styles.button}
+        disabled={loading}
+      >
+        {loading ? 'Criando conta...' : 'Criar conta'}
+      </button>
+    </form>
+  );
+}
+
+export default function CadastroPage() {
+  return (
     <main className={styles.page}>
       <div className={styles.card}>
         <h1 className={styles.title}>TV Time</h1>
         <p className={styles.subtitle}>Crie sua conta</p>
 
-        <form onSubmit={handleSubmit} className={styles.form} noValidate>
-          <div className={styles.field}>
-            <label htmlFor="email" className={styles.label}>
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.input}
-              placeholder="seu@email.com"
-              disabled={loading}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="username" className={styles.label}>
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              autoComplete="username"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className={styles.input}
-              placeholder="meu_usuario"
-              disabled={loading}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="displayName" className={styles.label}>
-              Nome de exibicao
-            </label>
-            <input
-              id="displayName"
-              type="text"
-              autoComplete="name"
-              required
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className={styles.input}
-              placeholder="Seu Nome"
-              disabled={loading}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="password" className={styles.label}>
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={styles.input}
-              placeholder="Minimo 8 caracteres"
-              disabled={loading}
-            />
-          </div>
-
-          {error && (
-            <p role="alert" className={styles.error}>
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            className={styles.button}
-            disabled={loading}
-          >
-            {loading ? 'Criando conta...' : 'Criar conta'}
-          </button>
-        </form>
+        <Suspense fallback={<div className={styles.form} />}>
+          <CadastroForm />
+        </Suspense>
 
         <p className={styles.footer}>
           Ja tem conta?{' '}
