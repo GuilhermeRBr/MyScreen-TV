@@ -10,6 +10,10 @@ const nextConfig = {
     ],
   },
   async headers() {
+    // Em dev, NEXT_PUBLIC_API_URL pode não estar disponível no contexto do next.config.js.
+    // Usamos uma lista explícita para garantir que a CSP nunca seja "connect-src 'self' undefined".
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
     return [
       {
         source: '/(.*)',
@@ -22,7 +26,8 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https://image.tmdb.org data: blob:",
               "font-src 'self'",
-              "connect-src 'self'",
+              // Permite chamadas ao backend tanto em dev (localhost:3001) quanto em produção
+              `connect-src 'self' ${backendUrl}`,
               "frame-ancestors 'none'",
             ].join('; '),
           },

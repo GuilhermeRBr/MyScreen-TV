@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
@@ -14,9 +15,14 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService<Env>);
   const frontendUrl = config.get<string>('FRONTEND_URL', { infer: true })!;
   const port = config.get<number>('PORT', { infer: true }) ?? 3001;
+  const nodeEnv = config.get<string>('NODE_ENV', { infer: true });
 
-  // Segurança HTTP
-  app.use(helmet());
+  // Segurança HTTP — desabilita CSP apenas na rota do Swagger em dev
+  app.use(
+    helmet({
+      contentSecurityPolicy: nodeEnv === 'production' ? undefined : false,
+    }),
+  );
 
   // Cookie parser para JWT em HttpOnly cookies
   app.use(cookieParser());
@@ -40,6 +46,35 @@ async function bootstrap(): Promise<void> {
 
   // Filtro global de exceções — impede vazamento de stack trace
   app.useGlobalFilters(new GlobalExceptionFilter());
+
+  // Swagger — disponível apenas fora de produção
+  if (nodeEnv !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('TV Time API')
+      .setDescription(
+        'API do TV Time — catalogação de séries e filmes. ' +
+        'Endpoints marcados com o cadeado requerem autenticação via cookie JWT (faça login primeiro em POST /auth/login).',
+      )
+      .setVersion('1.0')
+      .addCookieAuth('access_token')
+      .addTag('Auth', 'Registro, login, refresh e logout')
+      .addTag('Users', 'Perfil do usuário e sistema de follows')
+      .addTag('Shows', 'Séries — listagem, busca e detalhes')
+      .addTag('Movies', 'Filmes — listagem, busca e detalhes')
+      .addTag('Watch', 'Progresso de episódios e filmes assistidos')
+      .addTag('Lists', 'Listas personalizadas do usuário')
+      .addTag('Feed', 'Descobrir, próximos episódios e continuar assistindo')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    });
+
+    logger.log(`Swagger disponível em http://localhost:${port}/api/docs`);
+  }
 
   await app.listen(port);
   logger.log(`Backend rodando em http://localhost:${port}`);

@@ -10,6 +10,12 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiCookieAuth,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -17,6 +23,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Env } from '../env.validation';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -25,15 +32,24 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Criar nova conta', description: 'Registra um novo usuário e já retorna os cookies de autenticação.' })
+  @ApiResponse({ status: 201, description: 'Conta criada. Cookies access_token e refresh_token definidos.' })
+  @ApiResponse({ status: 400, description: 'Email ou username já em uso, ou dados inválidos.' })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.register(dto);
+    const { accessToken, refreshToken } = await this.authService.register(dto);
+    this.setTokenCookies(res, accessToken, refreshToken);
+    return { message: 'Conta criada com sucesso' };
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Fazer login', description: 'Autentica o usuário e define os cookies HttpOnly de acesso e refresh.' })
+  @ApiResponse({ status: 200, description: 'Login realizado. Cookies access_token e refresh_token definidos.' })
+  @ApiResponse({ status: 401, description: 'Credenciais inválidas.' })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -46,6 +62,10 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtRefreshGuard)
+  @ApiCookieAuth('access_token')
+  @ApiOperation({ summary: 'Renovar tokens', description: 'Troca o refresh_token por um novo par de tokens (rotação). O cookie refresh_token deve estar presente.' })
+  @ApiResponse({ status: 200, description: 'Tokens renovados.' })
+  @ApiResponse({ status: 401, description: 'Refresh token inválido ou expirado.' })
   async refresh(
     @Req() req: Request & { user: { userId: string; jti: string } },
     @Res({ passthrough: true }) res: Response,
@@ -63,6 +83,10 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth('access_token')
+  @ApiOperation({ summary: 'Fazer logout', description: 'Revoga o refresh token e limpa os cookies de autenticação.' })
+  @ApiResponse({ status: 200, description: 'Logout realizado.' })
+  @ApiResponse({ status: 401, description: 'Não autenticado.' })
   async logout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
