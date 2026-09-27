@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -22,7 +24,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https://image.tmdb.org data: blob:",
               "font-src 'self'",
-              "connect-src 'self'",
+              `connect-src 'self' ${API_URL}`,
               "frame-ancestors 'none'",
             ].join('; '),
           },
