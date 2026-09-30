@@ -71,6 +71,20 @@
   border-color: var(--color-accent);
 }
 
+.inputError {
+  border-color: var(--color-error);
+}
+
+.inputError:focus {
+  border-color: var(--color-error);
+}
+
+.fieldError {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: calc(var(--space-1) * -1);
+}
+
 .input:disabled {
   opacity: 0.5;
   cursor: not-allowed;

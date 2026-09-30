@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TmdbService } from '../tmdb/tmdb.service';
+import { SHOWS_MESSAGES } from './messages/shows.messages';
 
 @Injectable()
 export class ShowsService {
@@ -39,7 +40,7 @@ export class ShowsService {
     const show = await this.prisma.show.findUnique({ where: { tmdbId } });
 
     if (!show) {
-      throw new NotFoundException('Série não encontrada');
+      throw new NotFoundException(SHOWS_MESSAGES.SHOW_NOT_FOUND);
     }
 
     return this.prisma.season.findMany({
@@ -52,7 +53,7 @@ export class ShowsService {
     const show = await this.prisma.show.findUnique({ where: { tmdbId } });
 
     if (!show) {
-      throw new NotFoundException('Série não encontrada');
+      throw new NotFoundException(SHOWS_MESSAGES.SHOW_NOT_FOUND);
     }
 
     const season = await this.prisma.season.findUnique({
@@ -63,7 +64,7 @@ export class ShowsService {
     });
 
     if (!season) {
-      throw new NotFoundException('Temporada não encontrada');
+      throw new NotFoundException(SHOWS_MESSAGES.SEASON_NOT_FOUND);
     }
 
     return season;

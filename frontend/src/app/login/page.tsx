@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { PasswordInput } from '@/components/PasswordInput/PasswordInput';
 import styles from './page.module.css';
 
 function LoginForm() {
@@ -26,11 +27,13 @@ function LoginForm() {
       router.push(redirect);
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(
-          err.status === 401
-            ? 'Email ou senha incorretos.'
-            : err.message,
-        );
+        if (err.status === 429) {
+          setError('Muitas tentativas. Aguarde um momento e tente novamente.');
+        } else if (err.status === 401) {
+          setError('Email ou senha incorretos.');
+        } else {
+          setError('Erro ao entrar. Tente novamente.');
+        }
       } else {
         setError('Erro ao conectar com o servidor. Tente novamente.');
       }
@@ -62,14 +65,11 @@ function LoginForm() {
         <label htmlFor="password" className={styles.label}>
           Senha
         </label>
-        <input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="current-password"
-          required
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={styles.input}
+          onChange={(v) => setPassword(v)}
           placeholder="••••••••"
           disabled={loading}
         />

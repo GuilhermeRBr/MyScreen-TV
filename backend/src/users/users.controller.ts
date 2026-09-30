@@ -20,6 +20,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { USERS_SWAGGER } from './messages/users.swagger';
 
 @ApiTags('Users')
 @ApiCookieAuth('access_token')
@@ -29,17 +30,17 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
-  @ApiOperation({ summary: 'Meu perfil', description: 'Retorna os dados do usuário autenticado.' })
-  @ApiResponse({ status: 200, description: 'Dados do perfil.' })
-  @ApiResponse({ status: 401, description: 'Não autenticado.' })
+  @ApiOperation(USERS_SWAGGER.getMyProfile.operation)
+  @ApiResponse({ status: 200, description: USERS_SWAGGER.getMyProfile.responses[200] })
+  @ApiResponse({ status: 401, description: USERS_SWAGGER.getMyProfile.responses[401] })
   getMyProfile(@CurrentUser() user: JwtPayload) {
     return this.usersService.getProfile(user.sub);
   }
 
   @Patch('me')
-  @ApiOperation({ summary: 'Atualizar perfil', description: 'Atualiza nome de exibição, bio ou avatar do usuário autenticado.' })
-  @ApiResponse({ status: 200, description: 'Perfil atualizado.' })
-  @ApiResponse({ status: 401, description: 'Não autenticado.' })
+  @ApiOperation(USERS_SWAGGER.updateProfile.operation)
+  @ApiResponse({ status: 200, description: USERS_SWAGGER.updateProfile.responses[200] })
+  @ApiResponse({ status: 401, description: USERS_SWAGGER.updateProfile.responses[401] })
   updateProfile(
     @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateProfileDto,
@@ -48,19 +49,19 @@ export class UsersController {
   }
 
   @Get(':username')
-  @ApiOperation({ summary: 'Perfil público', description: 'Retorna o perfil público de um usuário pelo username.' })
+  @ApiOperation(USERS_SWAGGER.getPublicProfile.operation)
   @ApiParam({ name: 'username', example: 'joaosilva' })
-  @ApiResponse({ status: 200, description: 'Perfil público.' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  @ApiResponse({ status: 200, description: USERS_SWAGGER.getPublicProfile.responses[200] })
+  @ApiResponse({ status: 404, description: USERS_SWAGGER.getPublicProfile.responses[404] })
   getPublicProfile(@Param('username') username: string) {
     return this.usersService.getPublicProfile(username);
   }
 
   @Post(':username/follow')
-  @ApiOperation({ summary: 'Seguir usuário' })
+  @ApiOperation(USERS_SWAGGER.follow.operation)
   @ApiParam({ name: 'username', example: 'joaosilva' })
-  @ApiResponse({ status: 201, description: 'Agora seguindo o usuário.' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  @ApiResponse({ status: 201, description: USERS_SWAGGER.follow.responses[201] })
+  @ApiResponse({ status: 404, description: USERS_SWAGGER.follow.responses[404] })
   follow(
     @CurrentUser() user: JwtPayload,
     @Param('username') username: string,
@@ -69,10 +70,10 @@ export class UsersController {
   }
 
   @Delete(':username/follow')
-  @ApiOperation({ summary: 'Deixar de seguir usuário' })
+  @ApiOperation(USERS_SWAGGER.unfollow.operation)
   @ApiParam({ name: 'username', example: 'joaosilva' })
-  @ApiResponse({ status: 200, description: 'Deixou de seguir.' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  @ApiResponse({ status: 200, description: USERS_SWAGGER.unfollow.responses[200] })
+  @ApiResponse({ status: 404, description: USERS_SWAGGER.unfollow.responses[404] })
   unfollow(
     @CurrentUser() user: JwtPayload,
     @Param('username') username: string,

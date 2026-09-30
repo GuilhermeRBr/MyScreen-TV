@@ -21,6 +21,7 @@ import { AddListItemDto } from './dto/add-list-item.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { LISTS_SWAGGER } from './messages/lists.swagger';
 
 @ApiTags('Lists')
 @ApiCookieAuth('access_token')
@@ -30,27 +31,27 @@ export class ListsController {
   constructor(private readonly listsService: ListsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Criar lista', description: 'Cria uma nova lista personalizada para o usuário.' })
-  @ApiResponse({ status: 201, description: 'Lista criada.' })
-  @ApiResponse({ status: 401, description: 'Não autenticado.' })
+  @ApiOperation(LISTS_SWAGGER.create.operation)
+  @ApiResponse({ status: 201, description: LISTS_SWAGGER.create.responses[201] })
+  @ApiResponse({ status: 401, description: LISTS_SWAGGER.create.responses[401] })
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateListDto) {
     return this.listsService.createList(user.sub, dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Minhas listas', description: 'Retorna todas as listas do usuário autenticado.' })
-  @ApiResponse({ status: 200, description: 'Lista de listas.' })
-  @ApiResponse({ status: 401, description: 'Não autenticado.' })
+  @ApiOperation(LISTS_SWAGGER.getMyLists.operation)
+  @ApiResponse({ status: 200, description: LISTS_SWAGGER.getMyLists.responses[200] })
+  @ApiResponse({ status: 401, description: LISTS_SWAGGER.getMyLists.responses[401] })
   getMyLists(@CurrentUser() user: JwtPayload) {
     return this.listsService.getUserLists(user.sub);
   }
 
   @Get(':listId')
-  @ApiOperation({ summary: 'Detalhes de uma lista', description: 'Retorna os itens de uma lista específica. O usuário precisa ser o dono ou a lista deve ser pública.' })
+  @ApiOperation(LISTS_SWAGGER.getById.operation)
   @ApiParam({ name: 'listId', description: 'UUID da lista', example: '550e8400-e29b-41d4-a716-446655440000' })
-  @ApiResponse({ status: 200, description: 'Lista com seus itens.' })
-  @ApiResponse({ status: 403, description: 'Sem permissão para ver esta lista.' })
-  @ApiResponse({ status: 404, description: 'Lista não encontrada.' })
+  @ApiResponse({ status: 200, description: LISTS_SWAGGER.getById.responses[200] })
+  @ApiResponse({ status: 403, description: LISTS_SWAGGER.getById.responses[403] })
+  @ApiResponse({ status: 404, description: LISTS_SWAGGER.getById.responses[404] })
   getById(
     @CurrentUser() user: JwtPayload,
     @Param('listId', ParseUUIDPipe) listId: string,
@@ -59,12 +60,12 @@ export class ListsController {
   }
 
   @Post(':listId/items')
-  @ApiOperation({ summary: 'Adicionar item à lista', description: 'Adiciona uma série ou filme a uma lista. Forneça showId ou movieId.' })
+  @ApiOperation(LISTS_SWAGGER.addItem.operation)
   @ApiParam({ name: 'listId', description: 'UUID da lista', example: '550e8400-e29b-41d4-a716-446655440000' })
-  @ApiResponse({ status: 201, description: 'Item adicionado.' })
-  @ApiResponse({ status: 400, description: 'Nenhum showId ou movieId fornecido.' })
-  @ApiResponse({ status: 403, description: 'Sem permissão.' })
-  @ApiResponse({ status: 404, description: 'Lista não encontrada.' })
+  @ApiResponse({ status: 201, description: LISTS_SWAGGER.addItem.responses[201] })
+  @ApiResponse({ status: 400, description: LISTS_SWAGGER.addItem.responses[400] })
+  @ApiResponse({ status: 403, description: LISTS_SWAGGER.addItem.responses[403] })
+  @ApiResponse({ status: 404, description: LISTS_SWAGGER.addItem.responses[404] })
   addItem(
     @CurrentUser() user: JwtPayload,
     @Param('listId', ParseUUIDPipe) listId: string,
@@ -74,12 +75,12 @@ export class ListsController {
   }
 
   @Delete(':listId/items/:itemId')
-  @ApiOperation({ summary: 'Remover item da lista' })
+  @ApiOperation(LISTS_SWAGGER.removeItem.operation)
   @ApiParam({ name: 'listId', description: 'UUID da lista' })
   @ApiParam({ name: 'itemId', description: 'UUID do item' })
-  @ApiResponse({ status: 200, description: 'Item removido.' })
-  @ApiResponse({ status: 403, description: 'Sem permissão.' })
-  @ApiResponse({ status: 404, description: 'Lista ou item não encontrado.' })
+  @ApiResponse({ status: 200, description: LISTS_SWAGGER.removeItem.responses[200] })
+  @ApiResponse({ status: 403, description: LISTS_SWAGGER.removeItem.responses[403] })
+  @ApiResponse({ status: 404, description: LISTS_SWAGGER.removeItem.responses[404] })
   removeItem(
     @CurrentUser() user: JwtPayload,
     @Param('listId', ParseUUIDPipe) listId: string,
@@ -89,11 +90,11 @@ export class ListsController {
   }
 
   @Delete(':listId')
-  @ApiOperation({ summary: 'Excluir lista' })
+  @ApiOperation(LISTS_SWAGGER.deleteList.operation)
   @ApiParam({ name: 'listId', description: 'UUID da lista' })
-  @ApiResponse({ status: 200, description: 'Lista excluída.' })
-  @ApiResponse({ status: 403, description: 'Sem permissão.' })
-  @ApiResponse({ status: 404, description: 'Lista não encontrada.' })
+  @ApiResponse({ status: 200, description: LISTS_SWAGGER.deleteList.responses[200] })
+  @ApiResponse({ status: 403, description: LISTS_SWAGGER.deleteList.responses[403] })
+  @ApiResponse({ status: 404, description: LISTS_SWAGGER.deleteList.responses[404] })
   deleteList(
     @CurrentUser() user: JwtPayload,
     @Param('listId', ParseUUIDPipe) listId: string,

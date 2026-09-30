@@ -121,6 +121,8 @@ input,
 textarea,
 select {
   font-family: inherit;
+  background-color: transparent;
+  color: inherit;
 }
 
 /* ============================================================

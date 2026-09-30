@@ -4,7 +4,122 @@ import { useState, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { PasswordInput } from '@/components/PasswordInput/PasswordInput';
 import styles from './page.module.css';
+
+type FieldErrors = Partial<Record<'email' | 'username' | 'displayName' | 'password' | 'confirmPassword', string>>;
+
+function validateForm(
+  email: string,
+  username: string,
+  displayName: string,
+  password: string,
+  confirmPassword: string,
+): FieldErrors {
+  const errors: FieldErrors = {};
+
+  // Email
+  const emailTrimmed = email.trim();
+  if (!emailTrimmed) {
+    errors.email = 'Email é obrigatório';
+  } else if (emailTrimmed.length < 5) {
+    errors.email = 'Email deve ter pelo menos 5 caracteres';
+  } else if (emailTrimmed.length > 50) {
+    errors.email = 'Email deve ter no máximo 50 caracteres';
+  } else if (/\s/.test(emailTrimmed)) {
+    errors.email = 'Email não pode conter espaços';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+    errors.email = 'Email inválido';
+  }
+
+  // Username
+  const usernameTrimmed = username.trim();
+  if (!usernameTrimmed) {
+    errors.username = 'Username é obrigatório';
+  } else if (usernameTrimmed.length < 3) {
+    errors.username = 'Username deve ter pelo menos 3 caracteres';
+  } else if (usernameTrimmed.length > 30) {
+    errors.username = 'Username deve ter no máximo 30 caracteres';
+  } else if (/\s/.test(usernameTrimmed)) {
+    errors.username = 'Username não pode conter espaços';
+  } else if (!/^[a-zA-Z0-9_.]+$/.test(usernameTrimmed)) {
+    errors.username = 'Username só pode conter letras, números, underscore e ponto';
+  } else if (/^[._]|[._]$/.test(usernameTrimmed)) {
+    errors.username = 'Username não pode começar ou terminar com ponto ou underscore';
+  }
+
+  // Nome de exibição
+  const displayNameTrimmed = displayName.trim();
+  if (!displayNameTrimmed) {
+    errors.displayName = 'Nome de exibição é obrigatório';
+  } else if (displayNameTrimmed.length < 2) {
+    errors.displayName = 'Nome deve ter pelo menos 2 caracteres';
+  } else if (displayNameTrimmed.length > 100) {
+    errors.displayName = 'Nome deve ter no máximo 100 caracteres';
+  }
+
+  // Senha
+  if (!password) {
+    errors.password = 'Senha é obrigatória';
+  } else if (password.length < 8) {
+    errors.password = 'Senha deve ter pelo menos 8 caracteres';
+  } else if (password.length > 20) {
+    errors.password = 'Senha deve ter no máximo 20 caracteres';
+  } else if (!/[A-Z]/.test(password)) {
+    errors.password = 'Senha deve conter pelo menos uma letra maiúscula';
+  } else if (!/[a-z]/.test(password)) {
+    errors.password = 'Senha deve conter pelo menos uma letra minúscula';
+  } else if (!/[0-9]/.test(password)) {
+    errors.password = 'Senha deve conter pelo menos um número';
+  } else if (!/[^A-Za-z0-9]/.test(password)) {
+    errors.password = 'Senha deve conter pelo menos um caractere especial';
+  }
+
+  // Confirmar senha
+  if (!confirmPassword) {
+    errors.confirmPassword = 'Confirmação de senha é obrigatória';
+  } else if (confirmPassword !== password) {
+    errors.confirmPassword = 'As senhas não coincidem';
+  }
+
+  return errors;
+}
+
+// Erros vindos do backend depois de passar na validação local (ex: duplicados)
+function parseApiError(err: ApiError): FieldErrors {
+  const mapped: FieldErrors = {};
+
+  // Formato estruturado do ValidationPipe: array de "campo:mensagem"
+  if (err.errors && err.errors.length > 0) {
+    const FIELD_MAP: Record<string, keyof FieldErrors> = {
+      email: 'email',
+      username: 'username',
+      password: 'password',
+      confirmPassword: 'confirmPassword',
+      displayName: 'displayName',
+    };
+
+    for (const item of err.errors) {
+      const colonIndex = item.indexOf(':');
+      if (colonIndex !== -1) {
+        const key = FIELD_MAP[item.slice(0, colonIndex)];
+        if (key) mapped[key] = item.slice(colonIndex + 1);
+      }
+    }
+
+    if (Object.keys(mapped).length > 0) return mapped;
+  }
+
+  // Erros do service como string unica: "Email ja esta em uso", "Username ja esta em uso"
+  const lower = err.message.toLowerCase();
+  if (lower.includes('username')) {
+    mapped.username = err.message;
+  } else if (lower.includes('email')) {
+    mapped.email = err.message;
+  }
+
+  return mapped;
+}
 
 function CadastroForm() {
   const router = useRouter();
@@ -13,26 +128,44 @@ function CadastroForm() {
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
+    setGeneralError(null);
+
+    // Validação no frontend primeiro
+    const localErrors = validateForm(email, username, displayName, password, confirmPassword);
+    if (Object.keys(localErrors).length > 0) {
+      setFieldErrors(localErrors);
+      return;
+    }
+
+    setFieldErrors({});
     setLoading(true);
 
     try {
-      await api.post('/auth/register', { email, username, displayName, password });
+      await api.post('/auth/register', { email, username, displayName, password, confirmPassword });
       router.push('/series');
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(
-          err.status === 400 || err.status === 409
-            ? err.message
-            : 'Erro ao criar conta. Tente novamente.',
-        );
+        if (err.status === 429) {
+          setGeneralError('Muitas tentativas. Aguarde um momento e tente novamente.');
+        } else if (err.status === 400 || err.status === 409) {
+          const mapped = parseApiError(err);
+          if (Object.keys(mapped).length > 0) {
+            setFieldErrors(mapped);
+          } else {
+            setGeneralError(err.message);
+          }
+        } else {
+          setGeneralError('Erro ao criar conta. Tente novamente.');
+        }
       } else {
-        setError('Erro ao conectar com o servidor. Tente novamente.');
+        setGeneralError('Erro ao conectar com o servidor. Tente novamente.');
       }
     } finally {
       setLoading(false);
@@ -49,13 +182,19 @@ function CadastroForm() {
           id="email"
           type="email"
           autoComplete="email"
-          required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={styles.input}
+          onChange={(e) => { setEmail(e.target.value); setFieldErrors((prev) => ({ ...prev, email: undefined })); }}
+          className={`${styles.input}${fieldErrors.email ? ` ${styles.inputError}` : ''}`}
           placeholder="seu@email.com"
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.email)}
+          aria-describedby={fieldErrors.email ? 'email-error' : undefined}
         />
+        {fieldErrors.email && (
+          <span id="email-error" role="alert" className={styles.fieldError}>
+            {fieldErrors.email}
+          </span>
+        )}
       </div>
 
       <div className={styles.field}>
@@ -66,61 +205,93 @@ function CadastroForm() {
           id="username"
           type="text"
           autoComplete="username"
-          required
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className={styles.input}
+          onChange={(e) => { setUsername(e.target.value); setFieldErrors((prev) => ({ ...prev, username: undefined })); }}
+          className={`${styles.input}${fieldErrors.username ? ` ${styles.inputError}` : ''}`}
           placeholder="meu_usuario"
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.username)}
+          aria-describedby={fieldErrors.username ? 'username-error' : undefined}
         />
+        {fieldErrors.username && (
+          <span id="username-error" role="alert" className={styles.fieldError}>
+            {fieldErrors.username}
+          </span>
+        )}
       </div>
 
       <div className={styles.field}>
         <label htmlFor="displayName" className={styles.label}>
-          Nome de exibicao
+          Nome de exibição
         </label>
         <input
           id="displayName"
           type="text"
           autoComplete="name"
-          required
           value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          className={styles.input}
+          onChange={(e) => { setDisplayName(e.target.value); setFieldErrors((prev) => ({ ...prev, displayName: undefined })); }}
+          className={`${styles.input}${fieldErrors.displayName ? ` ${styles.inputError}` : ''}`}
           placeholder="Seu Nome"
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.displayName)}
+          aria-describedby={fieldErrors.displayName ? 'displayName-error' : undefined}
         />
+        {fieldErrors.displayName && (
+          <span id="displayName-error" role="alert" className={styles.fieldError}>
+            {fieldErrors.displayName}
+          </span>
+        )}
       </div>
 
       <div className={styles.field}>
         <label htmlFor="password" className={styles.label}>
           Senha
         </label>
-        <input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="new-password"
-          required
-          minLength={8}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={styles.input}
-          placeholder="Minimo 8 caracteres"
+          onChange={(v) => { setPassword(v); setFieldErrors((prev) => ({ ...prev, password: undefined })); }}
+          placeholder="8-20 caracteres, maiúscula, número e símbolo"
           disabled={loading}
+          hasError={Boolean(fieldErrors.password)}
+          aria-describedby={fieldErrors.password ? 'password-error' : undefined}
         />
+        {fieldErrors.password && (
+          <span id="password-error" role="alert" className={styles.fieldError}>
+            {fieldErrors.password}
+          </span>
+        )}
       </div>
 
-      {error && (
+      <div className={styles.field}>
+        <label htmlFor="confirmPassword" className={styles.label}>
+          Confirmar senha
+        </label>
+        <PasswordInput
+          id="confirmPassword"
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(v) => { setConfirmPassword(v); setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined })); }}
+          placeholder="Repita a senha"
+          disabled={loading}
+          hasError={Boolean(fieldErrors.confirmPassword)}
+          aria-describedby={fieldErrors.confirmPassword ? 'confirmPassword-error' : undefined}
+        />
+        {fieldErrors.confirmPassword && (
+          <span id="confirmPassword-error" role="alert" className={styles.fieldError}>
+            {fieldErrors.confirmPassword}
+          </span>
+        )}
+      </div>
+
+      {generalError && (
         <p role="alert" className={styles.error}>
-          {error}
+          {generalError}
         </p>
       )}
 
-      <button
-        type="submit"
-        className={styles.button}
-        disabled={loading}
-      >
+      <button type="submit" className={styles.button} disabled={loading}>
         {loading ? 'Criando conta...' : 'Criar conta'}
       </button>
     </form>
@@ -139,7 +310,7 @@ export default function CadastroPage() {
         </Suspense>
 
         <p className={styles.footer}>
-          Ja tem conta?{' '}
+          Já tem conta?{' '}
           <Link href="/login" className={styles.link}>
             Entrar
           </Link>
