@@ -23,6 +23,8 @@ import { LoginDto } from './dto/login.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Env } from '../env.validation';
+import { AUTH_SWAGGER } from './messages/auth.swagger';
+import { AUTH_MESSAGES } from './messages/auth.messages';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -33,44 +35,44 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  @Throttle({ default: { ttl: 60000, limit: 5 } }) // 5 tentativas por IP por minuto
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Criar nova conta', description: 'Registra um novo usuário e já retorna os cookies de autenticação.' })
-  @ApiResponse({ status: 201, description: 'Conta criada. Cookies access_token e refresh_token definidos.' })
-  @ApiResponse({ status: 400, description: 'Email ou username já em uso, ou dados inválidos.' })
-  @ApiResponse({ status: 429, description: 'Muitas tentativas. Aguarde antes de tentar novamente.' })
+  @ApiOperation(AUTH_SWAGGER.register.operation)
+  @ApiResponse({ status: 201, description: AUTH_SWAGGER.register.responses[201] })
+  @ApiResponse({ status: 400, description: AUTH_SWAGGER.register.responses[400] })
+  @ApiResponse({ status: 429, description: AUTH_SWAGGER.register.responses[429] })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { accessToken, refreshToken } = await this.authService.register(dto);
     this.setTokenCookies(res, accessToken, refreshToken);
-    return { message: 'Conta criada com sucesso' };
+    return { message: AUTH_MESSAGES.REGISTER_SUCCESS };
   }
 
   @Post('login')
-  @Throttle({ default: { ttl: 60000, limit: 10 } }) // 10 tentativas por IP por minuto
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Fazer login', description: 'Autentica o usuário e define os cookies HttpOnly de acesso e refresh.' })
-  @ApiResponse({ status: 200, description: 'Login realizado. Cookies access_token e refresh_token definidos.' })
-  @ApiResponse({ status: 401, description: 'Credenciais inválidas.' })
-  @ApiResponse({ status: 429, description: 'Muitas tentativas. Aguarde antes de tentar novamente.' })
+  @ApiOperation(AUTH_SWAGGER.login.operation)
+  @ApiResponse({ status: 200, description: AUTH_SWAGGER.login.responses[200] })
+  @ApiResponse({ status: 401, description: AUTH_SWAGGER.login.responses[401] })
+  @ApiResponse({ status: 429, description: AUTH_SWAGGER.login.responses[429] })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { accessToken, refreshToken } = await this.authService.login(dto);
     this.setTokenCookies(res, accessToken, refreshToken);
-    return { message: 'Login realizado com sucesso' };
+    return { message: AUTH_MESSAGES.LOGIN_SUCCESS };
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtRefreshGuard)
   @ApiCookieAuth('access_token')
-  @ApiOperation({ summary: 'Renovar tokens', description: 'Troca o refresh_token por um novo par de tokens (rotação). O cookie refresh_token deve estar presente.' })
-  @ApiResponse({ status: 200, description: 'Tokens renovados.' })
-  @ApiResponse({ status: 401, description: 'Refresh token inválido ou expirado.' })
+  @ApiOperation(AUTH_SWAGGER.refresh.operation)
+  @ApiResponse({ status: 200, description: AUTH_SWAGGER.refresh.responses[200] })
+  @ApiResponse({ status: 401, description: AUTH_SWAGGER.refresh.responses[401] })
   async refresh(
     @Req() req: Request & { user: { userId: string; jti: string } },
     @Res({ passthrough: true }) res: Response,
@@ -82,16 +84,16 @@ export class AuthController {
       rawRefreshToken,
     );
     this.setTokenCookies(res, accessToken, refreshToken);
-    return { message: 'Token renovado com sucesso' };
+    return { message: AUTH_MESSAGES.REFRESH_SUCCESS };
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth('access_token')
-  @ApiOperation({ summary: 'Fazer logout', description: 'Revoga o refresh token e limpa os cookies de autenticação.' })
-  @ApiResponse({ status: 200, description: 'Logout realizado.' })
-  @ApiResponse({ status: 401, description: 'Não autenticado.' })
+  @ApiOperation(AUTH_SWAGGER.logout.operation)
+  @ApiResponse({ status: 200, description: AUTH_SWAGGER.logout.responses[200] })
+  @ApiResponse({ status: 401, description: AUTH_SWAGGER.logout.responses[401] })
   async logout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -103,7 +105,7 @@ export class AuthController {
     }
 
     this.clearTokenCookies(res);
-    return { message: 'Logout realizado com sucesso' };
+    return { message: AUTH_MESSAGES.LOGOUT_SUCCESS };
   }
 
   private setTokenCookies(

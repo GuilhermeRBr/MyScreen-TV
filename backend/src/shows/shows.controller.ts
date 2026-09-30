@@ -13,6 +13,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { ShowsService } from './shows.service';
+import { SHOWS_SWAGGER } from './messages/shows.swagger';
 
 @ApiTags('Shows')
 @Controller('shows')
@@ -20,25 +21,25 @@ export class ShowsController {
   constructor(private readonly showsService: ShowsService) {}
 
   @Get('popular')
-  @ApiOperation({ summary: 'Séries populares', description: 'Retorna a lista de séries populares via TMDB.' })
+  @ApiOperation(SHOWS_SWAGGER.getPopular.operation)
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiResponse({ status: 200, description: 'Lista de séries populares.' })
+  @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getPopular.responses[200] })
   getPopular(@Query('page', new ParseIntPipe({ optional: true })) page?: number) {
     return this.showsService.getPopular(page ?? 1);
   }
 
   @Get('trending')
-  @ApiOperation({ summary: 'Séries em alta', description: 'Retorna as séries em tendência da semana via TMDB.' })
-  @ApiResponse({ status: 200, description: 'Lista de séries em alta.' })
+  @ApiOperation(SHOWS_SWAGGER.getTrending.operation)
+  @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getTrending.responses[200] })
   getTrending() {
     return this.showsService.getTrending();
   }
 
   @Get('search')
-  @ApiOperation({ summary: 'Buscar séries', description: 'Pesquisa séries pelo nome via TMDB.' })
+  @ApiOperation(SHOWS_SWAGGER.search.operation)
   @ApiQuery({ name: 'q', required: true, type: String, example: 'Breaking Bad' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiResponse({ status: 200, description: 'Resultados da busca.' })
+  @ApiResponse({ status: 200, description: SHOWS_SWAGGER.search.responses[200] })
   search(
     @Query('q') query: string,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
@@ -47,29 +48,29 @@ export class ShowsController {
   }
 
   @Get(':tmdbId')
-  @ApiOperation({ summary: 'Detalhes de uma série', description: 'Retorna detalhes completos de uma série pelo ID do TMDB, incluindo elenco. Sincroniza com o banco se necessário.' })
+  @ApiOperation(SHOWS_SWAGGER.getDetail.operation)
   @ApiParam({ name: 'tmdbId', type: Number, example: 1396, description: 'ID da série no TMDB' })
-  @ApiResponse({ status: 200, description: 'Detalhes da série.' })
-  @ApiResponse({ status: 404, description: 'Série não encontrada.' })
+  @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getDetail.responses[200] })
+  @ApiResponse({ status: 404, description: SHOWS_SWAGGER.getDetail.responses[404] })
   getDetail(@Param('tmdbId', ParseIntPipe) tmdbId: number) {
     return this.showsService.getShowDetail(tmdbId);
   }
 
   @Get(':tmdbId/seasons')
-  @ApiOperation({ summary: 'Temporadas de uma série' })
+  @ApiOperation(SHOWS_SWAGGER.getSeasons.operation)
   @ApiParam({ name: 'tmdbId', type: Number, example: 1396 })
-  @ApiResponse({ status: 200, description: 'Lista de temporadas.' })
-  @ApiResponse({ status: 404, description: 'Série não encontrada.' })
+  @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getSeasons.responses[200] })
+  @ApiResponse({ status: 404, description: SHOWS_SWAGGER.getSeasons.responses[404] })
   getSeasons(@Param('tmdbId', ParseIntPipe) tmdbId: number) {
     return this.showsService.getShowSeasons(tmdbId);
   }
 
   @Get(':tmdbId/seasons/:seasonNumber/episodes')
-  @ApiOperation({ summary: 'Episódios de uma temporada' })
+  @ApiOperation(SHOWS_SWAGGER.getEpisodes.operation)
   @ApiParam({ name: 'tmdbId', type: Number, example: 1396 })
   @ApiParam({ name: 'seasonNumber', type: Number, example: 1 })
-  @ApiResponse({ status: 200, description: 'Lista de episódios da temporada.' })
-  @ApiResponse({ status: 404, description: 'Série ou temporada não encontrada.' })
+  @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getEpisodes.responses[200] })
+  @ApiResponse({ status: 404, description: SHOWS_SWAGGER.getEpisodes.responses[404] })
   getEpisodes(
     @Param('tmdbId', ParseIntPipe) tmdbId: number,
     @Param('seasonNumber', ParseIntPipe) seasonNumber: number,

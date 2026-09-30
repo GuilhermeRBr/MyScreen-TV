@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { USERS_MESSAGES } from './messages/users.messages';
 
 type SafeUser = {
   id: string;
@@ -41,7 +42,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
+      throw new NotFoundException(USERS_MESSAGES.USER_NOT_FOUND);
     }
 
     return user;
@@ -64,7 +65,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
+      throw new NotFoundException(USERS_MESSAGES.USER_NOT_FOUND);
     }
 
     return user;
@@ -100,11 +101,11 @@ export class UsersService {
     });
 
     if (!target) {
-      throw new NotFoundException('Usuário não encontrado');
+      throw new NotFoundException(USERS_MESSAGES.USER_NOT_FOUND);
     }
 
     if (target.id === followerId) {
-      throw new BadRequestException('Você não pode seguir a si mesmo');
+      throw new BadRequestException(USERS_MESSAGES.CANNOT_FOLLOW_SELF);
     }
 
     await this.prisma.follow.upsert({
@@ -128,7 +129,7 @@ export class UsersService {
     });
 
     if (!target) {
-      throw new NotFoundException('Usuário não encontrado');
+      throw new NotFoundException(USERS_MESSAGES.USER_NOT_FOUND);
     }
 
     await this.prisma.follow.deleteMany({

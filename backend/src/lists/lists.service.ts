@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateListDto } from './dto/create-list.dto';
 import { AddListItemDto } from './dto/add-list-item.dto';
+import { LISTS_MESSAGES } from './messages/lists.messages';
 
 @Injectable()
 export class ListsService {
@@ -42,11 +43,11 @@ export class ListsService {
     });
 
     if (!list) {
-      throw new NotFoundException('Lista não encontrada');
+      throw new NotFoundException(LISTS_MESSAGES.LIST_NOT_FOUND);
     }
 
     if (!list.isPublic && list.userId !== requestingUserId) {
-      throw new ForbiddenException('Acesso negado a esta lista');
+      throw new ForbiddenException(LISTS_MESSAGES.ACCESS_DENIED_LIST);
     }
 
     return list;
@@ -58,7 +59,7 @@ export class ListsService {
     dto: AddListItemDto,
   ) {
     if (!dto.showId && !dto.movieId) {
-      throw new BadRequestException('Informe showId ou movieId');
+      throw new BadRequestException(LISTS_MESSAGES.MISSING_SHOW_OR_MOVIE);
     }
 
     const list = await this.prisma.customList.findUnique({
@@ -67,11 +68,11 @@ export class ListsService {
     });
 
     if (!list) {
-      throw new NotFoundException('Lista não encontrada');
+      throw new NotFoundException(LISTS_MESSAGES.LIST_NOT_FOUND);
     }
 
     if (list.userId !== userId) {
-      throw new ForbiddenException('Acesso negado');
+      throw new ForbiddenException(LISTS_MESSAGES.ACCESS_DENIED);
     }
 
     const lastItem = await this.prisma.customListItem.findFirst({
@@ -97,11 +98,11 @@ export class ListsService {
     });
 
     if (!list) {
-      throw new NotFoundException('Lista não encontrada');
+      throw new NotFoundException(LISTS_MESSAGES.LIST_NOT_FOUND);
     }
 
     if (list.userId !== userId) {
-      throw new ForbiddenException('Acesso negado');
+      throw new ForbiddenException(LISTS_MESSAGES.ACCESS_DENIED);
     }
 
     await this.prisma.customListItem.delete({ where: { id: itemId } });
@@ -114,11 +115,11 @@ export class ListsService {
     });
 
     if (!list) {
-      throw new NotFoundException('Lista não encontrada');
+      throw new NotFoundException(LISTS_MESSAGES.LIST_NOT_FOUND);
     }
 
     if (list.userId !== userId) {
-      throw new ForbiddenException('Acesso negado');
+      throw new ForbiddenException(LISTS_MESSAGES.ACCESS_DENIED);
     }
 
     await this.prisma.customList.delete({ where: { id: listId } });

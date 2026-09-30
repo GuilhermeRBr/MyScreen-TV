@@ -7,6 +7,11 @@ inclusion: always
 
 Este steering se aplica a todo código gerado no projeto (frontend Next.js e backend NestJS). Sempre priorize estas regras sobre estilo pessoal ou "jeito mais rápido" de resolver.
 
+## Sem mensagens espalhadas pelo codigo
+
+- monte uma subpasta dentro da feature tipo: auth/messages
+para poder organizar as mensagens de retorno e a documentacao do swagger
+
 ## Princípios gerais
 
 - **SOLID** — principalmente Single Responsibility (uma classe/função faz uma coisa) e Dependency Inversion (dependa de interfaces/abstrações, não de implementações concretas, especialmente em Services do Nest).

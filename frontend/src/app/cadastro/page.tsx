@@ -18,37 +18,67 @@ function validateForm(
 ): FieldErrors {
   const errors: FieldErrors = {};
 
-  if (!email) {
+  // Email
+  const emailTrimmed = email.trim();
+  if (!emailTrimmed) {
     errors.email = 'Email é obrigatório';
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  } else if (emailTrimmed.length < 5) {
+    errors.email = 'Email deve ter pelo menos 5 caracteres';
+  } else if (emailTrimmed.length > 50) {
+    errors.email = 'Email deve ter no máximo 50 caracteres';
+  } else if (/\s/.test(emailTrimmed)) {
+    errors.email = 'Email não pode conter espaços';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
     errors.email = 'Email inválido';
   }
 
-  if (!username) {
+  // Username
+  const usernameTrimmed = username.trim();
+  if (!usernameTrimmed) {
     errors.username = 'Username é obrigatório';
-  } else if (username.length < 3) {
+  } else if (usernameTrimmed.length < 3) {
     errors.username = 'Username deve ter pelo menos 3 caracteres';
-  } else if (username.length > 30) {
+  } else if (usernameTrimmed.length > 30) {
     errors.username = 'Username deve ter no máximo 30 caracteres';
-  } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-    errors.username = 'Username só pode conter letras, números e underscore';
+  } else if (/\s/.test(usernameTrimmed)) {
+    errors.username = 'Username não pode conter espaços';
+  } else if (!/^[a-zA-Z0-9_.]+$/.test(usernameTrimmed)) {
+    errors.username = 'Username só pode conter letras, números, underscore e ponto';
+  } else if (/^[._]|[._]$/.test(usernameTrimmed)) {
+    errors.username = 'Username não pode começar ou terminar com ponto ou underscore';
   }
 
-  if (!displayName) {
+  // Nome de exibição
+  const displayNameTrimmed = displayName.trim();
+  if (!displayNameTrimmed) {
     errors.displayName = 'Nome de exibição é obrigatório';
-  } else if (displayName.length < 2) {
+  } else if (displayNameTrimmed.length < 2) {
     errors.displayName = 'Nome deve ter pelo menos 2 caracteres';
+  } else if (displayNameTrimmed.length > 100) {
+    errors.displayName = 'Nome deve ter no máximo 100 caracteres';
   }
 
+  // Senha
   if (!password) {
     errors.password = 'Senha é obrigatória';
   } else if (password.length < 8) {
     errors.password = 'Senha deve ter pelo menos 8 caracteres';
+  } else if (password.length > 20) {
+    errors.password = 'Senha deve ter no máximo 20 caracteres';
+  } else if (!/[A-Z]/.test(password)) {
+    errors.password = 'Senha deve conter pelo menos uma letra maiúscula';
+  } else if (!/[a-z]/.test(password)) {
+    errors.password = 'Senha deve conter pelo menos uma letra minúscula';
+  } else if (!/[0-9]/.test(password)) {
+    errors.password = 'Senha deve conter pelo menos um número';
+  } else if (!/[^A-Za-z0-9]/.test(password)) {
+    errors.password = 'Senha deve conter pelo menos um caractere especial';
   }
 
+  // Confirmar senha
   if (!confirmPassword) {
     errors.confirmPassword = 'Confirmação de senha é obrigatória';
-  } else if (password && confirmPassword !== password) {
+  } else if (confirmPassword !== password) {
     errors.confirmPassword = 'As senhas não coincidem';
   }
 
@@ -222,7 +252,7 @@ function CadastroForm() {
           autoComplete="new-password"
           value={password}
           onChange={(v) => { setPassword(v); setFieldErrors((prev) => ({ ...prev, password: undefined })); }}
-          placeholder="Mínimo 8 caracteres"
+          placeholder="8-20 caracteres, maiúscula, número e símbolo"
           disabled={loading}
           hasError={Boolean(fieldErrors.password)}
           aria-describedby={fieldErrors.password ? 'password-error' : undefined}

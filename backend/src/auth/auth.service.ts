@@ -13,6 +13,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtPayload, RefreshTokenPayload } from './interfaces/jwt-payload.interface';
 import { Env } from '../env.validation';
 import { User } from '@prisma/client';
+import { AUTH_MESSAGES } from './messages/auth.messages';
 
 interface TokenPair {
   accessToken: string;
@@ -30,26 +31,30 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<TokenPair> {
+    // O @Transform do DTO já normalizou, mas garantimos aqui também
+    const email = dto.email.trim().toLowerCase();
+    const username = dto.username.trim().toLowerCase();
+
     const existing = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email: dto.email }, { username: dto.username }],
+        OR: [{ email }, { username }],
       },
       select: { id: true, email: true, username: true },
     });
 
     if (existing) {
-      if (existing.email === dto.email) {
-        throw new BadRequestException('Email já está em uso');
+      if (existing.email === email) {
+        throw new BadRequestException(AUTH_MESSAGES.EMAIL_IN_USE);
       }
-      throw new BadRequestException('Username já está em uso');
+      throw new BadRequestException(AUTH_MESSAGES.USERNAME_IN_USE);
     }
 
     const passwordHash = await bcrypt.hash(dto.password, this.BCRYPT_ROUNDS);
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
-        username: dto.username,
+        email,
+        username,
         passwordHash,
         displayName: dto.displayName,
       },
@@ -64,20 +69,22 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<TokenPair> {
+    const email = dto.email.trim().toLowerCase();
+
     const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email },
     });
 
     if (!user) {
       // Tempo constante para evitar user enumeration
       await bcrypt.compare(dto.password, '$2b$12$invalidhashfortimingprotection');
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS);
     }
 
     const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!passwordValid) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS);
     }
 
     return this.generateTokenPair(user.id, user.email, user.role);
@@ -101,7 +108,7 @@ export class AuthService {
       storedToken.revokedAt !== null ||
       storedToken.expiresAt < new Date()
     ) {
-      throw new UnauthorizedException('Refresh token inválido ou expirado');
+      throw new UnauthorizedException(AUTH_MESSAGES.INVALID_REFRESH_TOKEN);
     }
 
     // Revogar token usado (rotação de refresh token)

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ShowSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { WATCH_MESSAGES } from './messages/watch.messages';
 
 export interface SeasonProgress {
   seasonId: string;
@@ -41,7 +42,7 @@ export class WatchService {
     });
 
     if (!episode) {
-      throw new NotFoundException('Episódio não encontrado');
+      throw new NotFoundException(WATCH_MESSAGES.EPISODE_NOT_FOUND);
     }
 
     const existing = await this.prisma.watchProgress.findUnique({
@@ -72,7 +73,7 @@ export class WatchService {
     });
 
     if (!season) {
-      throw new NotFoundException('Temporada não encontrada');
+      throw new NotFoundException(WATCH_MESSAGES.SEASON_NOT_FOUND);
     }
 
     const existingIds = await this.prisma.watchProgress
@@ -161,7 +162,7 @@ export class WatchService {
     });
 
     if (!movie) {
-      throw new NotFoundException('Filme não encontrado');
+      throw new NotFoundException(WATCH_MESSAGES.MOVIE_NOT_FOUND);
     }
 
     const existing = await this.prisma.movieWatch.findUnique({
@@ -192,7 +193,7 @@ export class WatchService {
     });
 
     if (!movie) {
-      throw new NotFoundException('Filme não encontrado');
+      throw new NotFoundException(WATCH_MESSAGES.MOVIE_NOT_FOUND);
     }
 
     await this.prisma.movieWatch.upsert({
