@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const isDev = process.env.NODE_ENV === 'development';
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -14,6 +16,17 @@ const nextConfig = {
     // Usamos uma lista explícita para garantir que a CSP nunca seja "connect-src 'self' undefined".
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+    // react-refresh (hot reload) do Next.js exige 'unsafe-eval' em desenvolvimento.
+    // Em produção isso é removido para manter a CSP restritiva.
+    const scriptSrc = isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'";
+
+    // Em dev o webpack se conecta via WebSocket para hot reload.
+    const connectSrc = isDev
+      ? `connect-src 'self' ${backendUrl} ws://localhost:3000`
+      : `connect-src 'self' ${backendUrl}`;
+
     return [
       {
         source: '/(.*)',
@@ -22,12 +35,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
+              scriptSrc,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https://image.tmdb.org data: blob:",
               "font-src 'self'",
-              // Permite chamadas ao backend tanto em dev (localhost:3001) quanto em produção
-              `connect-src 'self' ${backendUrl}`,
+              connectSrc,
               "frame-ancestors 'none'",
             ].join('; '),
           },
