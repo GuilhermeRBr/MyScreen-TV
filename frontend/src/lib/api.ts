@@ -14,6 +14,7 @@ class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    public readonly errors?: string[],
   ) {
     super(message);
     this.name = 'ApiError';
@@ -56,6 +57,7 @@ async function request<T>(
         throw new ApiError(
           retryResponse.status,
           (errorData as { message?: string }).message ?? 'Erro desconhecido',
+          (errorData as { errors?: string[] }).errors,
         );
       }
 
@@ -75,6 +77,7 @@ async function request<T>(
     throw new ApiError(
       response.status,
       (errorData as { message?: string }).message ?? 'Erro na requisição',
+      (errorData as { errors?: string[] }).errors,
     );
   }
 

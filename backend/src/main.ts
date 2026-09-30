@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, BadRequestException } from '@nestjs/common';
+import { ValidationError } from 'class-validator';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -41,6 +42,15 @@ async function bootstrap(): Promise<void> {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      // Retorna erros estruturados com o nome do campo para o frontend mapear por input
+      exceptionFactory: (validationErrors: ValidationError[]) => {
+        const errors = validationErrors.flatMap((err) =>
+          Object.values(err.constraints ?? {}).map(
+            (msg) => `${err.property}:${msg}`,
+          ),
+        );
+        return new BadRequestException(errors);
+      },
     }),
   );
 
