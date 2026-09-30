@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
@@ -32,10 +33,12 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Throttle({ default: { ttl: 60000, limit: 5 } }) // 5 tentativas por IP por minuto
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Criar nova conta', description: 'Registra um novo usuário e já retorna os cookies de autenticação.' })
   @ApiResponse({ status: 201, description: 'Conta criada. Cookies access_token e refresh_token definidos.' })
   @ApiResponse({ status: 400, description: 'Email ou username já em uso, ou dados inválidos.' })
+  @ApiResponse({ status: 429, description: 'Muitas tentativas. Aguarde antes de tentar novamente.' })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -46,10 +49,12 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { ttl: 60000, limit: 10 } }) // 10 tentativas por IP por minuto
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Fazer login', description: 'Autentica o usuário e define os cookies HttpOnly de acesso e refresh.' })
   @ApiResponse({ status: 200, description: 'Login realizado. Cookies access_token e refresh_token definidos.' })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas.' })
+  @ApiResponse({ status: 429, description: 'Muitas tentativas. Aguarde antes de tentar novamente.' })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,

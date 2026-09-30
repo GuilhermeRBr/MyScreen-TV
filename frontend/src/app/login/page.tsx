@@ -26,11 +26,13 @@ function LoginForm() {
       router.push(redirect);
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(
-          err.status === 401
-            ? 'Email ou senha incorretos.'
-            : err.message,
-        );
+        if (err.status === 429) {
+          setError('Muitas tentativas. Aguarde um momento e tente novamente.');
+        } else if (err.status === 401) {
+          setError('Email ou senha incorretos.');
+        } else {
+          setError('Erro ao entrar. Tente novamente.');
+        }
       } else {
         setError('Erro ao conectar com o servidor. Tente novamente.');
       }

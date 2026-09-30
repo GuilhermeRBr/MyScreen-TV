@@ -112,7 +112,9 @@ function CadastroForm() {
       router.push('/series');
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 400 || err.status === 409) {
+        if (err.status === 429) {
+          setGeneralError('Muitas tentativas. Aguarde um momento e tente novamente.');
+        } else if (err.status === 400 || err.status === 409) {
           const mapped = parseApiError(err);
           if (Object.keys(mapped).length > 0) {
             setFieldErrors(mapped);
