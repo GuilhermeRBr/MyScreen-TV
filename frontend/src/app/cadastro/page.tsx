@@ -4,50 +4,58 @@ import { useState, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { PasswordInput } from '@/components/PasswordInput/PasswordInput';
 import styles from './page.module.css';
 
-type FieldErrors = Partial<Record<'email' | 'username' | 'displayName' | 'password', string>>;
+type FieldErrors = Partial<Record<'email' | 'username' | 'displayName' | 'password' | 'confirmPassword', string>>;
 
 function validateForm(
   email: string,
   username: string,
   displayName: string,
   password: string,
+  confirmPassword: string,
 ): FieldErrors {
   const errors: FieldErrors = {};
 
   if (!email) {
-    errors.email = 'Email e obrigatorio';
+    errors.email = 'Email é obrigatório';
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.email = 'Email invalido';
+    errors.email = 'Email inválido';
   }
 
   if (!username) {
-    errors.username = 'Username e obrigatorio';
+    errors.username = 'Username é obrigatório';
   } else if (username.length < 3) {
     errors.username = 'Username deve ter pelo menos 3 caracteres';
   } else if (username.length > 30) {
-    errors.username = 'Username deve ter no maximo 30 caracteres';
+    errors.username = 'Username deve ter no máximo 30 caracteres';
   } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-    errors.username = 'Username so pode conter letras, numeros e underscore';
+    errors.username = 'Username só pode conter letras, números e underscore';
   }
 
   if (!displayName) {
-    errors.displayName = 'Nome de exibicao e obrigatorio';
+    errors.displayName = 'Nome de exibição é obrigatório';
   } else if (displayName.length < 2) {
     errors.displayName = 'Nome deve ter pelo menos 2 caracteres';
   }
 
   if (!password) {
-    errors.password = 'Senha e obrigatoria';
+    errors.password = 'Senha é obrigatória';
   } else if (password.length < 8) {
     errors.password = 'Senha deve ter pelo menos 8 caracteres';
+  }
+
+  if (!confirmPassword) {
+    errors.confirmPassword = 'Confirmação de senha é obrigatória';
+  } else if (password && confirmPassword !== password) {
+    errors.confirmPassword = 'As senhas não coincidem';
   }
 
   return errors;
 }
 
-// Erros vindos do backend depois de passar na validacao local (ex: duplicados)
+// Erros vindos do backend depois de passar na validação local (ex: duplicados)
 function parseApiError(err: ApiError): FieldErrors {
   const mapped: FieldErrors = {};
 
@@ -57,6 +65,7 @@ function parseApiError(err: ApiError): FieldErrors {
       email: 'email',
       username: 'username',
       password: 'password',
+      confirmPassword: 'confirmPassword',
       displayName: 'displayName',
     };
 
@@ -89,6 +98,7 @@ function CadastroForm() {
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -97,8 +107,8 @@ function CadastroForm() {
     e.preventDefault();
     setGeneralError(null);
 
-    // Validacao no frontend primeiro
-    const localErrors = validateForm(email, username, displayName, password);
+    // Validação no frontend primeiro
+    const localErrors = validateForm(email, username, displayName, password, confirmPassword);
     if (Object.keys(localErrors).length > 0) {
       setFieldErrors(localErrors);
       return;
@@ -108,7 +118,7 @@ function CadastroForm() {
     setLoading(true);
 
     try {
-      await api.post('/auth/register', { email, username, displayName, password });
+      await api.post('/auth/register', { email, username, displayName, password, confirmPassword });
       router.push('/series');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -182,7 +192,7 @@ function CadastroForm() {
 
       <div className={styles.field}>
         <label htmlFor="displayName" className={styles.label}>
-          Nome de exibicao
+          Nome de exibição
         </label>
         <input
           id="displayName"
@@ -207,21 +217,40 @@ function CadastroForm() {
         <label htmlFor="password" className={styles.label}>
           Senha
         </label>
-        <input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="new-password"
           value={password}
-          onChange={(e) => { setPassword(e.target.value); setFieldErrors((prev) => ({ ...prev, password: undefined })); }}
-          className={`${styles.input}${fieldErrors.password ? ` ${styles.inputError}` : ''}`}
-          placeholder="Minimo 8 caracteres"
+          onChange={(v) => { setPassword(v); setFieldErrors((prev) => ({ ...prev, password: undefined })); }}
+          placeholder="Mínimo 8 caracteres"
           disabled={loading}
-          aria-invalid={Boolean(fieldErrors.password)}
+          hasError={Boolean(fieldErrors.password)}
           aria-describedby={fieldErrors.password ? 'password-error' : undefined}
         />
         {fieldErrors.password && (
           <span id="password-error" role="alert" className={styles.fieldError}>
             {fieldErrors.password}
+          </span>
+        )}
+      </div>
+
+      <div className={styles.field}>
+        <label htmlFor="confirmPassword" className={styles.label}>
+          Confirmar senha
+        </label>
+        <PasswordInput
+          id="confirmPassword"
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(v) => { setConfirmPassword(v); setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined })); }}
+          placeholder="Repita a senha"
+          disabled={loading}
+          hasError={Boolean(fieldErrors.confirmPassword)}
+          aria-describedby={fieldErrors.confirmPassword ? 'confirmPassword-error' : undefined}
+        />
+        {fieldErrors.confirmPassword && (
+          <span id="confirmPassword-error" role="alert" className={styles.fieldError}>
+            {fieldErrors.confirmPassword}
           </span>
         )}
       </div>
@@ -251,7 +280,7 @@ export default function CadastroPage() {
         </Suspense>
 
         <p className={styles.footer}>
-          Ja tem conta?{' '}
+          Já tem conta?{' '}
           <Link href="/login" className={styles.link}>
             Entrar
           </Link>

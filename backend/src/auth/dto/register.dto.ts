@@ -6,6 +6,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
+import { Match } from '../decorators/match.decorator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'usuario@email.com' })
@@ -26,6 +27,11 @@ export class RegisterDto {
   @MinLength(8, { message: 'Senha deve ter pelo menos 8 caracteres' })
   @MaxLength(100)
   password!: string;
+
+  @ApiProperty({ example: 'minhasenha123', description: 'Deve ser igual ao campo password' })
+  @IsString({ message: 'Confirmação de senha é obrigatória' })
+  @Match('password', { message: 'As senhas não coincidem' })
+  confirmPassword!: string;
 
   @ApiProperty({ example: 'João Silva', minLength: 2, maxLength: 60 })
   @IsString()

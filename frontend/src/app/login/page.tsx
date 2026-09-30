@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { PasswordInput } from '@/components/PasswordInput/PasswordInput';
 import styles from './page.module.css';
 
 function LoginForm() {
@@ -64,14 +65,11 @@ function LoginForm() {
         <label htmlFor="password" className={styles.label}>
           Senha
         </label>
-        <input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="current-password"
-          required
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={styles.input}
+          onChange={(v) => setPassword(v)}
           placeholder="••••••••"
           disabled={loading}
         />
