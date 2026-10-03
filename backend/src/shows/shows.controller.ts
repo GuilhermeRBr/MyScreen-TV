@@ -1,5 +1,6 @@
 import {
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
   ParseIntPipe,
@@ -24,8 +25,10 @@ export class ShowsController {
   @ApiOperation(SHOWS_SWAGGER.getPopular.operation)
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getPopular.responses[200] })
-  getPopular(@Query('page', new ParseIntPipe({ optional: true })) page?: number) {
-    return this.showsService.getPopular(page ?? 1);
+  getPopular(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  ) {
+    return this.showsService.getPopular(page);
   }
 
   @Get('trending')
@@ -42,9 +45,9 @@ export class ShowsController {
   @ApiResponse({ status: 200, description: SHOWS_SWAGGER.search.responses[200] })
   search(
     @Query('q') query: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
   ) {
-    return this.showsService.search(query, page ?? 1);
+    return this.showsService.search(query, page);
   }
 
   @Get(':tmdbId')

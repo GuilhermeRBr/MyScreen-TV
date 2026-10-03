@@ -1,5 +1,6 @@
 import styles from './page.module.css';
-import { IconChevronRight, IconBell, IconDots, IconClock, IconUser } from '@/components/icons';
+import { IconChevronRight, IconBell, IconClock, IconUser } from '@/components/icons';
+import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
 
 // Perfil e stats ficam client-side pois dependem de auth
 // Aqui e o shell estatico — dados reais viriam via hook/Client Component
@@ -13,9 +14,7 @@ export default function PerfilPage() {
             <button className={styles.bellButton} aria-label="Notificacoes">
               <IconBell width={18} height={18} />
             </button>
-            <button aria-label="Mais opcoes" style={{ color: 'white' }}>
-              <IconDots width={20} height={20} />
-            </button>
+            <ProfileMenu />
           </div>
         </div>
 
