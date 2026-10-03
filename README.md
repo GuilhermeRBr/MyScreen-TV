@@ -1,15 +1,15 @@
 <div align="center">
 
-<h1 align="center">TV Time — Catalogo de Series e Filmes</h1>
+<h1 align="center">MyScreen TV — Catalogo de Series e Filmes</h1>
 
 <p align="center">
-  <strong>TV Time e uma plataforma open-source para catalogacao e acompanhamento de series e filmes, desenvolvida para quem quer organizar o que assiste com Next.js, NestJS, TypeScript e PostgreSQL.</strong>
+  <strong>MyScreen TV e uma plataforma open-source para catalogacao e acompanhamento de series e filmes, desenvolvida para quem quer organizar o que assiste com Next.js, NestJS, TypeScript e PostgreSQL.</strong>
 </p>
 
 <p align="center">
   <a href="#"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue"></a>
-  <a href="#"><img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/GuilhermeRBr/tv-time?color=green"></a>
-  <a href="#"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/GuilhermeRBr/tv-time?color=purple"></a>
+  <a href="#"><img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/GuilhermeRBr/myscreen-tv?color=green"></a>
+  <a href="#"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/GuilhermeRBr/myscreen-tv?color=purple"></a>
 </p>
 
 <br />
@@ -24,7 +24,7 @@
 
 ## Sobre o projeto
 
-O **TV Time** e uma aplicacao web para **acompanhamento de series e filmes**, inspirada no app TV Time, com foco em progresso por temporada, estatisticas de perfil e calendario de lancamentos.
+O **MyScreen TV** e uma aplicacao web para **acompanhamento de series e filmes**, com foco em progresso por temporada, estatisticas de perfil e calendario de lancamentos.
 
 > Desenvolvido para quem quer ter controle total sobre o que assiste, com uma experiencia visual moderna e dados em tempo real via TMDB.
 
@@ -119,7 +119,7 @@ yarn dev
 ## Estrutura de Pastas
 
 ```
-tv-time/
+myscreen-tv/
 ├── backend/
 │   ├── prisma/
 │   │   └── schema.prisma

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Aplicacao de catalogacao de series e filmes estilo TV Time, composta por um monorepo com dois projetos independentes: `backend` (NestJS + Prisma + PostgreSQL) e `frontend` (Next.js App Router + CSS Modules). A fonte primaria de dados de catalogo e a TMDB API, com cache local de ate 6 meses no PostgreSQL. Toda a comunicacao entre frontend e backend ocorre via HTTP REST, com autenticacao por cookies HttpOnly.
+Aplicacao de catalogacao de series e filmes estilo MyScreen TV, composta por um monorepo com dois projetos independentes: `backend` (NestJS + Prisma + PostgreSQL) e `frontend` (Next.js App Router + CSS Modules). A fonte primaria de dados de catalogo e a TMDB API, com cache local de ate 6 meses no PostgreSQL. Toda a comunicacao entre frontend e backend ocorre via HTTP REST, com autenticacao por cookies HttpOnly.
 
 ---
 
@@ -1025,15 +1025,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: tvtime_app
-      POSTGRES_PASSWORD: tvtime_dev_password
-      POSTGRES_DB: tvtime_dev
+      POSTGRES_USER: myscreen_tv_app
+      POSTGRES_PASSWORD: myscreen_tv_dev_password
+      POSTGRES_DB: myscreen_tv_dev
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U tvtime_app -d tvtime_dev']
+      test: ['CMD-SHELL', 'pg_isready -U myscreen_tv_app -d myscreen_tv_dev']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -1063,9 +1063,9 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: tvtime_test
-          POSTGRES_PASSWORD: tvtime_test
-          POSTGRES_DB: tvtime_test
+          POSTGRES_USER: myscreen_tv_test
+          POSTGRES_PASSWORD: myscreen_tv_test
+          POSTGRES_DB: myscreen_tv_test
         ports: ['5432:5432']
         options: >-
           --health-cmd pg_isready
@@ -1085,11 +1085,11 @@ jobs:
       - run: yarn prisma migrate deploy
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://tvtime_test:tvtime_test@localhost:5432/tvtime_test
+          DATABASE_URL: postgresql://myscreen_tv_test:myscreen_tv_test@localhost:5432/myscreen_tv_test
       - run: yarn test --run
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://tvtime_test:tvtime_test@localhost:5432/tvtime_test
+          DATABASE_URL: postgresql://myscreen_tv_test:myscreen_tv_test@localhost:5432/myscreen_tv_test
           JWT_ACCESS_SECRET: test_access_secret_min_32_chars_here
           JWT_REFRESH_SECRET: test_refresh_secret_min_32_chars_here
           TMDB_API_KEY: test_key
