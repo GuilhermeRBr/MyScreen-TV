@@ -1,48 +1,36 @@
-import { Suspense } from 'react';
 import styles from './page.module.css';
-import { PosterCard } from '@/components/PosterCard/PosterCard';
+import { SeriesInfiniteGrid } from '@/components/SeriesInfiniteGrid/SeriesInfiniteGrid';
 import { IconEye, IconFilter } from '@/components/icons';
 
-// Server component — busca dados diretamente no servidor
-async function getPopularShows() {
+interface PopularShowsResponse {
+  results: Array<{ id: number; name: string; poster_path: string | null }>;
+  page: number;
+  total_pages: number;
+}
+
+async function fetchPopularShows(page = 1): Promise<PopularShowsResponse> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
   try {
-    const res = await fetch(`${apiUrl}/shows/popular`, {
+    const res = await fetch(`${apiUrl}/shows/popular?page=${page}`, {
       next: { revalidate: 3600 },
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) return { results: [], page: 1, total_pages: 1 };
 
-    const data = await res.json() as { results: Array<{ id: number; name: string; poster_path: string | null }> };
-    return data.results ?? [];
+    return res.json() as Promise<PopularShowsResponse>;
   } catch {
-    return [];
+    return { results: [], page: 1, total_pages: 1 };
   }
 }
 
-async function ShowsGrid() {
-  const shows = await getPopularShows();
+export default async function SeriesPage() {
+  const data = await fetchPopularShows(1);
 
-  return (
-    <div className={styles.grid}>
-      {shows.map((show) => (
-        <PosterCard
-          key={show.id}
-          title={show.name}
-          posterPath={show.poster_path}
-          href={`/show/${show.id}/sobre`}
-        />
-      ))}
-    </div>
-  );
-}
-
-export default function SeriesPage() {
   return (
     <>
       <header className={styles.header}>
-        <h1 className={styles.title}>Séries</h1>
+        <h1 className={styles.title}>Series</h1>
         <div className={styles.controls}>
           <button className={styles.iconButton} aria-label="Ver modo de lista">
             <IconEye />
@@ -50,24 +38,12 @@ export default function SeriesPage() {
         </div>
       </header>
 
-      <Suspense
-        fallback={
-          <div className={styles.grid}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  aspectRatio: '2/3',
-                  backgroundColor: 'var(--color-bg-elevated)',
-                  borderRadius: 'var(--radius-sm)',
-                }}
-              />
-            ))}
-          </div>
-        }
-      >
-        <ShowsGrid />
-      </Suspense>
+      <SeriesInfiniteGrid
+        initialItems={data.results}
+        initialPage={data.page}
+        totalPages={data.total_pages}
+        gridClassName={styles.grid}
+      />
 
       <button className={styles.filterBar} type="button">
         <IconFilter />

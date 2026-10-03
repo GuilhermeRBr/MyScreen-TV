@@ -1,27 +1,32 @@
 import Link from 'next/link';
 import styles from './page.module.css';
-import { PosterCard } from '@/components/PosterCard/PosterCard';
+import { MoviesInfiniteGrid } from '@/components/MoviesInfiniteGrid/MoviesInfiniteGrid';
 import { IconGrid } from '@/components/icons';
 
-async function getPopularMovies() {
+interface PopularMoviesResponse {
+  results: Array<{ id: number; title: string; poster_path: string | null }>;
+  page: number;
+  total_pages: number;
+}
+
+async function fetchPopularMovies(page = 1): Promise<PopularMoviesResponse> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
   try {
-    const res = await fetch(`${apiUrl}/movies/popular`, {
+    const res = await fetch(`${apiUrl}/movies/popular?page=${page}`, {
       next: { revalidate: 3600 },
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) return { results: [], page: 1, total_pages: 1 };
 
-    const data = await res.json() as { results: Array<{ id: number; title: string; poster_path: string | null }> };
-    return data.results ?? [];
+    return res.json() as Promise<PopularMoviesResponse>;
   } catch {
-    return [];
+    return { results: [], page: 1, total_pages: 1 };
   }
 }
 
 export default async function FilmesPage() {
-  const movies = await getPopularMovies();
+  const data = await fetchPopularMovies(1);
 
   return (
     <>
@@ -56,16 +61,12 @@ export default async function FilmesPage() {
       </div>
 
       <section aria-label="Minha lista de filmes">
-        <div className={styles.grid}>
-          {movies.map((movie) => (
-            <PosterCard
-              key={movie.id}
-              title={movie.title}
-              posterPath={movie.poster_path}
-              href={`/filme/${movie.id}`}
-            />
-          ))}
-        </div>
+        <MoviesInfiniteGrid
+          initialItems={data.results}
+          initialPage={data.page}
+          totalPages={data.total_pages}
+          gridClassName={styles.grid}
+        />
       </section>
     </>
   );

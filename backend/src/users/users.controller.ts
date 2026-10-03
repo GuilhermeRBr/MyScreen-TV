@@ -18,9 +18,12 @@ import {
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { USERS_SWAGGER } from './messages/users.swagger';
+import { UserRole } from '@prisma/client';
 
 @ApiTags('Users')
 @ApiCookieAuth('access_token')
@@ -79,5 +82,15 @@ export class UsersController {
     @Param('username') username: string,
   ) {
     return this.usersService.unfollow(user.sub, username);
+  }
+
+  @Get('admin/list')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation(USERS_SWAGGER.adminListUsers.operation)
+  @ApiResponse({ status: 200, description: USERS_SWAGGER.adminListUsers.responses[200] })
+  @ApiResponse({ status: 403, description: USERS_SWAGGER.adminListUsers.responses[403] })
+  adminListUsers() {
+    return this.usersService.adminListUsers();
   }
 }

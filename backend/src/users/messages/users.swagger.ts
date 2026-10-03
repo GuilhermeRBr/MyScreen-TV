@@ -5,7 +5,8 @@ export const USERS_SWAGGER = {
   getMyProfile: {
     operation: {
       summary: 'Meu perfil',
-      description: 'Retorna os dados do usuário autenticado.',
+      description:
+        'Retorna os dados completos do usuário autenticado, incluindo contadores de seguidores/seguindo e lastLoginAt.',
     },
     responses: {
       200: 'Dados do perfil.',
@@ -16,7 +17,7 @@ export const USERS_SWAGGER = {
     operation: {
       summary: 'Atualizar perfil',
       description:
-        'Atualiza nome de exibição, bio ou avatar do usuário autenticado.',
+        'Atualiza nome de exibição, bio ou URL do avatar do usuário autenticado. Apenas os campos enviados são modificados.',
     },
     responses: {
       200: 'Perfil atualizado.',
@@ -26,7 +27,8 @@ export const USERS_SWAGGER = {
   getPublicProfile: {
     operation: {
       summary: 'Perfil público',
-      description: 'Retorna o perfil público de um usuário pelo username.',
+      description:
+        'Retorna o perfil público de um usuário pelo username. Não expõe email, role ou lastLoginAt.',
     },
     responses: {
       200: 'Perfil público.',
@@ -34,17 +36,37 @@ export const USERS_SWAGGER = {
     },
   },
   follow: {
-    operation: { summary: 'Seguir usuário' },
+    operation: {
+      summary: 'Seguir usuário',
+      description:
+        'Cria um relacionamento de follow entre o usuário autenticado e o alvo. Idempotente: chamar novamente não gera erro.',
+    },
     responses: {
       201: 'Agora seguindo o usuário.',
+      400: 'Tentativa de seguir a si mesmo.',
       404: 'Usuário não encontrado.',
     },
   },
   unfollow: {
-    operation: { summary: 'Deixar de seguir usuário' },
+    operation: {
+      summary: 'Deixar de seguir usuário',
+      description:
+        'Remove o relacionamento de follow entre o usuário autenticado e o alvo. Idempotente: sem efeito se já não seguia.',
+    },
     responses: {
       200: 'Deixou de seguir.',
       404: 'Usuário não encontrado.',
+    },
+  },
+  adminListUsers: {
+    operation: {
+      summary: 'Listar usuarios (admin)',
+      description:
+        'Retorna todos os usuarios cadastrados com dados de perfil, role e lastLoginAt. Restrito a usuarios com role ADMIN.',
+    },
+    responses: {
+      200: 'Array de usuarios ordenado por data de cadastro (mais recente primeiro).',
+      403: 'Acesso negado. Requer role ADMIN.',
     },
   },
 } as const;

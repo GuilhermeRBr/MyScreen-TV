@@ -7,11 +7,11 @@ export const AUTH_SWAGGER = {
     operation: {
       summary: 'Criar nova conta',
       description:
-        'Registra um novo usuário e já retorna os cookies de autenticação.',
+        'Registra um novo usuário e já retorna os cookies HttpOnly de autenticação (access_token e refresh_token). Rate limit: 5 tentativas por minuto por IP.',
     },
     responses: {
       201: 'Conta criada. Cookies access_token e refresh_token definidos.',
-      400: 'Email ou username já em uso, ou dados inválidos.',
+      400: 'Email ou username já em uso, ou dados de validação inválidos.',
       429: 'Muitas tentativas. Aguarde antes de tentar novamente.',
     },
   },
@@ -19,11 +19,11 @@ export const AUTH_SWAGGER = {
     operation: {
       summary: 'Fazer login',
       description:
-        'Autentica o usuário e define os cookies HttpOnly de acesso e refresh.',
+        'Autentica o usuário com email e senha e define os cookies HttpOnly de acesso (15 min) e refresh (7 dias). Rate limit: 10 tentativas por minuto por IP.',
     },
     responses: {
       200: 'Login realizado. Cookies access_token e refresh_token definidos.',
-      401: 'Credenciais inválidas.',
+      401: 'Credenciais inválidas (email ou senha incorretos).',
       429: 'Muitas tentativas. Aguarde antes de tentar novamente.',
     },
   },
@@ -31,21 +31,21 @@ export const AUTH_SWAGGER = {
     operation: {
       summary: 'Renovar tokens',
       description:
-        'Troca o refresh_token por um novo par de tokens (rotação). O cookie refresh_token deve estar presente.',
+        'Troca o refresh_token atual por um novo par de tokens (rotação de token). O cookie refresh_token precisa estar presente. O token usado é imediatamente revogado.',
     },
     responses: {
-      200: 'Tokens renovados.',
-      401: 'Refresh token inválido ou expirado.',
+      200: 'Tokens renovados. Novos cookies definidos.',
+      401: 'Refresh token inválido, expirado ou já revogado.',
     },
   },
   logout: {
     operation: {
       summary: 'Fazer logout',
       description:
-        'Revoga o refresh token e limpa os cookies de autenticação.',
+        'Revoga o refresh token no banco de dados e limpa os cookies access_token e refresh_token do browser.',
     },
     responses: {
-      200: 'Logout realizado.',
+      200: 'Logout realizado. Cookies removidos.',
       401: 'Não autenticado.',
     },
   },
