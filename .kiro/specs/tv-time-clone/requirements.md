@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Aplicacao de catalogacao de series e filmes inspirada no TV Time. Permite ao usuario acompanhar series e filmes, marcar episodios como assistidos (individual ou em lote), visualizar progresso por temporada, acessar um calendario de lancamentos futuros ("Em Breve"), explorar novos conteudos e gerenciar um perfil com estatisticas de consumo. A fonte de dados de catalogo e a TMDB API com cache local de ate 6 meses. O sistema e composto por um backend NestJS + Prisma + PostgreSQL e um frontend Next.js com CSS Modules.
+Aplicacao de catalogacao de series e filmes inspirada no MyScreen TV. Permite ao usuario acompanhar series e filmes, marcar episodios como assistidos (individual ou em lote), visualizar progresso por temporada, acessar um calendario de lancamentos futuros ("Em Breve"), explorar novos conteudos e gerenciar um perfil com estatisticas de consumo. A fonte de dados de catalogo e a TMDB API com cache local de ate 6 meses. O sistema e composto por um backend NestJS + Prisma + PostgreSQL e um frontend Next.js com CSS Modules.
 
 ---
 

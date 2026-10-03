@@ -1,7 +1,7 @@
 {
-  "name": "tvtime-backend",
+  "name": "myscreen-tv-backend",
   "version": "1.0.0",
-  "description": "Backend NestJS do TV Time",
+  "description": "Backend NestJS do MyScreen TV",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

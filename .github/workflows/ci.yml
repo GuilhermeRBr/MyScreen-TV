@@ -43,13 +43,13 @@ jobs:
         run: yarn prisma generate
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://tvtime_app:ci_password@localhost:5432/tvtime
+          DATABASE_URL: postgresql://myscreen_tv_app:ci_password@localhost:5432/myscreen_tv
 
       - name: Tests
         run: yarn test --passWithNoTests
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://tvtime_app:ci_password@localhost:5432/tvtime
+          DATABASE_URL: postgresql://myscreen_tv_app:ci_password@localhost:5432/myscreen_tv
           JWT_SECRET: ci-jwt-secret-long-enough-for-validation-32chars
           JWT_EXPIRATION: 15m
           JWT_REFRESH_SECRET: ci-refresh-secret-long-enough-for-validation

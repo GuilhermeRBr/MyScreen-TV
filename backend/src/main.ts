@@ -60,9 +60,9 @@ async function bootstrap(): Promise<void> {
   // Swagger — disponível apenas fora de produção
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('TV Time API')
+      .setTitle('MyScreen TV API')
       .setDescription(
-        'API do TV Time — catalogação de séries e filmes. ' +
+        'API do MyScreen TV — catalogação de séries e filmes. ' +
         'Endpoints marcados com o cadeado requerem autenticação via cookie JWT (faça login primeiro em POST /auth/login).',
       )
       .setVersion('1.0')

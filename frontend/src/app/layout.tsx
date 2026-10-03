@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'TV Time',
+  title: 'MyScreen TV',
   description: 'Acompanhe suas séries e filmes favoritos',
 };
 

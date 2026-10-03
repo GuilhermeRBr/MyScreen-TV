@@ -2,7 +2,7 @@
 
 ## Contexto do produto
 
-Aplicação de catalogação de séries e filmes (referência visual: apps estilo TV Time), permitindo ao usuário: seguir séries/filmes, marcar episódios como assistidos, ver progresso por temporada, listas customizadas, "continuar assistindo", "em breve" (calendário de lançamentos) e perfil com estatísticas.
+Aplicação de catalogação de séries e filmes (referência visual: apps estilo MyScreen TV), permitindo ao usuário: seguir séries/filmes, marcar episódios como assistidos, ver progresso por temporada, listas customizadas, "continuar assistindo", "em breve" (calendário de lançamentos) e perfil com estatísticas.
 
 ## Stack definida
 

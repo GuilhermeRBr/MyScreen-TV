@@ -96,7 +96,7 @@ export default function LoginPage() {
   return (
     <main className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>TV Time</h1>
+        <h1 className={styles.title}>MyScreen TV</h1>
         <p className={styles.subtitle}>Acompanhe suas séries e filmes</p>
 
         <Suspense fallback={<div className={styles.form} />}>
