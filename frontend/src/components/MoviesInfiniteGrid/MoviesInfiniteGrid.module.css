@@ -1,0 +1,23 @@
+.sentinel {
+  width: 100%;
+  padding: var(--space-2) 0;
+}
+
+.loadingRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 0 3px;
+}
+
+.skeleton {
+  aspect-ratio: 2 / 3;
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
