@@ -62,18 +62,26 @@ async function bootstrap(): Promise<void> {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('MyScreen TV API')
       .setDescription(
-        'API do MyScreen TV — catalogação de séries e filmes. ' +
-        'Endpoints marcados com o cadeado requerem autenticação via cookie JWT (faça login primeiro em POST /auth/login).',
+        'API do MyScreen TV — catalogação de séries e filmes.\n\n' +
+        '**Autenticacao:** endpoints marcados com o cadeado requerem JWT via cookie HttpOnly. ' +
+        'Faca login em `POST /auth/login` e o cookie sera definido automaticamente.\n\n' +
+        '**Rate limiting:** endpoints de auth possuem limite por IP (ver cada operacao).\n\n' +
+        '**Roles:** o endpoint `GET /users/admin/list` requer role `ADMIN`.',
       )
       .setVersion('1.0')
-      .addCookieAuth('access_token')
-      .addTag('Auth', 'Registro, login, refresh e logout')
-      .addTag('Users', 'Perfil do usuário e sistema de follows')
-      .addTag('Shows', 'Séries — listagem, busca e detalhes')
-      .addTag('Movies', 'Filmes — listagem, busca e detalhes')
-      .addTag('Watch', 'Progresso de episódios e filmes assistidos')
-      .addTag('Lists', 'Listas personalizadas do usuário')
-      .addTag('Feed', 'Descobrir, próximos episódios e continuar assistindo')
+      .addCookieAuth('access_token', {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'access_token',
+        description: 'Cookie HttpOnly definido automaticamente apos login.',
+      })
+      .addTag('Auth', 'Registro, login, renovacao de token e logout')
+      .addTag('Users', 'Perfil do usuario autenticado, perfil publico e sistema de follows')
+      .addTag('Shows', 'Series — listagem, busca, detalhes, temporadas e episodios (sem autenticacao)')
+      .addTag('Movies', 'Filmes — listagem, busca e detalhes (sem autenticacao)')
+      .addTag('Watch', 'Progresso de episodios e filmes: marcar como assistido, estatisticas')
+      .addTag('Lists', 'Listas personalizadas: criar, gerenciar itens e excluir')
+      .addTag('Feed', 'Tela inicial: descobrir conteudo, proximos episodios e continuar assistindo')
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
