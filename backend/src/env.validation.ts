@@ -24,6 +24,12 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'staging', 'production', 'test'])
     .default('development'),
+  SYSADMIN_EMAIL: z.string().email('SYSADMIN_EMAIL deve ser um e-mail válido'),
+  SYSADMIN_PASSWORD: z
+    .string()
+    .min(8, 'SYSADMIN_PASSWORD deve ter pelo menos 8 caracteres'),
+  SYSADMIN_USERNAME: z.string().min(3, 'SYSADMIN_USERNAME deve ter pelo menos 3 caracteres'),
+  SYSADMIN_DISPLAY_NAME: z.string().min(1, 'SYSADMIN_DISPLAY_NAME é obrigatório'),
 });
 
 export type Env = z.infer<typeof envSchema>;
