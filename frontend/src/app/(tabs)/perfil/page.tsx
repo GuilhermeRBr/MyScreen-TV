@@ -1,6 +1,8 @@
 import styles from './page.module.css';
+import Link from 'next/link';
 import { IconChevronRight, IconBell, IconClock, IconUser } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
+import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
 
 // Perfil e stats ficam client-side pois dependem de auth
 // Aqui e o shell estatico — dados reais viriam via hook/Client Component
@@ -11,57 +13,26 @@ export default function PerfilPage() {
       <header className={styles.header}>
         <div className={styles.backdrop}>
           <div className={styles.topBar}>
-            <button className={styles.bellButton} aria-label="Notificacoes">
+            <button className={styles.bellButton} aria-label="Notificações">
               <IconBell width={18} height={18} />
             </button>
             <ProfileMenu />
           </div>
         </div>
 
-        {/* Avatar + nome */}
+        {/* Avatar + nome + username */}
         <div className={styles.profileSection}>
-          <div className={styles.avatar}>
-            <IconUser
-              width={36}
-              height={36}
-              style={{
-                margin: '14px',
-                color: 'var(--color-text-muted)',
-              }}
-            />
-          </div>
-          <div className={styles.profileInfo}>
-            <div className={styles.username}>
-              <span>Meu perfil</span>
-              <span className={styles.editBadge}>EDITAR</span>
-            </div>
-          </div>
+          <ProfileHeader />
         </div>
       </header>
 
-      {/* Contadores */}
-      <div className={styles.stats}>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>0</span>
-          <span className={styles.statLabel}>seguindo</span>
-        </div>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>0</span>
-          <span className={styles.statLabel}>seguidores</span>
-        </div>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>0</span>
-          <span className={styles.statLabel}>comentarios</span>
-        </div>
-      </div>
 
-      <div className={styles.divider} />
 
-      {/* Estatisticas */}
+      {/* Estatísticas */}
       <section className={styles.section} aria-labelledby="stats-title">
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle} id="stats-title">
-            Estatisticas
+            Estatísticas
           </h2>
           <span className={styles.sectionLink}>
             <IconChevronRight width={16} height={16} />
@@ -83,7 +54,7 @@ export default function PerfilPage() {
           <div className={styles.watchTimeCard}>
             <div className={styles.watchTimeCardTitle}>
               <IconUser width={14} height={14} />
-              Episodios assistidos
+              Episódios assistidos
             </div>
             <div className={styles.watchTimeNumbers}>
               <span className={styles.episodesCount}>0</span>
@@ -125,20 +96,37 @@ export default function PerfilPage() {
           <h2 className={styles.sectionTitle} id="shows-title">
             Series
           </h2>
-          <span className={styles.sectionLink}>
+          <Link href="/perfil/series" className={styles.sectionLink} aria-label="Ver todas as séries">
             <IconChevronRight width={16} height={16} />
-          </span>
+          </Link>
         </div>
         <div className={styles.showsGrid}>
           {/* Populado via Client Component com dados reais */}
         </div>
       </section>
 
-      {/* Atribuicao TMDB */}
+      <div className={styles.divider} />
+
+      {/* Filmes */}
+      <section className={styles.section} aria-labelledby="movies-title">
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle} id="movies-title">
+            Filmes
+          </h2>
+          <Link href="/perfil/filmes" className={styles.sectionLink} aria-label="Ver todos os filmes">
+            <IconChevronRight width={16} height={16} />
+          </Link>
+        </div>
+        <div className={styles.showsGrid}>
+          {/* Populado via Client Component com dados reais */}
+        </div>
+      </section>
+
+      {/* Atribuição TMDB */}
       <div className={styles.tmdbAttribution} role="contentinfo">
         <span className={styles.tmdbLogo}>TMDB</span>
         <span>
-          Este produto usa a API do TMDB mas nao e endossado ou certificado pelo
+          Este produto usa a API do TMDB, mas não é endossado ou certificado pelo
           TMDB.
         </span>
       </div>

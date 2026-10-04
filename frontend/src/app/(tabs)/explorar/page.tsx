@@ -43,8 +43,8 @@ export default async function ExplorarPage() {
         <input
           type="search"
           className={styles.searchInput}
-          placeholder="Pesquisa"
-          aria-label="Pesquisar series e filmes"
+          placeholder="Pesquisar"
+          aria-label="Pesquisar séries e filmes"
         />
       </div>
 
@@ -63,8 +63,7 @@ export default async function ExplorarPage() {
       </nav>
 
       {/* Feed de conteudo */}
-      <section className={styles.feed} aria-label="Filmes em destaque">
-        {trending.map((movie) => {
+      <section className={styles.feed} aria-label="Filmes em destaque">        {trending.map((movie) => {
           const backdropUrl = tmdbImage(movie.backdrop_path ?? movie.poster_path, 'w780');
 
           return (

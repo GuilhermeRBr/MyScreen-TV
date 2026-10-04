@@ -21,6 +21,7 @@ export const USERS_SWAGGER = {
     },
     responses: {
       200: 'Perfil atualizado.',
+      400: 'Dados inválidos (ex: avatarUrl não é uma URL válida, displayName excede 60 caracteres).',
       401: 'Não autenticado.',
     },
   },
@@ -60,12 +61,12 @@ export const USERS_SWAGGER = {
   },
   adminListUsers: {
     operation: {
-      summary: 'Listar usuarios (admin)',
+      summary: 'Listar usuários (admin)',
       description:
-        'Retorna todos os usuarios cadastrados com dados de perfil, role e lastLoginAt. Restrito a usuarios com role ADMIN.',
+        'Retorna todos os usuários cadastrados com dados de perfil, role e lastLoginAt. Restrito a usuários com role ADMIN.',
     },
     responses: {
-      200: 'Array de usuarios ordenado por data de cadastro (mais recente primeiro).',
+      200: 'Array de usuários ordenado por data de cadastro (mais recente primeiro).',
       403: 'Acesso negado. Requer role ADMIN.',
     },
   },

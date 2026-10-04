@@ -72,4 +72,26 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  getUserMovies: {
+    operation: {
+      summary: 'Filmes do usuário',
+      description:
+        'Retorna todos os filmes que o usuário marcou como assistido (WATCHED) ou adicionou à watchlist (WATCHLIST), com dados do filme e status. Ordenado por atualização mais recente.',
+    },
+    responses: {
+      200: 'Array de { status, watchedAt, movie } ordenado por updatedAt desc.',
+      401: 'Não autenticado.',
+    },
+  },
+  getUserSubscriptions: {
+    operation: {
+      summary: 'Séries do usuário',
+      description:
+        'Retorna todas as séries que o usuário acompanha (qualquer status de UserShowSubscription), com dados da série e status. Ordenado por atualização mais recente.',
+    },
+    responses: {
+      200: 'Array de { status, show } ordenado por updatedAt desc.',
+      401: 'Não autenticado.',
+    },
+  },
 } as const;

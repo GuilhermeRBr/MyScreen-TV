@@ -234,6 +234,57 @@ export class WatchService {
   }
 
   // ---------------------------------------------------------------------------
+  // Listas do usuário
+  // ---------------------------------------------------------------------------
+
+  async getUserMovieWatches(userId: string) {
+    const watches = await this.prisma.movieWatch.findMany({
+      where: { userId },
+      include: {
+        movie: {
+          select: {
+            id: true,
+            tmdbId: true,
+            title: true,
+            posterPath: true,
+            releaseDate: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return watches.map((w) => ({
+      status: w.status,
+      watchedAt: w.watchedAt,
+      movie: w.movie,
+    }));
+  }
+
+  async getUserShowSubscriptions(userId: string) {
+    const subscriptions = await this.prisma.userShowSubscription.findMany({
+      where: { userId },
+      include: {
+        show: {
+          select: {
+            id: true,
+            tmdbId: true,
+            name: true,
+            posterPath: true,
+            status: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return subscriptions.map((s) => ({
+      status: s.status,
+      show: s.show,
+    }));
+  }
+
+  // ---------------------------------------------------------------------------
   // Assinatura de série
   // ---------------------------------------------------------------------------
 

@@ -34,7 +34,7 @@ export default async function FilmesPage() {
         <h1 className={styles.title}>Filmes</h1>
       </header>
 
-      <nav className={styles.tabs} aria-label="Secoes de filmes">
+      <nav className={styles.tabs} aria-label="Seções de filmes">
         <Link href="/filmes" className={`${styles.tab} ${styles.tabActive}`}>
           MINHA LISTA
         </Link>
