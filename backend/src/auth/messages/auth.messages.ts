@@ -14,4 +14,9 @@ export const AUTH_MESSAGES = {
   USERNAME_IN_USE: 'Username já está em uso',
   INVALID_CREDENTIALS: 'Credenciais inválidas',
   INVALID_REFRESH_TOKEN: 'Refresh token inválido ou expirado',
+
+  // Recuperação de senha
+  FORGOT_PASSWORD_SENT: 'Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.',
+  RESET_PASSWORD_SUCCESS: 'Senha redefinida com sucesso.',
+  RESET_TOKEN_INVALID: 'Token inválido ou expirado.',
 } as const;

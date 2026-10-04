@@ -53,6 +53,22 @@
   color: var(--color-text-secondary);
 }
 
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forgotLink {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-muted);
+  transition: color 0.15s ease;
+}
+
+.forgotLink:hover {
+  color: var(--color-accent);
+}
+
 .input {
   width: 100%;
   padding: var(--space-3) var(--space-4);

@@ -8,7 +8,7 @@ const PROTECTED_PATHS = [
   '/explorar',
 ];
 
-const PUBLIC_PATHS = ['/login', '/cadastro'];
+const PUBLIC_PATHS = ['/login', '/cadastro', '/forgot-password', '/reset-password'];
 
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;

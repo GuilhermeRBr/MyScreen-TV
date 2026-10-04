@@ -30,6 +30,8 @@ const envSchema = z.object({
     .min(8, 'SYSADMIN_PASSWORD deve ter pelo menos 8 caracteres'),
   SYSADMIN_USERNAME: z.string().min(3, 'SYSADMIN_USERNAME deve ter pelo menos 3 caracteres'),
   SYSADMIN_DISPLAY_NAME: z.string().min(1, 'SYSADMIN_DISPLAY_NAME é obrigatório'),
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY é obrigatório'),
+  MAIL_FROM: z.string().min(1, 'MAIL_FROM é obrigatório'),
 });
 
 export type Env = z.infer<typeof envSchema>;
