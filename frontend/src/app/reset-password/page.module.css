@@ -124,6 +124,20 @@
   gap: var(--space-4);
 }
 
+.successRedirect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.redirectInfo {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
 .tokenInvalidMessage {
   color: var(--color-error);
   background-color: rgba(229, 62, 62, 0.1);

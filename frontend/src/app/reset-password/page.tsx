@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, FormEvent, Suspense } from 'react';
+import { useState, FormEvent, Suspense, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { PasswordInput } from '@/components/PasswordInput/PasswordInput';
 import styles from './page.module.css';
@@ -35,6 +35,37 @@ function validatePasswords(password: string, confirmPassword: string): FieldErro
   }
 
   return errors;
+}
+
+function ResetSuccessRedirect() {
+  const router = useRouter();
+  const [seconds, setSeconds] = useState(3);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSeconds((s) => {
+        if (s <= 1) {
+          clearInterval(interval);
+          router.push('/login');
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [router]);
+
+  return (
+    <div className={styles.successRedirect}>
+      <p role="status" className={styles.success}>
+        Senha redefinida com sucesso.
+      </p>
+      <p className={styles.redirectInfo}>
+        Redirecionando para o login em {seconds}...
+      </p>
+    </div>
+  );
 }
 
 function ResetPasswordForm() {
@@ -95,16 +126,7 @@ function ResetPasswordForm() {
   }
 
   if (success) {
-    return (
-      <div className={styles.tokenInvalid}>
-        <p className={styles.success}>
-          Senha redefinida com sucesso.
-        </p>
-        <Link href="/login" className={styles.link}>
-          Ir para o login
-        </Link>
-      </div>
-    );
+    return <ResetSuccessRedirect />;
   }
 
   return (
