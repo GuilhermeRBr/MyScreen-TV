@@ -85,7 +85,7 @@ export const WATCH_SWAGGER = {
   },
   getUserSubscriptions: {
     operation: {
-      summary: 'Series do usuário',
+      summary: 'Séries do usuário',
       description:
         'Retorna todas as séries que o usuário acompanha (qualquer status de UserShowSubscription), com dados da série e status. Ordenado por atualização mais recente.',
     },

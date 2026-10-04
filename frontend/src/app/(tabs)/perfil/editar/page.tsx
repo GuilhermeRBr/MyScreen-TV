@@ -53,7 +53,7 @@ export default function EditarPerfilPage() {
         });
       })
       .catch(() => {
-        if (!cancelled) setError('Nao foi possivel carregar o perfil.');
+        if (!cancelled) setError('Não foi possível carregar o perfil.');
       })
       .finally(() => {
         if (!cancelled) setLoadingProfile(false);
@@ -68,15 +68,15 @@ export default function EditarPerfilPage() {
     const errors: Partial<Record<keyof FormState, string>> = {};
 
     if (form.displayName.length > DISPLAY_NAME_MAX) {
-      errors.displayName = `Maximo de ${DISPLAY_NAME_MAX} caracteres.`;
+      errors.displayName = `Máximo de ${DISPLAY_NAME_MAX} caracteres.`;
     }
 
     if (form.bio.length > BIO_MAX) {
-      errors.bio = `Maximo de ${BIO_MAX} caracteres.`;
+      errors.bio = `Máximo de ${BIO_MAX} caracteres.`;
     }
 
     if (form.avatarUrl && !/^https?:\/\/.+/.test(form.avatarUrl)) {
-      errors.avatarUrl = 'Informe uma URL valida (comecando com http:// ou https://).';
+      errors.avatarUrl = 'Informe uma URL válida (começando com http:// ou https://).';
     }
 
     setFieldErrors(errors);
@@ -105,7 +105,7 @@ export default function EditarPerfilPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 400) {
-          setError('Dados invalidos. Verifique os campos e tente novamente.');
+          setError('Dados inválidos. Verifique os campos e tente novamente.');
         } else if (err.status === 401) {
           router.push('/login');
         } else {
@@ -135,7 +135,7 @@ export default function EditarPerfilPage() {
           <IconChevronLeft width={20} height={20} />
         </Link>
         <h1 className={styles.pageTitle}>Editar perfil</h1>
-        {/* Espacador para centralizar o titulo */}
+        {/* Espaçador para centralizar o título */}
         <div className={styles.topBarSpacer} aria-hidden="true" />
       </header>
 
@@ -177,10 +177,10 @@ export default function EditarPerfilPage() {
             </div>
           </div>
 
-          {/* Nome de exibicao */}
+          {/* Nome de exibição */}
           <div className={styles.field}>
             <label htmlFor="displayName" className={styles.label}>
-              Nome de exibicao
+              Nome de exibição
             </label>
             <input
               id="displayName"
@@ -188,7 +188,7 @@ export default function EditarPerfilPage() {
               value={form.displayName}
               onChange={(e) => handleChange('displayName', e.target.value)}
               className={`${styles.input} ${fieldErrors.displayName ? styles.inputError : ''}`}
-              placeholder="Como voce quer ser chamado?"
+              placeholder="Como você quer ser chamado?"
               maxLength={DISPLAY_NAME_MAX}
               disabled={saving}
               aria-describedby={fieldErrors.displayName ? 'displayName-error' : 'displayName-hint'}
@@ -214,7 +214,7 @@ export default function EditarPerfilPage() {
               value={form.bio}
               onChange={(e) => handleChange('bio', e.target.value)}
               className={`${styles.textarea} ${fieldErrors.bio ? styles.inputError : ''}`}
-              placeholder="Conte um pouco sobre voce..."
+              placeholder="Conte um pouco sobre você..."
               maxLength={BIO_MAX}
               rows={4}
               disabled={saving}
@@ -265,7 +265,7 @@ export default function EditarPerfilPage() {
             </p>
           )}
 
-          {/* Acoes */}
+          {/* Ações */}
           <div className={styles.actions}>
             <Link href="/perfil" className={styles.cancelButton}>
               Cancelar

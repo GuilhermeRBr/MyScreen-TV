@@ -99,13 +99,13 @@ export default function PerfilFilmesPage() {
 
         {!loading && error && (
           <p className={styles.emptyMessage}>
-            Nao foi possivel carregar seus filmes. Tente novamente.
+            Não foi possível carregar seus filmes. Tente novamente.
           </p>
         )}
 
         {!loading && !error && items.length === 0 && (
           <div className={styles.emptyState}>
-            <p className={styles.emptyMessage}>Voce ainda nao adicionou nenhum filme.</p>
+            <p className={styles.emptyMessage}>Você ainda não adicionou nenhum filme.</p>
             <Link href="/filmes" className={styles.emptyAction}>
               Explorar filmes
             </Link>

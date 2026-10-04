@@ -63,7 +63,7 @@ export function ProfileMenu() {
     <div ref={menuRef} className={styles.wrapper}>
       <button
         className={styles.trigger}
-        aria-label="Mais opcoes"
+        aria-label="Mais opções"
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((prev) => !prev)}
@@ -75,7 +75,7 @@ export function ProfileMenu() {
         <div
           className={styles.menu}
           role="menu"
-          aria-label="Opcoes do perfil"
+          aria-label="Opções do perfil"
         >
           <button
             className={`${styles.menuItem} ${styles.menuItemDanger}`}
@@ -92,7 +92,7 @@ export function ProfileMenu() {
   );
 }
 
-// Icone de logout inline — sem emoji, SVG proprio
+// Ícone de logout inline — sem emoji, SVG próprio
 function IconSignOut(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg

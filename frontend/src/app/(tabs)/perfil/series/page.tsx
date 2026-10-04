@@ -61,13 +61,13 @@ export default function PerfilSeriesPage() {
         <Link href="/perfil" className={styles.backButton} aria-label="Voltar para o perfil">
           <IconChevronLeft width={20} height={20} />
         </Link>
-        <h1 className={styles.pageTitle}>Series</h1>
+        <h1 className={styles.pageTitle}>Séries</h1>
         <div className={styles.topBarSpacer} aria-hidden="true" />
       </header>
 
       <main className={styles.content}>
         {loading && (
-          <div className={styles.grid} aria-label="Carregando series...">
+          <div className={styles.grid} aria-label="Carregando séries...">
             {Array.from({ length: 9 }).map((_, i) => (
               <div key={i} className={styles.skeleton} aria-hidden="true" />
             ))}
@@ -76,22 +76,22 @@ export default function PerfilSeriesPage() {
 
         {!loading && error && (
           <p className={styles.emptyMessage}>
-            Nao foi possivel carregar suas series. Tente novamente.
+            Não foi possível carregar suas séries. Tente novamente.
           </p>
         )}
 
         {!loading && !error && items.length === 0 && (
           <div className={styles.emptyState}>
-            <p className={styles.emptyMessage}>Voce ainda nao segue nenhuma serie.</p>
+            <p className={styles.emptyMessage}>Você ainda não segue nenhuma série.</p>
             <Link href="/series" className={styles.emptyAction}>
-              Explorar series
+              Explorar séries
             </Link>
           </div>
         )}
 
         {!loading && !error && items.length > 0 && (
           <>
-            <p className={styles.count}>{items.length} {items.length === 1 ? 'serie' : 'series'}</p>
+            <p className={styles.count}>{items.length} {items.length === 1 ? 'série' : 'séries'}</p>
             <div className={styles.grid}>
               {items.map(({ show, status }) => (
                 <div key={show.id} className={styles.item}>

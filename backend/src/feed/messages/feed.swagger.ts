@@ -15,7 +15,7 @@ export const FEED_SWAGGER = {
   },
   getUpcoming: {
     operation: {
-      summary: 'Proximos episodios',
+      summary: 'Próximos episódios',
       description:
         'Retorna os episódios que serão exibidos nos próximos 30 dias das séries que o usuário está acompanhando (status WATCHING ou REWATCHING).',
     },

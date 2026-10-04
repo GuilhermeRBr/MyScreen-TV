@@ -13,7 +13,7 @@ export default function PerfilPage() {
       <header className={styles.header}>
         <div className={styles.backdrop}>
           <div className={styles.topBar}>
-            <button className={styles.bellButton} aria-label="Notificacoes">
+            <button className={styles.bellButton} aria-label="Notificações">
               <IconBell width={18} height={18} />
             </button>
             <ProfileMenu />
@@ -38,17 +38,17 @@ export default function PerfilPage() {
         </div>
         <div className={styles.stat}>
           <span className={styles.statValue}>0</span>
-          <span className={styles.statLabel}>comentarios</span>
+          <span className={styles.statLabel}>comentários</span>
         </div>
       </div>
 
       <div className={styles.divider} />
 
-      {/* Estatisticas */}
+      {/* Estatísticas */}
       <section className={styles.section} aria-labelledby="stats-title">
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle} id="stats-title">
-            Estatisticas
+            Estatísticas
           </h2>
           <span className={styles.sectionLink}>
             <IconChevronRight width={16} height={16} />
@@ -70,7 +70,7 @@ export default function PerfilPage() {
           <div className={styles.watchTimeCard}>
             <div className={styles.watchTimeCardTitle}>
               <IconUser width={14} height={14} />
-              Episodios assistidos
+              Episódios assistidos
             </div>
             <div className={styles.watchTimeNumbers}>
               <span className={styles.episodesCount}>0</span>
@@ -112,7 +112,7 @@ export default function PerfilPage() {
           <h2 className={styles.sectionTitle} id="shows-title">
             Series
           </h2>
-          <Link href="/perfil/series" className={styles.sectionLink} aria-label="Ver todas as series">
+          <Link href="/perfil/series" className={styles.sectionLink} aria-label="Ver todas as séries">
             <IconChevronRight width={16} height={16} />
           </Link>
         </div>
@@ -138,11 +138,11 @@ export default function PerfilPage() {
         </div>
       </section>
 
-      {/* Atribuicao TMDB */}
+      {/* Atribuição TMDB */}
       <div className={styles.tmdbAttribution} role="contentinfo">
         <span className={styles.tmdbLogo}>TMDB</span>
         <span>
-          Este produto usa a API do TMDB mas nao e endossado ou certificado pelo
+          Este produto usa a API do TMDB, mas não é endossado ou certificado pelo
           TMDB.
         </span>
       </div>
