@@ -43,6 +43,7 @@ export class UsersController {
   @Patch('me')
   @ApiOperation(USERS_SWAGGER.updateProfile.operation)
   @ApiResponse({ status: 200, description: USERS_SWAGGER.updateProfile.responses[200] })
+  @ApiResponse({ status: 400, description: USERS_SWAGGER.updateProfile.responses[400] })
   @ApiResponse({ status: 401, description: USERS_SWAGGER.updateProfile.responses[401] })
   updateProfile(
     @CurrentUser() user: JwtPayload,
@@ -64,6 +65,7 @@ export class UsersController {
   @ApiOperation(USERS_SWAGGER.follow.operation)
   @ApiParam({ name: 'username', example: 'joaosilva' })
   @ApiResponse({ status: 201, description: USERS_SWAGGER.follow.responses[201] })
+  @ApiResponse({ status: 400, description: USERS_SWAGGER.follow.responses[400] })
   @ApiResponse({ status: 404, description: USERS_SWAGGER.follow.responses[404] })
   follow(
     @CurrentUser() user: JwtPayload,

@@ -50,6 +50,14 @@
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
   flex-shrink: 0;
+  text-decoration: none;
+  display: inline-block;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.editBadge:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .username {

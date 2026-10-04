@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { IconUser } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import styles from './ProfileHeader.module.css';
@@ -73,7 +74,12 @@ export function ProfileHeader({ onDataLoaded }: ProfileHeaderProps) {
           />
         </div>
         <div className={styles.info}>
-          <span className={styles.displayName}>Meu perfil</span>
+          <div className={styles.nameRow}>
+            <span className={styles.displayName}>Meu perfil</span>
+            <Link href="/perfil/editar" className={styles.editBadge}>
+              EDITAR
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -103,7 +109,9 @@ export function ProfileHeader({ onDataLoaded }: ProfileHeaderProps) {
       <div className={styles.info}>
         <div className={styles.nameRow}>
           <span className={styles.displayName}>{name}</span>
-          <span className={styles.editBadge}>EDITAR</span>
+          <Link href="/perfil/editar" className={styles.editBadge}>
+            EDITAR
+          </Link>
         </div>
         {profile.displayName && (
           <span className={styles.username}>@{profile.username}</span>

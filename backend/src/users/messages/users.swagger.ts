@@ -21,6 +21,7 @@ export const USERS_SWAGGER = {
     },
     responses: {
       200: 'Perfil atualizado.',
+      400: 'Dados inválidos (ex: avatarUrl não é uma URL válida, displayName excede 60 caracteres).',
       401: 'Não autenticado.',
     },
   },
