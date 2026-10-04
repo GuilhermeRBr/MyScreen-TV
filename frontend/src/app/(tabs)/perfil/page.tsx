@@ -26,23 +26,7 @@ export default function PerfilPage() {
         </div>
       </header>
 
-      {/* Contadores */}
-      <div className={styles.stats}>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>0</span>
-          <span className={styles.statLabel}>seguindo</span>
-        </div>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>0</span>
-          <span className={styles.statLabel}>seguidores</span>
-        </div>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>0</span>
-          <span className={styles.statLabel}>comentários</span>
-        </div>
-      </div>
 
-      <div className={styles.divider} />
 
       {/* Estatísticas */}
       <section className={styles.section} aria-labelledby="stats-title">
