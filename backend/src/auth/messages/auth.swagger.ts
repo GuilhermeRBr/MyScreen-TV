@@ -49,4 +49,32 @@ export const AUTH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  forgotPassword: {
+    operation: {
+      summary: 'Solicitar recuperação de senha',
+      description:
+        'Envia um e-mail com link de recuperação de senha caso o endereço esteja cadastrado. ' +
+        'A resposta é sempre genérica para evitar enumeração de usuários. ' +
+        'Rate limit: 3 tentativas por minuto por IP.',
+    },
+    responses: {
+      200: 'Instruções enviadas (resposta genérica independente do e-mail existir ou não).',
+      400: 'Dados de validação inválidos.',
+      429: 'Muitas tentativas. Aguarde antes de tentar novamente.',
+    },
+  },
+  resetPassword: {
+    operation: {
+      summary: 'Redefinir senha',
+      description:
+        'Redefine a senha do usuário usando o token recebido por e-mail. ' +
+        'O token é de uso único, expira em 15 minutos e é armazenado apenas como hash SHA-256. ' +
+        'Todos os refresh tokens existentes são invalidados após a redefinição.',
+    },
+    responses: {
+      200: 'Senha redefinida com sucesso.',
+      400: 'Dados de validação inválidos.',
+      401: 'Token inválido ou expirado.',
+    },
+  },
 } as const;

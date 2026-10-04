@@ -6,19 +6,24 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { createHash, randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload, RefreshTokenPayload } from './interfaces/jwt-payload.interface';
 import { Env } from '../env.validation';
 import { User } from '@prisma/client';
 import { AUTH_MESSAGES } from './messages/auth.messages';
+import { EmailService } from '../email/email.service';
 
 interface TokenPair {
   accessToken: string;
   refreshToken: string;
 }
+
+const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000; // 15 minutos
 
 @Injectable()
 export class AuthService {
@@ -28,6 +33,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService<Env>,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(dto: RegisterDto): Promise<TokenPair> {
@@ -136,6 +142,77 @@ export class AuthService {
       where: { tokenHash, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+    const email = dto.email.trim().toLowerCase();
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    // Resposta genérica: não revela se o e-mail existe
+    if (!user) {
+      return;
+    }
+
+    // Token criptograficamente seguro de 32 bytes
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = this.hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: expiresAt,
+      },
+    });
+
+    const frontendUrl = this.config.get<string>('FRONTEND_URL', { infer: true })!;
+    const resetLink = `${frontendUrl}/reset-password?token=${rawToken}`;
+
+    await this.emailService.sendPasswordResetEmail(email, resetLink);
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<void> {
+    const tokenHash = this.hashToken(dto.token);
+
+    const user = await this.prisma.user.findFirst({
+      where: { passwordResetTokenHash: tokenHash },
+      select: {
+        id: true,
+        passwordResetTokenHash: true,
+        passwordResetExpiresAt: true,
+      },
+    });
+
+    if (
+      !user ||
+      !user.passwordResetExpiresAt ||
+      user.passwordResetExpiresAt < new Date()
+    ) {
+      throw new UnauthorizedException(AUTH_MESSAGES.RESET_TOKEN_INVALID);
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, this.BCRYPT_ROUNDS);
+
+    // Atualiza senha, invalida o token e invalida todos os refresh tokens
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash,
+          passwordResetTokenHash: null,
+          passwordResetExpiresAt: null,
+        },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
   }
 
   private async generateTokenPair(

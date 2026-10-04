@@ -20,6 +20,8 @@ import {
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Env } from '../env.validation';
@@ -106,6 +108,29 @@ export class AuthController {
 
     this.clearTokenCookies(res);
     return { message: AUTH_MESSAGES.LOGOUT_SUCCESS };
+  }
+
+  @Post('forgot-password')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation(AUTH_SWAGGER.forgotPassword.operation)
+  @ApiResponse({ status: 200, description: AUTH_SWAGGER.forgotPassword.responses[200] })
+  @ApiResponse({ status: 400, description: AUTH_SWAGGER.forgotPassword.responses[400] })
+  @ApiResponse({ status: 429, description: AUTH_SWAGGER.forgotPassword.responses[429] })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto);
+    return { message: AUTH_MESSAGES.FORGOT_PASSWORD_SENT };
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation(AUTH_SWAGGER.resetPassword.operation)
+  @ApiResponse({ status: 200, description: AUTH_SWAGGER.resetPassword.responses[200] })
+  @ApiResponse({ status: 400, description: AUTH_SWAGGER.resetPassword.responses[400] })
+  @ApiResponse({ status: 401, description: AUTH_SWAGGER.resetPassword.responses[401] })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto);
+    return { message: AUTH_MESSAGES.RESET_PASSWORD_SUCCESS };
   }
 
   private setTokenCookies(

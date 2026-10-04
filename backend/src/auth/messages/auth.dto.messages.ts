@@ -37,4 +37,7 @@ export const AUTH_DTO_MESSAGES = {
   DISPLAY_NAME_REQUIRED: 'Nome de exibição é obrigatório',
   DISPLAY_NAME_MIN: 'Nome deve ter pelo menos 2 caracteres',
   DISPLAY_NAME_MAX: 'Nome deve ter no máximo 100 caracteres',
+
+  // Token de recuperação de senha
+  RESET_TOKEN_REQUIRED: 'Token é obrigatório',
 } as const;
