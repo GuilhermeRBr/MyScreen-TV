@@ -51,43 +51,6 @@
   z-index: 2;
 }
 
-.avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  background-color: var(--color-bg-elevated);
-  border: 3px solid var(--color-bg-primary);
-  flex-shrink: 0;
-  position: relative;
-}
-
-.avatarImage {
-  object-fit: cover;
-}
-
-.profileInfo {
-  flex: 1;
-}
-
-.username {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.editBadge {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  border: 1px solid var(--color-border);
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-}
-
 .stats {
   display: flex;
   gap: var(--space-6);

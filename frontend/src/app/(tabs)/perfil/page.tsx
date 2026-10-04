@@ -1,6 +1,7 @@
 import styles from './page.module.css';
 import { IconChevronRight, IconBell, IconClock, IconUser } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
+import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
 
 // Perfil e stats ficam client-side pois dependem de auth
 // Aqui e o shell estatico — dados reais viriam via hook/Client Component
@@ -18,24 +19,9 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        {/* Avatar + nome */}
+        {/* Avatar + nome + username */}
         <div className={styles.profileSection}>
-          <div className={styles.avatar}>
-            <IconUser
-              width={36}
-              height={36}
-              style={{
-                margin: '14px',
-                color: 'var(--color-text-muted)',
-              }}
-            />
-          </div>
-          <div className={styles.profileInfo}>
-            <div className={styles.username}>
-              <span>Meu perfil</span>
-              <span className={styles.editBadge}>EDITAR</span>
-            </div>
-          </div>
+          <ProfileHeader />
         </div>
       </header>
 
