@@ -62,9 +62,14 @@ function LoginForm() {
       </div>
 
       <div className={styles.field}>
-        <label htmlFor="password" className={styles.label}>
-          Senha
-        </label>
+        <div className={styles.labelRow}>
+          <label htmlFor="password" className={styles.label}>
+            Senha
+          </label>
+          <Link href="/forgot-password" className={styles.forgotLink}>
+            Esqueci minha senha
+          </Link>
+        </div>
         <PasswordInput
           id="password"
           autoComplete="current-password"
