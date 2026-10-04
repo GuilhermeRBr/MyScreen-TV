@@ -96,4 +96,20 @@ export class WatchController {
   getStats(@CurrentUser() user: JwtPayload) {
     return this.watchService.getUserStats(user.sub);
   }
+
+  @Get('movies')
+  @ApiOperation(WATCH_SWAGGER.getUserMovies.operation)
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.getUserMovies.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.getUserMovies.responses[401] })
+  getUserMovies(@CurrentUser() user: JwtPayload) {
+    return this.watchService.getUserMovieWatches(user.sub);
+  }
+
+  @Get('subscriptions')
+  @ApiOperation(WATCH_SWAGGER.getUserSubscriptions.operation)
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.getUserSubscriptions.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.getUserSubscriptions.responses[401] })
+  getUserSubscriptions(@CurrentUser() user: JwtPayload) {
+    return this.watchService.getUserShowSubscriptions(user.sub);
+  }
 }

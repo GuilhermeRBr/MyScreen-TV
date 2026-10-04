@@ -102,6 +102,12 @@
   align-items: center;
   gap: 4px;
   font-size: var(--font-size-sm);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sectionLink:hover {
+  color: var(--color-text-primary);
 }
 
 .watchTimeGrid {

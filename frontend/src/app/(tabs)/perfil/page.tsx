@@ -1,4 +1,5 @@
 import styles from './page.module.css';
+import Link from 'next/link';
 import { IconChevronRight, IconBell, IconClock, IconUser } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
 import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
@@ -111,9 +112,26 @@ export default function PerfilPage() {
           <h2 className={styles.sectionTitle} id="shows-title">
             Series
           </h2>
-          <span className={styles.sectionLink}>
+          <Link href="/perfil/series" className={styles.sectionLink} aria-label="Ver todas as series">
             <IconChevronRight width={16} height={16} />
-          </span>
+          </Link>
+        </div>
+        <div className={styles.showsGrid}>
+          {/* Populado via Client Component com dados reais */}
+        </div>
+      </section>
+
+      <div className={styles.divider} />
+
+      {/* Filmes */}
+      <section className={styles.section} aria-labelledby="movies-title">
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle} id="movies-title">
+            Filmes
+          </h2>
+          <Link href="/perfil/filmes" className={styles.sectionLink} aria-label="Ver todos os filmes">
+            <IconChevronRight width={16} height={16} />
+          </Link>
         </div>
         <div className={styles.showsGrid}>
           {/* Populado via Client Component com dados reais */}

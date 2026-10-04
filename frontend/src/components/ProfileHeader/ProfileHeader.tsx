@@ -25,6 +25,7 @@ export function ProfileHeader({ onDataLoaded }: ProfileHeaderProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [avatarBroken, setAvatarBroken] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,12 +91,13 @@ export function ProfileHeader({ onDataLoaded }: ProfileHeaderProps) {
   return (
     <div className={styles.wrapper}>
       <div className={styles.avatar} aria-label={`Avatar de ${name}`}>
-        {profile.avatarUrl ? (
+        {profile.avatarUrl && !avatarBroken ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={profile.avatarUrl}
             alt={`Avatar de ${name}`}
             className={styles.avatarImage}
+            onError={() => setAvatarBroken(true)}
           />
         ) : (
           <IconUser

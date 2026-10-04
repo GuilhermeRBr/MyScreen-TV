@@ -1,0 +1,153 @@
+.container {
+  min-height: 100dvh;
+  background-color: var(--color-bg-primary);
+  padding-bottom: calc(var(--nav-height) + var(--space-6));
+}
+
+/* ---- Topbar ---- */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background-color: var(--color-bg-primary);
+  z-index: 10;
+}
+
+.backButton {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-full);
+  transition: background-color 0.15s ease;
+}
+
+.backButton:hover {
+  background-color: var(--color-bg-elevated);
+}
+
+.pageTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.topBarSpacer {
+  width: 36px;
+}
+
+/* ---- Filtros ---- */
+.filterBar {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filterBar::-webkit-scrollbar {
+  display: none;
+}
+
+.filterTab {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-elevated);
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.filterTab:hover {
+  background-color: var(--color-bg-card);
+}
+
+.filterTabActive {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+/* ---- Conteudo ---- */
+.content {
+  padding: var(--space-4);
+}
+
+.count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+
+/* ---- Grid ---- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.watchlistBadge {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Skeletons ---- */
+.skeleton {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ---- Estado vazio ---- */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-10);
+  text-align: center;
+}
+
+.emptyMessage {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.emptyAction {
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+
+.emptyAction:hover {
+  background-color: var(--color-accent-hover);
+}
