@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { IconChevronRight, IconBell, IconClock, IconUser } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
 import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
+import { ProfileMoviesPreview } from '@/components/ProfileMoviesPreview/ProfileMoviesPreview';
 
 // Perfil e stats ficam client-side pois dependem de auth
 // Aqui e o shell estatico — dados reais viriam via hook/Client Component
@@ -117,9 +118,7 @@ export default function PerfilPage() {
             <IconChevronRight width={16} height={16} />
           </Link>
         </div>
-        <div className={styles.showsGrid}>
-          {/* Populado via Client Component com dados reais */}
-        </div>
+        <ProfileMoviesPreview />
       </section>
 
       {/* Atribuição TMDB */}

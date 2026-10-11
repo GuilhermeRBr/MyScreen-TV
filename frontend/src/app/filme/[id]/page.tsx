@@ -35,11 +35,11 @@ async function getMovieDetail(id: string): Promise<MovieDetail | null> {
   }
 }
 
-async function getMovieWatchStatus(id: string): Promise<MovieWatchStatus> {
+async function getMovieWatchStatus(movieInternalId: string): Promise<MovieWatchStatus> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
   try {
-    const res = await fetch(`${apiUrl}/watch/movies/${id}/status`, {
+    const res = await fetch(`${apiUrl}/watch/movies/${movieInternalId}/status`, {
       credentials: 'include',
       cache: 'no-store',
     });
@@ -74,14 +74,13 @@ export default async function FilmePage({
 }: {
   params: { id: string };
 }) {
-  const [movie, watchStatus] = await Promise.all([
-    getMovieDetail(params.id),
-    getMovieWatchStatus(params.id),
-  ]);
+  const movie = await getMovieDetail(params.id);
 
   if (!movie) {
     notFound();
   }
+
+  const watchStatus = await getMovieWatchStatus(movie.id);
 
   const releaseYear = movie.releaseDate
     ? new Date(movie.releaseDate).getFullYear()
