@@ -11,10 +11,7 @@ interface AddToWatchlistButtonProps {
   initialStatus: WatchStatus;
 }
 
-const API_URL =
-  typeof window !== 'undefined'
-    ? (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
-    : 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function fetchStatus(movieId: string): Promise<WatchStatus> {
   try {
@@ -38,14 +35,20 @@ async function addToWatchlist(movieId: string): Promise<void> {
   });
 }
 
-async function toggleWatched(movieId: string): Promise<{ watched: boolean }> {
-  const res = await fetch(`${API_URL}/watch/movies/toggle`, {
+async function markWatched(movieId: string): Promise<void> {
+  await fetch(`${API_URL}/watch/movies/toggle`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ movieId }),
   });
-  return res.json() as Promise<{ watched: boolean }>;
+}
+
+async function removeFromList(movieId: string): Promise<void> {
+  await fetch(`${API_URL}/watch/movies/${movieId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
 }
 
 export function AddToWatchlistButton({
@@ -68,20 +71,10 @@ export function AddToWatchlistButton({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Revalida o status do servidor ao montar (o initialStatus vem do SSR, pode estar desatualizado)
+  // Revalida o status do servidor ao montar
   useEffect(() => {
     fetchStatus(movieId).then(setStatus);
   }, [movieId]);
-
-  function handleMainClick() {
-    if (status === null) {
-      // Ainda não está na lista: abre menu para escolher a ação
-      setMenuOpen((prev) => !prev);
-    } else {
-      // Já está na lista: abre menu para gerenciar
-      setMenuOpen((prev) => !prev);
-    }
-  }
 
   function handleAddToWatchlist() {
     setMenuOpen(false);
@@ -94,29 +87,16 @@ export function AddToWatchlistButton({
   function handleMarkWatched() {
     setMenuOpen(false);
     startTransition(async () => {
-      const result = await toggleWatched(movieId);
-      setStatus(result.watched ? 'WATCHED' : 'WATCHLIST');
+      await markWatched(movieId);
+      setStatus('WATCHED');
     });
   }
 
   function handleRemove() {
     setMenuOpen(false);
     startTransition(async () => {
-      // Toggle para WATCHED e de volta remove o registro — a API já lida com isso
-      // Precisamos chamar watchlist e forçar status nulo fazendo toggle quando WATCHED
-      // A lógica do backend é: WATCHED -> toggle -> WATCHLIST; não há DELETE ainda.
-      // Então marcamos como WATCHED primeiro e depois toggle de novo para voltar a null.
-      // Como o backend só tem toggle que vai de null->WATCHED->WATCHLIST, aqui
-      // simplesmente atualizamos o estado local para refletir remoção e chamamos
-      // watchlist novamente (idempotente). Futuramente um endpoint DELETE resolve isso.
-      await addToWatchlist(movieId);
-      const result = await toggleWatched(movieId);
-      // Se ficou WATCHED, toggle de novo
-      if (result.watched) {
-        await toggleWatched(movieId);
-      }
-      const newStatus = await fetchStatus(movieId);
-      setStatus(newStatus);
+      await removeFromList(movieId);
+      setStatus(null);
     });
   }
 
@@ -126,7 +106,7 @@ export function AddToWatchlistButton({
     <div className={styles.wrapper} ref={menuRef}>
       <button
         className={`${styles.mainButton} ${isOnList ? styles.mainButtonActive : ''}`}
-        onClick={handleMainClick}
+        onClick={() => setMenuOpen((prev) => !prev)}
         disabled={isPending}
         aria-label={
           status === null

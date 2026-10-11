@@ -152,6 +152,21 @@ export class WatchService {
   // Filmes
   // ---------------------------------------------------------------------------
 
+  async removeMovieFromList(userId: string, movieId: string): Promise<void> {
+    const existing = await this.prisma.movieWatch.findUnique({
+      where: { userId_movieId: { userId, movieId } },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(WATCH_MESSAGES.MOVIE_NOT_FOUND);
+    }
+
+    await this.prisma.movieWatch.delete({
+      where: { id: existing.id },
+    });
+  }
+
   async toggleMovieWatched(
     userId: string,
     movieId: string,

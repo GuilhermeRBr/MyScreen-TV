@@ -48,6 +48,18 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  removeFromList: {
+    operation: {
+      summary: 'Remover filme da lista do usuário',
+      description:
+        'Remove completamente o registro MovieWatch do usuário para o filme informado, independentemente do status atual (WATCHLIST ou WATCHED).',
+    },
+    responses: {
+      200: 'Filme removido da lista.',
+      401: 'Não autenticado.',
+      404: 'Registro não encontrado.',
+    },
+  },
   toggleMovie: {
     operation: {
       summary: 'Marcar/desmarcar filme como assistido',

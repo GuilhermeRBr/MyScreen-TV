@@ -79,6 +79,19 @@ export class WatchController {
     return this.watchService.getMovieWatchStatus(user.sub, movieId);
   }
 
+  @Delete('movies/:movieId')
+  @ApiOperation(WATCH_SWAGGER.removeFromList.operation)
+  @ApiParam({ name: 'movieId', description: 'UUID interno do filme', example: '550e8400-e29b-41d4-a716-446655440001' })
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.removeFromList.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.removeFromList.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.removeFromList.responses[404] })
+  removeFromList(
+    @CurrentUser() user: JwtPayload,
+    @Param('movieId', ParseUUIDPipe) movieId: string,
+  ) {
+    return this.watchService.removeMovieFromList(user.sub, movieId);
+  }
+
   @Post('movies/toggle')
   @ApiOperation(WATCH_SWAGGER.toggleMovie.operation)
   @ApiResponse({ status: 201, description: WATCH_SWAGGER.toggleMovie.responses[201] })
