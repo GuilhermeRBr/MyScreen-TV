@@ -75,7 +75,7 @@ export function ProfileMoviesPreview() {
           key={movie.id}
           title={movie.title}
           posterPath={movie.posterPath}
-          href={`/filme/${movie.tmdbId}`}
+          href={`/filme/${movie.tmdbId}?from=/perfil`}
         />
       ))}
     </div>
