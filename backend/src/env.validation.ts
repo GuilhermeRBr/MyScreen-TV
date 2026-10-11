@@ -32,6 +32,28 @@ const envSchema = z.object({
   SYSADMIN_DISPLAY_NAME: z.string().min(1, 'SYSADMIN_DISPLAY_NAME é obrigatório'),
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY é obrigatório'),
   MAIL_FROM: z.string().min(1, 'MAIL_FROM é obrigatório'),
+
+  // Redis / BullMQ
+  REDIS_HOST: z.string().min(1, 'REDIS_HOST é obrigatório'),
+  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_USERNAME: z.string().optional(),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_DB: z.coerce.number().default(0),
+  REDIS_TLS: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true')
+    .pipe(z.boolean().default(false)),
+  EMAIL_QUEUE_CONCURRENCY: z.coerce.number().default(5),
+
+  // Bull Board (painel de inspeção de filas — desabilitado por padrão)
+  ENABLE_BULL_BOARD: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true')
+    .pipe(z.boolean().default(false)),
+  BULL_BOARD_USER: z.string().optional(),
+  BULL_BOARD_PASSWORD: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

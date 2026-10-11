@@ -16,7 +16,7 @@ import { JwtPayload, RefreshTokenPayload } from './interfaces/jwt-payload.interf
 import { Env } from '../env.validation';
 import { User } from '@prisma/client';
 import { AUTH_MESSAGES } from './messages/auth.messages';
-import { EmailService } from '../email/email.service';
+import { EmailQueueService } from '../email/email.queue.service';
 
 interface TokenPair {
   accessToken: string;
@@ -33,7 +33,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService<Env>,
-    private readonly emailService: EmailService,
+    private readonly emailQueueService: EmailQueueService,
   ) {}
 
   async register(dto: RegisterDto): Promise<TokenPair> {
@@ -170,10 +170,10 @@ export class AuthService {
       },
     });
 
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', { infer: true })!;
-    const resetLink = `${frontendUrl}/reset-password?token=${rawToken}`;
-
-    await this.emailService.sendPasswordResetEmail(email, resetLink);
+    // Enfileira o envio de forma assíncrona — a API retorna imediatamente
+    // sem aguardar o envio efetivo pelo provedor.
+    // O EmailQueueService resolve FRONTEND_URL internamente via ConfigService.
+    await this.emailQueueService.enqueuePasswordReset(email, rawToken);
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<void> {

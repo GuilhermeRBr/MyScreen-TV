@@ -5,9 +5,11 @@ import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
+import * as basicAuth from 'express-basic-auth';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { Env } from './env.validation';
+import { EMAIL_MESSAGES } from './email/messages/email.messages';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -57,16 +59,43 @@ async function bootstrap(): Promise<void> {
   // Filtro global de exceções — impede vazamento de stack trace
   app.useGlobalFilters(new GlobalExceptionFilter());
 
+  // Bull Board — painel de inspeção de filas (desabilitado por padrão)
+  // O BullBoardModule já está registrado no AppModule e configura a rota /queues.
+  // Aqui protegemos a rota com autenticação básica quando habilitado.
+  const enableBullBoard =
+    config.get<boolean>('ENABLE_BULL_BOARD', { infer: true }) ?? false;
+  if (enableBullBoard) {
+    const bullBoardUser = config.get<string>('BULL_BOARD_USER', { infer: true });
+    const bullBoardPassword = config.get<string>('BULL_BOARD_PASSWORD', {
+      infer: true,
+    });
+
+    if (!bullBoardUser || !bullBoardPassword) {
+      // Avisa e não expõe o painel sem credenciais configuradas
+      logger.warn(EMAIL_MESSAGES.BULL_BOARD_CONFIG_INCOMPLETE);
+    } else {
+      // Middleware de autenticação básica aplicado ANTES de registrar a rota
+      app.use(
+        '/queues',
+        basicAuth({
+          users: { [bullBoardUser]: bullBoardPassword },
+          challenge: true,
+        }),
+      );
+      logger.log(`Bull Board disponível em http://localhost:${port}/queues`);
+    }
+  }
+
   // Swagger — disponível apenas fora de produção
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('MyScreen TV API')
       .setDescription(
         'API do MyScreen TV — catalogação de séries e filmes.\n\n' +
-        '**Autenticacao:** endpoints marcados com o cadeado requerem JWT via cookie HttpOnly. ' +
-        'Faca login em `POST /auth/login` e o cookie sera definido automaticamente.\n\n' +
-        '**Rate limiting:** endpoints de auth possuem limite por IP (ver cada operacao).\n\n' +
-        '**Roles:** o endpoint `GET /users/admin/list` requer role `ADMIN`.',
+          '**Autenticacao:** endpoints marcados com o cadeado requerem JWT via cookie HttpOnly. ' +
+          'Faca login em `POST /auth/login` e o cookie sera definido automaticamente.\n\n' +
+          '**Rate limiting:** endpoints de auth possuem limite por IP (ver cada operacao).\n\n' +
+          '**Roles:** o endpoint `GET /users/admin/list` requer role `ADMIN`.',
       )
       .setVersion('1.0')
       .addCookieAuth('access_token', {
