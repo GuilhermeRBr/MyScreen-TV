@@ -203,6 +203,21 @@ export class WatchService {
     });
   }
 
+  async getMovieWatchStatus(
+    userId: string,
+    movieId: string,
+  ): Promise<{ status: string | null; watchedAt: Date | null }> {
+    const watch = await this.prisma.movieWatch.findUnique({
+      where: { userId_movieId: { userId, movieId } },
+      select: { status: true, watchedAt: true },
+    });
+
+    return {
+      status: watch?.status ?? null,
+      watchedAt: watch?.watchedAt ?? null,
+    };
+  }
+
   // ---------------------------------------------------------------------------
   // Stats
   // ---------------------------------------------------------------------------

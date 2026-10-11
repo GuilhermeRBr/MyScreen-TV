@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Post,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -64,6 +65,18 @@ export class WatchController {
     @Param('showId', ParseUUIDPipe) showId: string,
   ) {
     return this.watchService.getShowProgress(user.sub, showId);
+  }
+
+  @Get('movies/:movieId/status')
+  @ApiOperation(WATCH_SWAGGER.getMovieStatus.operation)
+  @ApiParam({ name: 'movieId', description: 'UUID interno do filme', example: '550e8400-e29b-41d4-a716-446655440001' })
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.getMovieStatus.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.getMovieStatus.responses[401] })
+  getMovieStatus(
+    @CurrentUser() user: JwtPayload,
+    @Param('movieId', ParseUUIDPipe) movieId: string,
+  ) {
+    return this.watchService.getMovieWatchStatus(user.sub, movieId);
   }
 
   @Post('movies/toggle')

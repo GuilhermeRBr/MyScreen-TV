@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import styles from './page.module.css';
 import { IconStar, IconClock } from '@/components/icons';
+import { AddToWatchlistButton } from '@/components/AddToWatchlistButton/AddToWatchlistButton';
 
 interface MovieDetail {
   id: string;
@@ -12,6 +13,11 @@ interface MovieDetail {
   genres: string[];
   voteAverage: number;
   voteCount: number;
+}
+
+interface MovieWatchStatus {
+  status: 'WATCHLIST' | 'WATCHED' | null;
+  watchedAt: string | null;
 }
 
 async function getMovieDetail(id: string): Promise<MovieDetail | null> {
@@ -26,6 +32,22 @@ async function getMovieDetail(id: string): Promise<MovieDetail | null> {
     return res.json() as Promise<MovieDetail>;
   } catch {
     return null;
+  }
+}
+
+async function getMovieWatchStatus(id: string): Promise<MovieWatchStatus> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+  try {
+    const res = await fetch(`${apiUrl}/watch/movies/${id}/status`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return { status: null, watchedAt: null };
+    return res.json() as Promise<MovieWatchStatus>;
+  } catch {
+    return { status: null, watchedAt: null };
   }
 }
 
@@ -52,7 +74,10 @@ export default async function FilmePage({
 }: {
   params: { id: string };
 }) {
-  const movie = await getMovieDetail(params.id);
+  const [movie, watchStatus] = await Promise.all([
+    getMovieDetail(params.id),
+    getMovieWatchStatus(params.id),
+  ]);
 
   if (!movie) {
     notFound();
@@ -66,6 +91,13 @@ export default async function FilmePage({
 
   return (
     <div className={styles.container}>
+      <div className={styles.actions}>
+        <AddToWatchlistButton
+          movieId={movie.id}
+          initialStatus={watchStatus.status}
+        />
+      </div>
+
       <section className={styles.infoBlock} aria-labelledby="info-title">
         <h2 className={styles.infoTitle} id="info-title">
           Informações do filme

@@ -37,6 +37,17 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  getMovieStatus: {
+    operation: {
+      summary: 'Status do filme na lista do usuário',
+      description:
+        'Retorna o status atual (WATCHLIST, WATCHED ou null) e a data em que foi marcado como assistido, se houver.',
+    },
+    responses: {
+      200: '{ status: "WATCHLIST" | "WATCHED" | null, watchedAt: string | null }',
+      401: 'Não autenticado.',
+    },
+  },
   toggleMovie: {
     operation: {
       summary: 'Marcar/desmarcar filme como assistido',
