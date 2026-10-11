@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
+import { EmailQueueService } from '../email/email.queue.service';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -44,8 +44,8 @@ const mockConfigService = {
   }),
 };
 
-const mockEmailService = {
-  sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+const mockEmailQueueService = {
+  enqueuePasswordReset: jest.fn().mockResolvedValue(undefined),
 };
 
 // ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
-        { provide: EmailService, useValue: mockEmailService },
+        { provide: EmailQueueService, useValue: mockEmailQueueService },
       ],
     }).compile();
 
@@ -228,11 +228,12 @@ describe('AuthService', () => {
           }),
         }),
       );
-      expect(mockEmailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
-      const [emailArg, linkArg] =
-        mockEmailService.sendPasswordResetEmail.mock.calls[0] as [string, string];
+      expect(mockEmailQueueService.enqueuePasswordReset).toHaveBeenCalledTimes(1);
+      const [emailArg, tokenArg] =
+        mockEmailQueueService.enqueuePasswordReset.mock.calls[0] as [string, string];
       expect(emailArg).toBe('user@test.com');
-      expect(linkArg).toContain('/reset-password?token=');
+      // O segundo argumento é o rawToken (64 hex chars = 32 bytes)
+      expect(tokenArg).toMatch(/^[0-9a-f]{64}$/);
     });
 
     it('deve retornar sem enviar e-mail quando o usuario nao existe', async () => {
@@ -241,7 +242,7 @@ describe('AuthService', () => {
       await service.forgotPassword({ email: 'ghost@test.com' });
 
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
-      expect(mockEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
+      expect(mockEmailQueueService.enqueuePasswordReset).not.toHaveBeenCalled();
     });
 
     it('nao deve armazenar o token puro — apenas o hash SHA-256', async () => {
@@ -250,12 +251,8 @@ describe('AuthService', () => {
 
       await service.forgotPassword({ email: 'user@test.com' });
 
-      const [, linkArg] =
-        mockEmailService.sendPasswordResetEmail.mock.calls[0] as [string, string];
-
-      // Extrai o token do link
-      const url = new URL(linkArg);
-      const rawToken = url.searchParams.get('token')!;
+      const [, rawToken] =
+        mockEmailQueueService.enqueuePasswordReset.mock.calls[0] as [string, string];
 
       const { createHash } = await import('crypto');
       const expectedHash = createHash('sha256').update(rawToken).digest('hex');
@@ -296,10 +293,10 @@ describe('AuthService', () => {
       await service.forgotPassword({ email: 'user@test.com' });
       await service.forgotPassword({ email: 'user@test.com' });
 
-      const calls = mockEmailService.sendPasswordResetEmail.mock
+      const calls = mockEmailQueueService.enqueuePasswordReset.mock
         .calls as [string, string][];
-      const token1 = new URL(calls[0][1]).searchParams.get('token');
-      const token2 = new URL(calls[1][1]).searchParams.get('token');
+      const token1 = calls[0][1];
+      const token2 = calls[1][1];
 
       expect(token1).not.toBe(token2);
     });
@@ -448,20 +445,20 @@ describe('AuthService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // EmailService — tratamento de erros do Resend
+  // forgotPassword — erros do EmailQueueService
   // ---------------------------------------------------------------------------
 
-  describe('forgotPassword — erros do EmailService', () => {
-    it('deve propagar erro quando o envio de e-mail falha', async () => {
+  describe('forgotPassword — erros do EmailQueueService', () => {
+    it('deve propagar erro quando o enfileiramento falha', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ id: 'uuid-1' });
       mockPrisma.user.update.mockResolvedValue({});
-      mockEmailService.sendPasswordResetEmail.mockRejectedValueOnce(
-        new Error('Falha ao enviar e-mail de recuperação de senha.'),
+      mockEmailQueueService.enqueuePasswordReset.mockRejectedValueOnce(
+        new Error('Redis indisponivel'),
       );
 
       await expect(
         service.forgotPassword({ email: 'user@test.com' }),
-      ).rejects.toThrow('Falha ao enviar e-mail de recuperação de senha.');
+      ).rejects.toThrow('Redis indisponivel');
     });
   });
 });

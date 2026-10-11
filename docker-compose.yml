@@ -19,5 +19,30 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: myscreen_tv_redis
+    restart: unless-stopped
+    # Configuração recomendada para BullMQ:
+    # - maxmemory-policy noeviction: nunca remove chaves arbitrariamente (jobs pendentes ficam seguros)
+    # - appendonly yes: persistência AOF para sobreviver a reinicializações
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+      --appendonly yes
+      --appendfilename appendonly.aof
+      --requirepass ${REDIS_PASSWORD}
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  redis_data:

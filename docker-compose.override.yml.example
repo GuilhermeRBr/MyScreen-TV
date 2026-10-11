@@ -1,8 +1,19 @@
 # Copie este arquivo para docker-compose.override.yml e ajuste conforme necessário.
-# NÃO commitar o arquivo override com valores reais.
+# NAO commitar o arquivo override com valores reais.
 version: '3.9'
 
 services:
   postgres:
     environment:
       POSTGRES_PASSWORD: local_dev_password_change_me
+
+  redis:
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+      --appendonly yes
+      --appendfilename appendonly.aof
+      --requirepass local_redis_password_change_me
+    environment:
+      REDIS_PASSWORD: local_redis_password_change_me
