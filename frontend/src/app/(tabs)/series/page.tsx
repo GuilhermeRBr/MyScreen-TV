@@ -1,6 +1,7 @@
+import Link from 'next/link';
 import styles from './page.module.css';
 import { SeriesInfiniteGrid } from '@/components/SeriesInfiniteGrid/SeriesInfiniteGrid';
-import { IconEye, IconFilter } from '@/components/icons';
+import { IconGrid } from '@/components/icons';
 
 interface PopularShowsResponse {
   results: Array<{ id: number; name: string; poster_path: string | null }>;
@@ -30,25 +31,43 @@ export default async function SeriesPage() {
   return (
     <>
       <header className={styles.header}>
-        <h1 className={styles.title}>Series</h1>
-        <div className={styles.controls}>
-          <button className={styles.iconButton} aria-label="Ver modo de lista">
-            <IconEye />
-          </button>
-        </div>
+        <h1 className={styles.title}>Séries</h1>
       </header>
 
-      <SeriesInfiniteGrid
-        initialItems={data.results}
-        initialPage={data.page}
-        totalPages={data.total_pages}
-        gridClassName={styles.grid}
-      />
+      <nav className={styles.tabs} aria-label="Seções de séries">
+        <Link href="/series" className={`${styles.tab} ${styles.tabActive}`}>
+          MINHA LISTA
+        </Link>
+        <Link href="/series/em-breve" className={styles.tab}>
+          EM BREVE
+        </Link>
+      </nav>
 
-      <button className={styles.filterBar} type="button">
-        <IconFilter />
-        FILTROS
-      </button>
+      <div className={styles.controls}>
+        <button
+          className={styles.filterBadge}
+          type="button"
+          aria-label="Filtrar por status"
+        >
+          ASSISTIR A SEGUIR
+        </button>
+        <button
+          className={styles.iconButton}
+          type="button"
+          aria-label="Alternar visualização em grade"
+        >
+          <IconGrid width={18} height={18} />
+        </button>
+      </div>
+
+      <section aria-label="Minha lista de séries">
+        <SeriesInfiniteGrid
+          initialItems={data.results}
+          initialPage={data.page}
+          totalPages={data.total_pages}
+          gridClassName={styles.grid}
+        />
+      </section>
     </>
   );
 }
