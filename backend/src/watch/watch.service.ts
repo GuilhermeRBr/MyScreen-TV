@@ -152,6 +152,21 @@ export class WatchService {
   // Filmes
   // ---------------------------------------------------------------------------
 
+  async removeMovieFromList(userId: string, movieId: string): Promise<void> {
+    const existing = await this.prisma.movieWatch.findUnique({
+      where: { userId_movieId: { userId, movieId } },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(WATCH_MESSAGES.MOVIE_NOT_FOUND);
+    }
+
+    await this.prisma.movieWatch.delete({
+      where: { id: existing.id },
+    });
+  }
+
   async toggleMovieWatched(
     userId: string,
     movieId: string,
@@ -201,6 +216,21 @@ export class WatchService {
       create: { userId, movieId, status: 'WATCHLIST' },
       update: {},
     });
+  }
+
+  async getMovieWatchStatus(
+    userId: string,
+    movieId: string,
+  ): Promise<{ status: string | null; watchedAt: Date | null }> {
+    const watch = await this.prisma.movieWatch.findUnique({
+      where: { userId_movieId: { userId, movieId } },
+      select: { status: true, watchedAt: true },
+    });
+
+    return {
+      status: watch?.status ?? null,
+      watchedAt: watch?.watchedAt ?? null,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -288,15 +318,51 @@ export class WatchService {
   // Assinatura de série
   // ---------------------------------------------------------------------------
 
+  async getShowSubscriptionStatus(
+    userId: string,
+    showId: string,
+  ): Promise<{ status: ShowSubscriptionStatus | null }> {
+    const sub = await this.prisma.userShowSubscription.findUnique({
+      where: { userId_showId: { userId, showId } },
+      select: { status: true },
+    });
+
+    return { status: sub?.status ?? null };
+  }
+
   async upsertShowSubscription(
     userId: string,
     showId: string,
     status: ShowSubscriptionStatus,
   ) {
+    const show = await this.prisma.show.findUnique({
+      where: { id: showId },
+      select: { id: true },
+    });
+
+    if (!show) {
+      throw new NotFoundException(WATCH_MESSAGES.SHOW_NOT_FOUND);
+    }
+
     return this.prisma.userShowSubscription.upsert({
       where: { userId_showId: { userId, showId } },
       create: { userId, showId, status },
       update: { status },
+    });
+  }
+
+  async removeShowSubscription(userId: string, showId: string): Promise<void> {
+    const existing = await this.prisma.userShowSubscription.findUnique({
+      where: { userId_showId: { userId, showId } },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(WATCH_MESSAGES.SHOW_SUBSCRIPTION_NOT_FOUND);
+    }
+
+    await this.prisma.userShowSubscription.delete({
+      where: { id: existing.id },
     });
   }
 }

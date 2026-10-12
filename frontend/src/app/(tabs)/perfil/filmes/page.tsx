@@ -126,7 +126,7 @@ export default function PerfilFilmesPage() {
                     <PosterCard
                       title={movie.title}
                       posterPath={movie.posterPath}
-                      href={`/filme/${movie.tmdbId}`}
+                      href={`/filme/${movie.tmdbId}?from=/perfil/filmes`}
                     />
                     {status === 'WATCHLIST' && (
                       <span className={styles.watchlistBadge}>Quero assistir</span>

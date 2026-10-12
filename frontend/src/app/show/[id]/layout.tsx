@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import styles from './layout.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
-import { IconChevronLeft, IconDots } from '@/components/icons';
+import { IconDots } from '@/components/icons';
+import { BackButton } from '@/components/BackButton/BackButton';
 
 interface Show {
   id: number;
@@ -33,9 +34,11 @@ async function getShow(id: string): Promise<Show | null> {
 export default async function ShowLayout({
   children,
   params,
+  searchParams,
 }: {
   children: React.ReactNode;
   params: { id: string };
+  searchParams?: { from?: string };
 }) {
   const show = await getShow(params.id);
 
@@ -47,6 +50,8 @@ export default async function ShowLayout({
   const rating = show.vote_average
     ? Math.round(show.vote_average * 10) / 10
     : null;
+
+  const from = searchParams?.from ?? null;
 
   return (
     <div className="page-container">
@@ -66,11 +71,9 @@ export default async function ShowLayout({
 
         {/* Barra topo */}
         <div className={styles.topBar}>
-          <Link href="/series" className={styles.backButton} aria-label="Voltar">
-            <IconChevronLeft width={24} height={24} />
-          </Link>
+          <BackButton fallbackHref="/series" from={from} label="Voltar" />
           <span className={styles.showTitle}>{show.name}</span>
-          <button className={styles.backButton} aria-label="Mais opcoes">
+          <button className={styles.backButton} aria-label="Mais opções">
             <IconDots width={20} height={20} />
           </button>
         </div>
@@ -113,18 +116,18 @@ export default async function ShowLayout({
       </div>
 
       {/* Tabs */}
-      <nav className={styles.tabs} aria-label="Secoes da serie">
+      <nav className={styles.tabs} aria-label="Seções da série">
         <Link
-          href={`/show/${params.id}/sobre`}
+          href={from ? `/show/${params.id}/sobre?from=${from}` : `/show/${params.id}/sobre`}
           className={styles.tab}
         >
           SOBRE
         </Link>
         <Link
-          href={`/show/${params.id}/episodios`}
+          href={from ? `/show/${params.id}/episodios?from=${from}` : `/show/${params.id}/episodios`}
           className={styles.tab}
         >
-          EPISODIOS
+          EPISÓDIOS
         </Link>
       </nav>
 

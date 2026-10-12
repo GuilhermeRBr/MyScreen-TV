@@ -3,9 +3,12 @@ import { notFound } from 'next/navigation';
 import styles from './page.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconStar, IconClock, IconUser } from '@/components/icons';
+import { AddToSubscriptionButton } from '@/components/AddToSubscriptionButton/AddToSubscriptionButton';
+import { serverFetch } from '@/lib/server-fetch';
 
 interface ShowDetail {
-  id: number;
+  id: string;
+  tmdbId: number;
   name: string;
   overview: string | null;
   firstAirDate: string | null;
@@ -22,6 +25,15 @@ interface ShowDetail {
   }>;
 }
 
+type ShowStatus =
+  | 'WATCHING'
+  | 'REWATCHING'
+  | 'PAUSED'
+  | 'STOPPED'
+  | 'PLAN_TO_WATCH'
+  | 'NOT_WATCHING_FOR_A_WHILE'
+  | null;
+
 async function getShowDetail(id: string): Promise<ShowDetail | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -32,6 +44,23 @@ async function getShowDetail(id: string): Promise<ShowDetail | null> {
 
     if (!res.ok) return null;
     return res.json() as Promise<ShowDetail>;
+  } catch {
+    return null;
+  }
+}
+
+async function getShowSubscriptionStatus(showInternalId: string): Promise<ShowStatus> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+  try {
+    const res = await serverFetch(
+      `${apiUrl}/watch/shows/${showInternalId}/subscription`,
+      { cache: 'no-store' },
+    );
+
+    if (!res.ok) return null;
+    const data = (await res.json()) as { status: ShowStatus };
+    return data.status;
   } catch {
     return null;
   }
@@ -73,16 +102,25 @@ export default async function SobrePage({
     notFound();
   }
 
+  const subscriptionStatus = await getShowSubscriptionStatus(show.id);
+
   const firstYear = formatYear(show.firstAirDate);
   const lastYear = formatYear(show.lastAirDate);
   const ratingDisplay = `${(show.voteAverage / 2).toFixed(1)}/5`;
 
   return (
     <div className={styles.container}>
-      {/* Informacoes principais */}
+      <div className={styles.actions}>
+        <AddToSubscriptionButton
+          showId={show.id}
+          initialStatus={subscriptionStatus}
+        />
+      </div>
+
+      {/* Informações principais */}
       <section className={styles.infoBlock} aria-labelledby="info-title">
         <h2 className={styles.infoTitle} id="info-title">
-          Informacoes da serie
+          Informações da série
         </h2>
 
         <p className={styles.infoDates}>
@@ -97,7 +135,7 @@ export default async function SobrePage({
           <div className={styles.stars} aria-hidden="true">
             {renderStars(show.voteAverage)}
           </div>
-          <span className={styles.ratingValue} aria-label={`Avaliacao: ${ratingDisplay}`}>
+          <span className={styles.ratingValue} aria-label={`Avaliação: ${ratingDisplay}`}>
             {ratingDisplay}
           </span>
         </div>
@@ -168,11 +206,11 @@ export default async function SobrePage({
         </section>
       )}
 
-      {/* Atribuicao TMDB obrigatoria */}
+      {/* Atribuição TMDB obrigatória */}
       <div className={styles.tmdbAttribution} role="contentinfo">
         <span className={styles.tmdbLogo}>TMDB</span>
         <span>
-          Este produto usa a API do TMDB mas nao e endossado ou certificado pelo
+          Este produto usa a API do TMDB mas não é endossado ou certificado pelo
           TMDB.
         </span>
       </div>
