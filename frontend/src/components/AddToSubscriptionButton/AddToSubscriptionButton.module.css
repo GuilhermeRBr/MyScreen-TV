@@ -111,3 +111,11 @@
 .menuItemDanger:hover:not(:disabled) {
   background-color: rgba(229, 62, 62, 0.08);
 }
+
+.errorMsg {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: var(--space-2);
+  text-align: center;
+  max-width: 220px;
+}

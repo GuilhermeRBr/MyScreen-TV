@@ -6,6 +6,8 @@ import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
 import { ProfileMoviesPreview } from '@/components/ProfileMoviesPreview/ProfileMoviesPreview';
 import { ProfileSeriesPreview } from '@/components/ProfileSeriesPreview/ProfileSeriesPreview';
 
+export const dynamic = 'force-dynamic';
+
 // Perfil e stats ficam client-side pois dependem de auth
 // Aqui e o shell estatico — dados reais viriam via hook/Client Component
 export default function PerfilPage() {

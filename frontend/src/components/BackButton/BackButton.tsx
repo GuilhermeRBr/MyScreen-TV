@@ -18,13 +18,20 @@ export function BackButton({
   const router = useRouter();
 
   function handleClick() {
-    if (from) {
-      router.push(from);
+    const destination = from ?? null;
+
+    if (destination) {
+      router.push(destination);
     } else if (window.history.length > 1) {
       router.back();
     } else {
       router.push(fallbackHref);
     }
+
+    // Força o Next.js a re-renderizar a rota de destino
+    // para que Client Components como ProfileSeriesPreview
+    // re-busquem dados atualizados do servidor.
+    router.refresh();
   }
 
   return (

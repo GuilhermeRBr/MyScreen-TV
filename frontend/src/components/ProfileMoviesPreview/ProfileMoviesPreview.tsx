@@ -27,21 +27,35 @@ export function ProfileMoviesPreview() {
   useEffect(() => {
     let cancelled = false;
 
-    api
-      .get<MovieWatch[]>('/watch/movies')
-      .then((data) => {
-        if (!cancelled) setItems(data);
-      })
-      .catch((err: unknown) => {
-        if (err instanceof ApiError && err.status === 401) return;
-        // falha silenciosa — a seção simplesmente fica vazia
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    function load() {
+      api
+        .get<MovieWatch[]>('/watch/movies')
+        .then((data) => {
+          if (!cancelled) setItems(data);
+        })
+        .catch((err: unknown) => {
+          if (err instanceof ApiError && err.status === 401) return;
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }
+
+    load();
+
+    // Recarrega quando o usuário volta para esta aba/página
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        setLoading(true);
+        load();
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

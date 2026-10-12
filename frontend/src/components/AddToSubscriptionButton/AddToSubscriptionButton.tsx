@@ -51,20 +51,30 @@ async function fetchStatus(showId: string): Promise<ShowStatus> {
   }
 }
 
-async function subscribe(showId: string, status: NonNullable<ShowStatus>): Promise<void> {
-  await fetch(`${API_URL}/watch/shows/subscribe`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ showId, status }),
-  });
+async function subscribe(showId: string, status: NonNullable<ShowStatus>): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/watch/shows/subscribe`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ showId, status }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
-async function unsubscribe(showId: string): Promise<void> {
-  await fetch(`${API_URL}/watch/shows/${showId}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
+async function unsubscribe(showId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/watch/shows/${showId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 export function AddToSubscriptionButton({
@@ -74,6 +84,7 @@ export function AddToSubscriptionButton({
   const [status, setStatus] = useState<ShowStatus>(initialStatus);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,17 +104,27 @@ export function AddToSubscriptionButton({
 
   function handleSubscribe(newStatus: NonNullable<ShowStatus>) {
     setMenuOpen(false);
+    setError(null);
     startTransition(async () => {
-      await subscribe(showId, newStatus);
-      setStatus(newStatus);
+      const ok = await subscribe(showId, newStatus);
+      if (ok) {
+        setStatus(newStatus);
+      } else {
+        setError('Não foi possível salvar. Tente novamente.');
+      }
     });
   }
 
   function handleRemove() {
     setMenuOpen(false);
+    setError(null);
     startTransition(async () => {
-      await unsubscribe(showId);
-      setStatus(null);
+      const ok = await unsubscribe(showId);
+      if (ok) {
+        setStatus(null);
+      } else {
+        setError('Não foi possível remover. Tente novamente.');
+      }
     });
   }
 
@@ -128,6 +149,10 @@ export function AddToSubscriptionButton({
         )}
         <span className={styles.label}>{buttonLabel}</span>
       </button>
+
+      {error && (
+        <span className={styles.errorMsg} role="alert">{error}</span>
+      )}
 
       {menuOpen && (
         <div className={styles.menu} role="menu" aria-label="Opções de acompanhamento">
