@@ -116,18 +116,18 @@ export default async function ShowLayout({
       </div>
 
       {/* Tabs */}
-      <nav className={styles.tabs} aria-label="Secoes da serie">
+      <nav className={styles.tabs} aria-label="Seções da série">
         <Link
-          href={`/show/${params.id}/sobre`}
+          href={from ? `/show/${params.id}/sobre?from=${from}` : `/show/${params.id}/sobre`}
           className={styles.tab}
         >
           SOBRE
         </Link>
         <Link
-          href={`/show/${params.id}/episodios`}
+          href={from ? `/show/${params.id}/episodios?from=${from}` : `/show/${params.id}/episodios`}
           className={styles.tab}
         >
-          EPISODIOS
+          EPISÓDIOS
         </Link>
       </nav>
 

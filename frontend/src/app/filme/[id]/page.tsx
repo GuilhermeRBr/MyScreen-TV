@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import styles from './page.module.css';
 import { IconStar, IconClock } from '@/components/icons';
 import { AddToWatchlistButton } from '@/components/AddToWatchlistButton/AddToWatchlistButton';
+import { serverFetch } from '@/lib/server-fetch';
 
 interface MovieDetail {
   id: string;
@@ -39,10 +40,10 @@ async function getMovieWatchStatus(movieInternalId: string): Promise<MovieWatchS
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
   try {
-    const res = await fetch(`${apiUrl}/watch/movies/${movieInternalId}/status`, {
-      credentials: 'include',
-      cache: 'no-store',
-    });
+    const res = await serverFetch(
+      `${apiUrl}/watch/movies/${movieInternalId}/status`,
+      { cache: 'no-store' },
+    );
 
     if (!res.ok) return { status: null, watchedAt: null };
     return res.json() as Promise<MovieWatchStatus>;

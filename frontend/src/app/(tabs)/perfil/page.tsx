@@ -4,6 +4,7 @@ import { IconChevronRight, IconBell, IconClock, IconUser } from '@/components/ic
 import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
 import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
 import { ProfileMoviesPreview } from '@/components/ProfileMoviesPreview/ProfileMoviesPreview';
+import { ProfileSeriesPreview } from '@/components/ProfileSeriesPreview/ProfileSeriesPreview';
 
 // Perfil e stats ficam client-side pois dependem de auth
 // Aqui e o shell estatico — dados reais viriam via hook/Client Component
@@ -91,19 +92,17 @@ export default function PerfilPage() {
 
       <div className={styles.divider} />
 
-      {/* Series */}
+      {/* Séries */}
       <section className={styles.section} aria-labelledby="shows-title">
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle} id="shows-title">
-            Series
+            Séries
           </h2>
           <Link href="/perfil/series" className={styles.sectionLink} aria-label="Ver todas as séries">
             <IconChevronRight width={16} height={16} />
           </Link>
         </div>
-        <div className={styles.showsGrid}>
-          {/* Populado via Client Component com dados reais */}
-        </div>
+        <ProfileSeriesPreview />
       </section>
 
       <div className={styles.divider} />

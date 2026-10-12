@@ -18,6 +18,7 @@ import {
 import { WatchService } from './watch.service';
 import { ToggleEpisodeDto } from './dto/toggle-episode.dto';
 import { ToggleMovieDto } from './dto/toggle-movie.dto';
+import { UpsertShowSubscriptionDto } from './dto/upsert-show-subscription.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -137,5 +138,42 @@ export class WatchController {
   @ApiResponse({ status: 401, description: WATCH_SWAGGER.getUserSubscriptions.responses[401] })
   getUserSubscriptions(@CurrentUser() user: JwtPayload) {
     return this.watchService.getUserShowSubscriptions(user.sub);
+  }
+
+  @Get('shows/:showId/subscription')
+  @ApiOperation(WATCH_SWAGGER.getShowSubscriptionStatus.operation)
+  @ApiParam({ name: 'showId', description: 'UUID interno da série', example: '550e8400-e29b-41d4-a716-446655440002' })
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.getShowSubscriptionStatus.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.getShowSubscriptionStatus.responses[401] })
+  getShowSubscriptionStatus(
+    @CurrentUser() user: JwtPayload,
+    @Param('showId', ParseUUIDPipe) showId: string,
+  ) {
+    return this.watchService.getShowSubscriptionStatus(user.sub, showId);
+  }
+
+  @Post('shows/subscribe')
+  @ApiOperation(WATCH_SWAGGER.upsertShowSubscription.operation)
+  @ApiResponse({ status: 201, description: WATCH_SWAGGER.upsertShowSubscription.responses[201] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.upsertShowSubscription.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.upsertShowSubscription.responses[404] })
+  upsertShowSubscription(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpsertShowSubscriptionDto,
+  ) {
+    return this.watchService.upsertShowSubscription(user.sub, dto.showId, dto.status);
+  }
+
+  @Delete('shows/:showId')
+  @ApiOperation(WATCH_SWAGGER.removeShowSubscription.operation)
+  @ApiParam({ name: 'showId', description: 'UUID interno da série', example: '550e8400-e29b-41d4-a716-446655440002' })
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.removeShowSubscription.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.removeShowSubscription.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.removeShowSubscription.responses[404] })
+  removeShowSubscription(
+    @CurrentUser() user: JwtPayload,
+    @Param('showId', ParseUUIDPipe) showId: string,
+  ) {
+    return this.watchService.removeShowSubscription(user.sub, showId);
   }
 }

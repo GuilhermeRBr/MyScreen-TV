@@ -3,6 +3,12 @@
   padding-bottom: calc(var(--nav-height) + var(--space-6));
 }
 
+.actions {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4) 0 var(--space-2);
+}
+
 .infoBlock {
   background-color: var(--color-bg-card);
   border-radius: var(--radius-md);

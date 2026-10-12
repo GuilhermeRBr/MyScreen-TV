@@ -117,4 +117,39 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  getShowSubscriptionStatus: {
+    operation: {
+      summary: 'Status da assinatura de uma série',
+      description:
+        'Retorna o status atual da assinatura do usuário para a série informada, ou null se não houver assinatura.',
+    },
+    responses: {
+      200: '{ status: ShowSubscriptionStatus | null }',
+      401: 'Não autenticado.',
+    },
+  },
+  upsertShowSubscription: {
+    operation: {
+      summary: 'Adicionar ou atualizar assinatura de série',
+      description:
+        'Cria ou atualiza o status de acompanhamento de uma série (WATCHING, REWATCHING, PAUSED, STOPPED, PLAN_TO_WATCH, NOT_WATCHING_FOR_A_WHILE).',
+    },
+    responses: {
+      201: 'Assinatura criada ou atualizada.',
+      401: 'Não autenticado.',
+      404: 'Série não encontrada.',
+    },
+  },
+  removeShowSubscription: {
+    operation: {
+      summary: 'Remover assinatura de série',
+      description:
+        'Remove completamente a assinatura do usuário para a série informada.',
+    },
+    responses: {
+      200: 'Assinatura removida.',
+      401: 'Não autenticado.',
+      404: 'Assinatura não encontrada.',
+    },
+  },
 } as const;

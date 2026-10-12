@@ -98,7 +98,7 @@ export default function PerfilSeriesPage() {
                   <PosterCard
                     title={show.name}
                     posterPath={show.posterPath}
-                    href={`/show/${show.tmdbId}/sobre`}
+                    href={`/show/${show.tmdbId}/sobre?from=/perfil/series`}
                   />
                   <span className={styles.statusBadge}>
                     {STATUS_LABEL[status] ?? status}
