@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { PosterCard } from '@/components/PosterCard/PosterCard';
 import { api, ApiError } from '@/lib/api';
@@ -17,11 +17,29 @@ interface ShowSubscription {
   };
 }
 
-const MAX_PREVIEW = 6;
+const SCROLL_AMOUNT = 280;
 
 export function ProfileSeriesPreview() {
   const [items, setItems] = useState<ShowSubscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  function updateScrollState() {
+    const el = gridRef.current;
+    if (!el) return;
+    setCanScrollPrev(el.scrollLeft > 0);
+    setCanScrollNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }
+
+  function scrollPrev() {
+    gridRef.current?.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+  }
+
+  function scrollNext() {
+    gridRef.current?.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +61,6 @@ export function ProfileSeriesPreview() {
 
     load();
 
-    // Recarrega quando o usuário volta para esta aba/página
     function handleVisibilityChange() {
       if (document.visibilityState === 'visible') {
         setLoading(true);
@@ -59,10 +76,14 @@ export function ProfileSeriesPreview() {
     };
   }, []);
 
+  useEffect(() => {
+    updateScrollState();
+  }, [items]);
+
   if (loading) {
     return (
       <div className={styles.grid} aria-label="Carregando séries...">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className={styles.skeleton} aria-hidden="true" />
         ))}
       </div>
@@ -80,18 +101,46 @@ export function ProfileSeriesPreview() {
     );
   }
 
-  const preview = items.slice(0, MAX_PREVIEW);
-
   return (
-    <div className={styles.grid}>
-      {preview.map(({ show }) => (
-        <PosterCard
-          key={show.id}
-          title={show.name}
-          posterPath={show.posterPath}
-          href={`/show/${show.tmdbId}/sobre?from=/perfil`}
-        />
-      ))}
+    <div className={styles.wrapper}>
+      <button
+        className={`${styles.navBtn} ${styles.navPrev}`}
+        onClick={scrollPrev}
+        disabled={!canScrollPrev}
+        aria-label="Rolar para a esquerda"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" aria-hidden="true">
+          <circle cx="12" cy="12" r="12" fill="currentColor" />
+          <path d="M13.5 8L10.5 12L13.5 16" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      <div
+        className={styles.grid}
+        ref={gridRef}
+        onScroll={updateScrollState}
+      >
+        {items.map(({ show }) => (
+          <PosterCard
+            key={show.id}
+            title={show.name}
+            posterPath={show.posterPath}
+            href={`/show/${show.tmdbId}/sobre?from=/perfil`}
+          />
+        ))}
+      </div>
+
+      <button
+        className={`${styles.navBtn} ${styles.navNext}`}
+        onClick={scrollNext}
+        disabled={!canScrollNext}
+        aria-label="Rolar para a direita"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" aria-hidden="true">
+          <circle cx="12" cy="12" r="12" fill="currentColor" />
+          <path d="M10.5 8L13.5 12L10.5 16" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
     </div>
   );
 }

@@ -65,9 +65,26 @@
   gap: 1px;
 }
 
+@media (min-width: 768px) {
+  .feed {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .feed {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .feedCard {
   position: relative;
   background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .feedBackdrop {

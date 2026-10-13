@@ -63,7 +63,7 @@ export default async function ShowLayout({
             alt={show.name}
             fill
             className={styles.backdropImage}
-            sizes="(max-width: 480px) 100vw, 480px"
+            sizes="(max-width: 480px) 100vw, (max-width: 1024px) 100vw, 960px"
             priority
           />
         )}

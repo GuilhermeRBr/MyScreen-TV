@@ -1,4 +1,5 @@
 import { BottomNav } from '@/components/BottomNav/BottomNav';
+import styles from './layout.module.css';
 
 export default function TabsLayout({
   children,
@@ -6,9 +7,9 @@ export default function TabsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <main className="page-container">{children}</main>
+    <div className={styles.shell}>
       <BottomNav />
-    </>
+      <main className={styles.content}>{children}</main>
+    </div>
   );
 }

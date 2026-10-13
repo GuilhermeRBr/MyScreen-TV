@@ -116,6 +116,12 @@
   gap: var(--space-3);
 }
 
+@media (min-width: 768px) {
+  .watchTimeGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 .watchTimeCard {
   background-color: var(--color-bg-card);
   border-radius: var(--radius-md);
@@ -199,6 +205,19 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 3px;
+}
+
+@media (min-width: 768px) {
+  .showsGrid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-2);
+  }
+}
+
+@media (min-width: 1024px) {
+  .showsGrid {
+    grid-template-columns: repeat(6, 1fr);
+  }
 }
 
 .tmdbAttribution {

@@ -73,6 +73,24 @@
   --max-content-width: 480px;
 }
 
+@media (min-width: 768px) {
+  :root {
+    --max-content-width: 720px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --max-content-width: 960px;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --max-content-width: 1100px;
+  }
+}
+
 /* ============================================================
    Reset e base
    ============================================================ */
