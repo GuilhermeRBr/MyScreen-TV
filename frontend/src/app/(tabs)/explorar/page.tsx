@@ -76,7 +76,7 @@ export default async function ExplorarPage() {
                     alt={movie.title}
                     fill
                     className={styles.feedBackdropImage}
-                    sizes="(max-width: 480px) 100vw, 480px"
+                    sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, 33vw"
                   />
                 )}
                 <div className={styles.playButton} aria-hidden="true">

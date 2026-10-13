@@ -6,6 +6,13 @@
   overflow: hidden;
 }
 
+@media (min-width: 1024px) {
+  .backdrop {
+    aspect-ratio: unset;
+    max-height: 420px;
+  }
+}
+
 .backdropImage {
   object-fit: cover;
 }

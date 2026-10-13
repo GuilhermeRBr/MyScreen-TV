@@ -25,7 +25,7 @@ export function PosterCard({
           src={imageUrl}
           alt={title}
           fill
-          sizes="(max-width: 480px) 33vw, 160px"
+          sizes="(max-width: 480px) 33vw, (max-width: 768px) 20vw, (max-width: 1024px) 17vw, 160px"
           className={styles.image}
         />
       ) : (
