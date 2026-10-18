@@ -9,10 +9,10 @@
   --color-bg-elevated: #252525;
   --color-bg-overlay: rgba(0, 0, 0, 0.7);
 
-  /* Accent amarelo MyScreen TV */
-  --color-accent: #f5c518;
-  --color-accent-hover: #e6b800;
-  --color-accent-muted: rgba(245, 197, 24, 0.15);
+  /* Accent vermelho MyScreen TV */
+  --color-accent: #eb5757;
+  --color-accent-hover: #c0392b;
+  --color-accent-muted: rgba(235, 87, 87, 0.15);
 
   /* Verde de progresso */
   --color-progress: #4caf50;
@@ -22,14 +22,14 @@
   --color-text-primary: #ffffff;
   --color-text-secondary: #a0a0a0;
   --color-text-muted: #606060;
-  --color-text-on-accent: #0f0f0f;
+  --color-text-on-accent: #ffffff;
 
   /* Bordas */
   --color-border: #2a2a2a;
   --color-border-subtle: rgba(255, 255, 255, 0.06);
 
   /* Status */
-  --color-new: #f5c518;
+  --color-new: #eb5757;
   --color-premiere: #ff6b35;
   --color-error: #e53e3e;
   --color-success: #4caf50;
