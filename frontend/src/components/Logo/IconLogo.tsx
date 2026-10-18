@@ -46,8 +46,8 @@ export function IconLogo({ size = 40, ...props }: IconLogoProps) {
           y2="84.9489"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#8B5CF6" />
-          <stop offset="1" stopColor="#5B2FE0" />
+          <stop stopColor="#EB5757" />
+          <stop offset="1" stopColor="#C0392B" />
         </linearGradient>
         <linearGradient
           id="icon-logo-grad-outer"
@@ -57,8 +57,8 @@ export function IconLogo({ size = 40, ...props }: IconLogoProps) {
           y2="84.9489"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#8B5CF6" />
-          <stop offset="1" stopColor="#5B2FE0" />
+          <stop stopColor="#EB5757" />
+          <stop offset="1" stopColor="#C0392B" />
         </linearGradient>
         <clipPath id="icon-logo-clip">
           <rect width="85" height="88" fill="white" />

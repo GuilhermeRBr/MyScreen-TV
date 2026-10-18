@@ -31,7 +31,7 @@ export function Logo({ width = 180, ...props }: LogoProps) {
       {/* Palavra-marca "TV" */}
       <path
         d="M399.832 23.3722V16.2727H433.281V23.3722H420.812V57H412.301V23.3722H399.832ZM446.148 16.2727L455.991 47.2159H456.369L466.233 16.2727H475.778L461.739 57H450.642L436.582 16.2727H446.148Z"
-        fill="#8B5CF6"
+        fill="#EB5757"
       />
       {/* Ícone */}
       <g clipPath="url(#logo-clip)">
@@ -57,8 +57,8 @@ export function Logo({ width = 180, ...props }: LogoProps) {
           y2="84.9489"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#8B5CF6" />
-          <stop offset="1" stopColor="#5B2FE0" />
+          <stop stopColor="#EB5757" />
+          <stop offset="1" stopColor="#C0392B" />
         </linearGradient>
         <linearGradient
           id="logo-grad-outer"
@@ -68,8 +68,8 @@ export function Logo({ width = 180, ...props }: LogoProps) {
           y2="84.9489"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#8B5CF6" />
-          <stop offset="1" stopColor="#5B2FE0" />
+          <stop stopColor="#EB5757" />
+          <stop offset="1" stopColor="#C0392B" />
         </linearGradient>
         <clipPath id="logo-clip">
           <rect width="85" height="88" fill="white" />
