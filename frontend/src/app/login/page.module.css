@@ -149,7 +149,7 @@
 }
 
 .welcomeAccent {
-  color: #9b68ff;
+  color: #eb5757;
 }
 
 .welcomeSubtitle {
@@ -220,7 +220,7 @@
 
 .input:focus {
   outline: none;
-  border-color: #8b5cf6;
+  border-color: #eb5757;
 }
 
 .input:disabled {
@@ -253,7 +253,7 @@
 }
 
 .eyeToggle:hover:not(:disabled) {
-  color: #9b68ff;
+  color: #eb5757;
 }
 
 .eyeToggle:disabled {
@@ -300,7 +300,7 @@
 }
 
 .checkboxInput:checked ~ .checkboxBox {
-  background: linear-gradient(135deg, #8b5cf6, #5b2fe0);
+  background: linear-gradient(135deg, #eb5757, #c0392b);
   border-color: transparent;
 }
 
@@ -322,14 +322,14 @@
 /* "Esqueceu sua senha?" — #AD7BFF, sublinhado */
 .forgotLink {
   font-size: 0.875rem;
-  color: #ad7bff;
+  color: #eb5757;
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color 0.15s ease;
 }
 
 .forgotLink:hover {
-  color: #c49bff;
+  color: #c0392b;
 }
 
 /* ---- Mensagem de erro ---- */
@@ -342,7 +342,7 @@
   padding: 0.75rem 1rem;
 }
 
-/* ---- Botão Entrar — gradiente #8B5CF6→#5B2FE0 ---- */
+/* ---- Botão Entrar — gradiente #EB5757→#C0392B ---- */
 .button {
   width: 100%;
   display: flex;
@@ -350,7 +350,7 @@
   justify-content: center;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  background: linear-gradient(90deg, #8b5cf6, #5b2fe0);
+  background: linear-gradient(90deg, #eb5757, #c0392b);
   color: #ffffff;
   font-size: 1.125rem;
   font-weight: 700;
@@ -438,7 +438,7 @@
 }
 
 .footerLink {
-  color: #ad7bff;
+  color: #eb5757;
   font-weight: 400;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -446,7 +446,7 @@
 }
 
 .footerLink:hover {
-  color: #c49bff;
+  color: #c0392b;
 }
 
 /* ---- Responsivo: abaixo de 820px vira coluna única ---- */
