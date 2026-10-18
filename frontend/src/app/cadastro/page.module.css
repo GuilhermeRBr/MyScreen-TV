@@ -22,13 +22,6 @@
   gap: var(--space-6);
 }
 
-.title {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  color: var(--color-accent);
-  letter-spacing: -0.5px;
-}
-
 .subtitle {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);

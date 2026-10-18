@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
+import { Logo } from '@/components/Logo/Logo';
 import styles from './page.module.css';
 
 export default function ForgotPasswordPage() {
@@ -39,7 +40,9 @@ export default function ForgotPasswordPage() {
   return (
     <main className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>MyScreen TV</h1>
+        <h1>
+          <Logo width={180} />
+        </h1>
         <p className={styles.subtitle}>Recuperação de senha</p>
 
         {submitted ? (

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { PasswordInput } from '@/components/PasswordInput/PasswordInput';
+import { Logo } from '@/components/Logo/Logo';
 import styles from './page.module.css';
 
 function LoginForm() {
@@ -101,7 +102,9 @@ export default function LoginPage() {
   return (
     <main className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>MyScreen TV</h1>
+        <h1>
+          <Logo width={180} />
+        </h1>
         <p className={styles.subtitle}>Acompanhe suas séries e filmes</p>
 
         <Suspense fallback={<div className={styles.form} />}>
