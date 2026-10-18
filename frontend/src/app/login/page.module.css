@@ -1,81 +1,226 @@
+/* ==========================================================
+   Login — layout split, fundo geométrico roxo/azul-marinho
+   ========================================================== */
+
+/* ---- Página e fundo ---- */
 .page {
+  position: relative;
   min-height: 100dvh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Cor base do fundo */
+.bgBase {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, #0f0f2e 0%, #11103a 35%, #0c0e24 65%, #080b1e 100%);
+  z-index: 0;
+}
+
+/* Forma geométrica angular — canto inferior-esquerdo */
+.bgShapeLeft {
+  position: absolute;
+  bottom: -80px;
+  left: -60px;
+  width: 420px;
+  height: 480px;
+  background: linear-gradient(135deg, rgba(60, 20, 120, 0.55), rgba(30, 10, 80, 0.3));
+  clip-path: polygon(0 40%, 100% 0%, 60% 100%, 0% 100%);
+  z-index: 0;
+}
+
+/* Forma geométrica angular — canto superior-direito */
+.bgShapeTopRight {
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 300px;
+  height: 340px;
+  background: linear-gradient(225deg, rgba(60, 20, 120, 0.4), rgba(20, 10, 60, 0.2));
+  clip-path: polygon(40% 0%, 100% 0%, 100% 100%, 0% 60%);
+  z-index: 0;
+}
+
+/* ---- Layout duas colunas ---- */
+.content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100dvh;
+}
+
+/* ---- Coluna esquerda (brand) ---- */
+.brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem 5% 3rem 7%;
+  gap: 2.5rem;
+}
+
+.tagline {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #c2cae0;
+  line-height: 1.55;
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.featureIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-6);
-  background-color: var(--color-bg-primary);
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  color: #a78bfa;
 }
 
+.featureText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.featureTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.featureDesc {
+  font-size: 0.8125rem;
+  color: #aab5d0;
+}
+
+/* ---- Coluna direita (wrapper centraliza o card) ---- */
+.cardWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 5%;
+}
+
+/* Card — gradiente exato do SVG do Figma */
 .card {
   width: 100%;
-  max-width: 400px;
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  padding: var(--space-10) var(--space-8);
+  max-width: 438px;
+  background: linear-gradient(135deg, rgba(20, 24, 41, 0.96) 0%, rgba(13, 17, 32, 0.96) 100%);
+  border: 1px solid #20263b;
+  border-radius: 16px;
+  padding: 2.5rem 2.25rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-6);
+  gap: 1.25rem;
 }
 
-.subtitle {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin-top: calc(var(--space-2) * -1);
+/* ---- Cabeçalho do card ---- */
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   text-align: center;
+  padding-bottom: 0.25rem;
 }
 
+.welcomeTitle {
+  font-size: 2.125rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.welcomeNormal {
+  color: #f8fafc;
+}
+
+.welcomeAccent {
+  color: #9b68ff;
+}
+
+.welcomeSubtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #b6c1da;
+  line-height: 1.4;
+}
+
+/* ---- Formulário ---- */
 .form {
-  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 1rem;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 0.5rem;
 }
 
+/* Labels: #F1F5F9, 1.0625rem */
 .label {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  color: #f1f5f9;
 }
 
-.labelRow {
+/* Wrapper com ícone inline */
+.inputWrapper {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 
-.forgotLink {
-  font-size: var(--font-size-xs, 0.75rem);
-  color: var(--color-text-muted);
-  transition: color 0.15s ease;
+.inputIcon {
+  position: absolute;
+  left: 14px;
+  color: #8390ae;
+  flex-shrink: 0;
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
 }
 
-.forgotLink:hover {
-  color: var(--color-accent);
-}
-
+/* Input: fundo #101525, borda #414B6C, placeholder #8390AE */
 .input {
   width: 100%;
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-md);
+  padding: 0.875rem 1rem 0.875rem 2.75rem;
+  background-color: #101525;
+  border: 1.2px solid #414b6c;
+  border-radius: 10px;
+  color: #f8fafc;
+  font-size: 1rem;
   transition: border-color 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #101525 inset;
+  -webkit-text-fill-color: #f8fafc;
+  caret-color: #f8fafc;
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--color-accent);
+  border-color: #8b5cf6;
 }
 
 .input:disabled {
@@ -84,32 +229,140 @@
 }
 
 .input::placeholder {
-  color: var(--color-text-muted);
+  color: #8390ae;
 }
 
+/* Input de senha — espaço para o botão de visibilidade */
+.inputWithToggle {
+  padding-right: 2.75rem;
+}
+
+/* Botão olho */
+.eyeToggle {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  color: #8390ae;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.eyeToggle:hover:not(:disabled) {
+  color: #9b68ff;
+}
+
+.eyeToggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- Linha lembrar / esqueceu ---- */
+.optionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.rememberMe {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+/* Esconde o input nativo mas mantém acessibilidade */
+.checkboxInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Checkbox visual — gradiente roxo #8B5CF6→#5B2FE0 quando marcado */
+.checkboxBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  border: 1.5px solid #343c57;
+  background: transparent;
+}
+
+.checkboxInput:checked ~ .checkboxBox {
+  background: linear-gradient(135deg, #8b5cf6, #5b2fe0);
+  border-color: transparent;
+}
+
+/* Check branco dentro do checkbox */
+.checkmark {
+  width: 12px;
+  height: 12px;
+  color: #ffffff;
+  stroke-width: 2.5;
+}
+
+/* "Lembrar de mim" — #D0D7E8 */
+.rememberLabel {
+  font-size: 0.9375rem;
+  color: #d0d7e8;
+  user-select: none;
+}
+
+/* "Esqueceu sua senha?" — #AD7BFF, sublinhado */
+.forgotLink {
+  font-size: 0.875rem;
+  color: #ad7bff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.forgotLink:hover {
+  color: #c49bff;
+}
+
+/* ---- Mensagem de erro ---- */
 .error {
-  font-size: var(--font-size-sm);
+  font-size: 0.875rem;
   color: var(--color-error);
-  background-color: rgba(229, 62, 62, 0.1);
+  background-color: rgba(229, 62, 62, 0.08);
   border: 1px solid rgba(229, 62, 62, 0.3);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
 }
 
+/* ---- Botão Entrar — gradiente #8B5CF6→#5B2FE0 ---- */
 .button {
   width: 100%;
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--color-accent);
-  color: var(--color-text-on-accent);
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  transition: background-color 0.15s ease, opacity 0.15s ease;
-  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(90deg, #8b5cf6, #5b2fe0);
+  color: #ffffff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+  margin-top: 0.25rem;
 }
 
 .button:hover:not(:disabled) {
-  background-color: var(--color-accent-hover);
+  filter: brightness(1.1);
 }
 
 .button:disabled {
@@ -117,18 +370,103 @@
   cursor: not-allowed;
 }
 
+.buttonArrow {
+  color: #ffffff;
+  width: 18px;
+  height: 16px;
+}
+
+/* ---- Divisor "Ou continue com" ---- */
+/* Linhas: #343C57, texto: #AAB5D0 */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.125rem 0;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background-color: #343c57;
+}
+
+.dividerText {
+  font-size: 0.875rem;
+  color: #aab5d0;
+  white-space: nowrap;
+}
+
+/* ---- Botões sociais — fundo #121727, borda #343C57 ---- */
+.socialButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.socialButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #121727;
+  border: 1px solid #343c57;
+  border-radius: 10px;
+  color: #f8fafc;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.socialButton:hover:not(:disabled) {
+  background-color: #181e32;
+  border-color: #4a527a;
+}
+
+.socialButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Rodapé — "Não tem uma conta?" #D0D7E8, link #AD7BFF ---- */
 .footer {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  color: #d0d7e8;
   text-align: center;
 }
 
-.link {
-  color: var(--color-accent);
-  font-weight: 500;
+.footerLink {
+  color: #ad7bff;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 2px;
   transition: color 0.15s ease;
 }
 
-.link:hover {
-  color: var(--color-accent-hover);
+.footerLink:hover {
+  color: #c49bff;
+}
+
+/* ---- Responsivo: abaixo de 820px vira coluna única ---- */
+@media (max-width: 820px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .cardWrapper {
+    padding: 2rem 1.5rem;
+    padding-top: 4rem;
+    align-items: flex-start;
+  }
+
+  .bgShapeLeft,
+  .bgShapeTopRight {
+    opacity: 0.6;
+  }
 }

@@ -35,7 +35,7 @@
   --color-success: #4caf50;
 
   /* Tipografia */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
