@@ -24,9 +24,11 @@
 
 ## Sobre o projeto
 
-O **MyScreen TV** e uma aplicacao web para **acompanhamento de series e filmes**, com foco em progresso por temporada, estatisticas de perfil e calendario de lancamentos.
+O **MyScreen TV** é uma aplicação web para **acompanhamento de séries e filmes**, com foco em progresso por temporada, estatísticas de perfil e calendário de lançamentos.
 
-> Desenvolvido para quem quer ter controle total sobre o que assiste, com uma experiencia visual moderna e dados em tempo real via TMDB.
+> Este projeto foi **inspirado no [TV Time](https://www.tvtime.com)**, aplicativo pioneiro no acompanhamento de séries e filmes que ajudou a definir a categoria. O MyScreen TV é uma recriação open-source com stack moderna, desenvolvida para fins de aprendizado e portfólio.
+
+> Desenvolvido para quem quer ter controle total sobre o que assiste, com uma experiência visual moderna e dados em tempo real via TMDB.
 
 Funcionalidades:
 

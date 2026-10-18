@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { PasswordInput } from '@/components/PasswordInput/PasswordInput';
+import { Logo } from '@/components/Logo/Logo';
 import styles from './page.module.css';
 
 type FieldErrors = Partial<Record<'password' | 'confirmPassword', string>>;
@@ -196,7 +197,9 @@ export default function ResetPasswordPage() {
   return (
     <main className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>MyScreen TV</h1>
+        <h1>
+          <Logo width={180} />
+        </h1>
         <p className={styles.subtitle}>Criar nova senha</p>
 
         <Suspense fallback={<div className={styles.form} />}>
