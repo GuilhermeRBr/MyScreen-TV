@@ -88,7 +88,7 @@
   flex-shrink: 0;
   width: 38px;
   height: 38px;
-  color: #a78bfa;
+  color: #eb5757;
 }
 
 .featureText {
@@ -374,60 +374,6 @@
   color: #ffffff;
   width: 18px;
   height: 16px;
-}
-
-/* ---- Divisor "Ou continue com" ---- */
-/* Linhas: #343C57, texto: #AAB5D0 */
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0.125rem 0;
-}
-
-.dividerLine {
-  flex: 1;
-  height: 1px;
-  background-color: #343c57;
-}
-
-.dividerText {
-  font-size: 0.875rem;
-  color: #aab5d0;
-  white-space: nowrap;
-}
-
-/* ---- Botões sociais — fundo #121727, borda #343C57 ---- */
-.socialButtons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.socialButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background-color: #121727;
-  border: 1px solid #343c57;
-  border-radius: 10px;
-  color: #f8fafc;
-  font-size: 0.9375rem;
-  font-weight: 400;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-
-.socialButton:hover:not(:disabled) {
-  background-color: #181e32;
-  border-color: #4a527a;
-}
-
-.socialButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* ---- Rodapé — "Não tem uma conta?" #D0D7E8, link #AD7BFF ---- */

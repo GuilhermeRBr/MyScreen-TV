@@ -10,8 +10,6 @@ import {
   IconBolt,
   IconHeart,
   IconArrowRight,
-  IconGoogle,
-  IconMicrosoft,
   IconCheck,
   IconUser,
   IconLock,
@@ -175,25 +173,6 @@ function LoginForm() {
         <span>{loading ? 'Entrando...' : 'Entrar'}</span>
         {!loading && <IconArrowRight className={styles.buttonArrow} />}
       </button>
-
-      {/* Divisor social */}
-      <div className={styles.divider}>
-        <span className={styles.dividerLine} />
-        <span className={styles.dividerText}>Ou continue com</span>
-        <span className={styles.dividerLine} />
-      </div>
-
-      {/* Botoes sociais */}
-      <div className={styles.socialButtons}>
-        <button type="button" className={styles.socialButton} disabled={loading}>
-          <IconGoogle />
-          <span>Google</span>
-        </button>
-        <button type="button" className={styles.socialButton} disabled={loading}>
-          <IconMicrosoft />
-          <span>Microsoft</span>
-        </button>
-      </div>
 
     </form>
   );
