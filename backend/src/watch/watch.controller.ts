@@ -56,6 +56,19 @@ export class WatchController {
     return this.watchService.markSeasonWatched(user.sub, seasonId);
   }
 
+  @Delete('seasons/:seasonId/mark-all')
+  @ApiOperation(WATCH_SWAGGER.unmarkSeasonWatched.operation)
+  @ApiParam({ name: 'seasonId', description: 'UUID da temporada', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.unmarkSeasonWatched.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.unmarkSeasonWatched.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.unmarkSeasonWatched.responses[404] })
+  unmarkSeasonWatched(
+    @CurrentUser() user: JwtPayload,
+    @Param('seasonId', ParseUUIDPipe) seasonId: string,
+  ) {
+    return this.watchService.unmarkSeasonWatched(user.sub, seasonId);
+  }
+
   @Get('shows/:showId/progress')
   @ApiOperation(WATCH_SWAGGER.getShowProgress.operation)
   @ApiParam({ name: 'showId', description: 'UUID da série', example: '550e8400-e29b-41d4-a716-446655440000' })

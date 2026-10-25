@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ShowSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WATCH_MESSAGES } from './messages/watch.messages';
@@ -95,6 +95,29 @@ export class WatchService {
     await this.prisma.watchProgress.createMany({ data: toCreate });
 
     return { markedCount: toCreate.length };
+  }
+
+  async unmarkSeasonWatched(
+    userId: string,
+    seasonId: string,
+  ): Promise<{ removedCount: number }> {
+    const season = await this.prisma.season.findUnique({
+      where: { id: seasonId },
+      include: { episodes: { select: { id: true } } },
+    });
+
+    if (!season) {
+      throw new NotFoundException(WATCH_MESSAGES.SEASON_NOT_FOUND);
+    }
+
+    const { count } = await this.prisma.watchProgress.deleteMany({
+      where: {
+        userId,
+        episodeId: { in: season.episodes.map((e) => e.id) },
+      },
+    });
+
+    return { removedCount: count };
   }
 
   async getShowProgress(userId: string, showId: string): Promise<ShowProgress> {

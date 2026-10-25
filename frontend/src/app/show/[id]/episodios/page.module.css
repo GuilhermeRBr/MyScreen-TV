@@ -162,6 +162,12 @@
   background-color: var(--color-progress);
   color: white;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.seasonCheckCircle:hover {
+  opacity: 0.75;
 }
 
 .chevron {

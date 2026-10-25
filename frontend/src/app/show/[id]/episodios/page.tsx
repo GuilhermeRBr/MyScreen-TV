@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import type React from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import styles from './page.module.css';
@@ -198,40 +199,107 @@ export default function EpisodiosPage() {
     }
   }
 
-  async function markAllWatched() {
+  async function toggleSeasonWatched(season: SeasonWithEpisodes, e: React.MouseEvent) {
+    // Impede que o clique no check abra/feche o acordeão
+    e.stopPropagation();
+
+    const isComplete = (season.watchedCount ?? 0) >= season.episodeCount && season.episodeCount > 0;
+
+    try {
+      if (isComplete) {
+        await api.delete(`/watch/seasons/${season.id}/mark-all`);
+
+        setSeasons((prev) =>
+          prev.map((s) =>
+            s.id === season.id
+              ? {
+                  ...s,
+                  watchedCount: 0,
+                  episodes: s.episodes.map((ep) => ({ ...ep, watched: false })),
+                }
+              : s,
+          ),
+        );
+
+        const epIds = season.episodes.map((e) => e.id);
+        setWatchedIds((prev) => {
+          const next = new Set(prev);
+          epIds.forEach((id) => next.delete(id));
+          return next;
+        });
+      } else {
+        await api.post(`/watch/seasons/${season.id}/mark-all`);
+
+        setSeasons((prev) =>
+          prev.map((s) =>
+            s.id === season.id
+              ? {
+                  ...s,
+                  watchedCount: s.episodeCount,
+                  episodes: s.episodes.map((ep) => ({ ...ep, watched: true })),
+                }
+              : s,
+          ),
+        );
+
+        const epIds = season.episodes.map((e) => e.id);
+        setWatchedIds((prev) => {
+          const next = new Set(prev);
+          epIds.forEach((id) => next.add(id));
+          return next;
+        });
+      }
+    } catch {
+      // falha silenciosa
+    }
+  }
+
+  async function toggleAllWatched() {
     if (!internalShowId) return;
 
     try {
-      // Marca todos os episódios de todas as temporadas visíveis
-      for (const season of seasons) {
-        await api.post(`/watch/seasons/${season.id}/mark-all`);
+      if (allWatched) {
+        // Desmarca todas as temporadas
+        for (const season of seasons) {
+          await api.delete(`/watch/seasons/${season.id}/mark-all`);
+        }
+
+        setSeasons((prev) =>
+          prev.map((s) => ({
+            ...s,
+            watchedCount: 0,
+            episodes: s.episodes.map((ep) => ({ ...ep, watched: false })),
+          })),
+        );
+        setWatchedIds(new Set());
+      } else {
+        // Marca todas as temporadas
+        for (const season of seasons) {
+          await api.post(`/watch/seasons/${season.id}/mark-all`);
+        }
+
+        const progress = await api.get<WatchProgressResponse>(
+          `/watch/shows/${internalShowId}/progress`,
+        );
+        const progressMap = new Map(
+          progress.seasons.map((s) => [s.seasonNumber, s.watchedCount]),
+        );
+
+        setSeasons((prev) =>
+          prev.map((s) => ({
+            ...s,
+            watchedCount: progressMap.get(s.seasonNumber) ?? s.watchedCount,
+            episodes: s.episodes.map((ep) => ({ ...ep, watched: true })),
+          })),
+        );
+
+        const allEpIds = seasons.flatMap((s) => s.episodes.map((ep) => ep.id));
+        setWatchedIds((prev) => {
+          const next = new Set(prev);
+          allEpIds.forEach((id) => next.add(id));
+          return next;
+        });
       }
-
-      // Recarrega progresso
-      const progress = await api.get<WatchProgressResponse>(
-        `/watch/shows/${internalShowId}/progress`,
-      );
-
-      const progressMap = new Map(
-        progress.seasons.map((s) => [s.seasonNumber, s.watchedCount]),
-      );
-
-      // Atualiza contadores e marca todos os eps carregados como assistidos
-      setSeasons((prev) =>
-        prev.map((s) => ({
-          ...s,
-          watchedCount: progressMap.get(s.seasonNumber) ?? s.watchedCount,
-          episodes: s.episodes.map((ep) => ({ ...ep, watched: true })),
-        })),
-      );
-
-      // Atualiza o set de assistidos
-      const allEpIds = seasons.flatMap((s) => s.episodes.map((e) => e.id));
-      setWatchedIds((prev) => {
-        const next = new Set(prev);
-        allEpIds.forEach((id) => next.add(id));
-        return next;
-      });
     } catch {
       // falha silenciosa
     }
@@ -304,8 +372,8 @@ export default function EpisodiosPage() {
           <h2 className={styles.allEpisodesTitle}>Todos os episodios</h2>
           <button
             className={`${styles.checkCircle} ${allWatched ? styles.checkCircleWatched : ''}`}
-            aria-label="Marcar todos como assistidos"
-            onClick={markAllWatched}
+            aria-label={allWatched ? 'Desmarcar todos os episódios' : 'Marcar todos como assistidos'}
+            onClick={toggleAllWatched}
           >
             <IconCheck width={14} height={14} />
           </button>
@@ -331,9 +399,13 @@ export default function EpisodiosPage() {
                   <span className={styles.seasonName}>{season.name}</span>
                   <span className={styles.seasonCount}>{watched}/{total}</span>
                   {isComplete ? (
-                    <div className={styles.seasonCheckCircle} aria-hidden="true">
+                    <button
+                      className={styles.seasonCheckCircle}
+                      aria-label={`Desmarcar ${season.name} como assistida`}
+                      onClick={(e) => toggleSeasonWatched(season, e)}
+                    >
                       <IconCheck width={14} height={14} />
-                    </div>
+                    </button>
                   ) : (
                     <IconChevronDown
                       width={20}
