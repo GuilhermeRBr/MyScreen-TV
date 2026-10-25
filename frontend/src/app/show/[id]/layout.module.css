@@ -89,36 +89,3 @@
   letter-spacing: 0.02em;
 }
 
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--color-border);
-  padding: 0 var(--space-4);
-  margin-top: var(--space-4);
-}
-
-.tab {
-  flex: 1;
-  text-align: center;
-  padding: var(--space-3) 0;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  letter-spacing: 0.04em;
-  position: relative;
-  transition: color 0.15s;
-}
-
-.tabActive {
-  color: var(--color-text-primary);
-}
-
-.tabActive::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: var(--color-accent);
-  border-radius: var(--radius-full) var(--radius-full) 0 0;
-}

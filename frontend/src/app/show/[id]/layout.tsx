@@ -1,10 +1,10 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import styles from './layout.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconDots } from '@/components/icons';
 import { BackButton } from '@/components/BackButton/BackButton';
+import { ShowTabs } from '@/components/ShowTabs/ShowTabs';
 
 interface Show {
   id: number;
@@ -116,20 +116,7 @@ export default async function ShowLayout({
       </div>
 
       {/* Tabs */}
-      <nav className={styles.tabs} aria-label="Seções da série">
-        <Link
-          href={from ? `/show/${params.id}/sobre?from=${from}` : `/show/${params.id}/sobre`}
-          className={styles.tab}
-        >
-          SOBRE
-        </Link>
-        <Link
-          href={from ? `/show/${params.id}/episodios?from=${from}` : `/show/${params.id}/episodios`}
-          className={styles.tab}
-        >
-          EPISÓDIOS
-        </Link>
-      </nav>
+      <ShowTabs showId={String(params.id)} from={from} />
 
       {children}
     </div>
