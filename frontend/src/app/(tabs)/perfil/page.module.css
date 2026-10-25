@@ -110,57 +110,6 @@
   color: var(--color-text-primary);
 }
 
-.watchTimeGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-}
-
-@media (min-width: 768px) {
-  .watchTimeGrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.watchTimeCard {
-  background-color: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-}
-
-.watchTimeCardTitle {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
-}
-
-.watchTimeNumbers {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-.watchTimeBig {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  line-height: 1;
-}
-
-.watchTimeUnit {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  font-weight: 500;
-}
-
-.episodesCount {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  line-height: 1;
-}
-
 .listCarousel {
   display: flex;
   gap: var(--space-3);
