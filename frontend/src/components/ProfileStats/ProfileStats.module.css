@@ -1,27 +1,23 @@
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.carousel {
+  display: flex;
+  flex-direction: row;
   gap: var(--space-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  /* permite o scroll até a borda do padding do pai */
+  margin: 0 calc(-1 * var(--space-4));
+  padding: 0 var(--space-4);
+  padding-bottom: var(--space-1);
 }
 
-@media (min-width: 768px) {
-  .grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-/* Card de tempo total ocupa a linha toda no mobile */
-.cardWide {
-  grid-column: 1 / -1;
-}
-
-@media (min-width: 768px) {
-  .cardWide {
-    grid-column: span 2;
-  }
+.carousel::-webkit-scrollbar {
+  display: none;
 }
 
 .card {
+  flex-shrink: 0;
+  width: 140px;
   background-color: var(--color-bg-card);
   border-radius: var(--radius-md);
   padding: var(--space-3);
@@ -34,6 +30,7 @@
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-2);
+  white-space: nowrap;
 }
 
 .cardNumbers {

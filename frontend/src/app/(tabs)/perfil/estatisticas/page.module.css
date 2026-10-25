@@ -1,0 +1,132 @@
+.container {
+  min-height: 100dvh;
+  background-color: var(--color-bg-primary);
+  padding-bottom: calc(var(--nav-height) + var(--space-6));
+}
+
+/* ---- Topbar ---- */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background-color: var(--color-bg-primary);
+  z-index: 10;
+}
+
+.backButton {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-full);
+  transition: background-color 0.15s ease;
+}
+
+.backButton:hover {
+  background-color: var(--color-bg-elevated);
+}
+
+.pageTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.topBarSpacer {
+  width: 36px;
+}
+
+/* ---- Conteúdo ---- */
+.content {
+  padding: var(--space-4);
+}
+
+/* ---- Grid de cards ---- */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.cardLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.cardValue {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  min-height: 40px;
+}
+
+.bigNumber {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.bigNumberSecondary {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.unit {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+  margin-right: var(--space-1);
+}
+
+/* ---- Skeleton ---- */
+.skeleton {
+  display: inline-block;
+  width: 64px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-elevated);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ---- Erro ---- */
+.errorMessage {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  padding-top: var(--space-10);
+}

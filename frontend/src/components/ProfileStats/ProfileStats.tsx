@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IconClock, IconTv, IconClapperboard } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import styles from './ProfileStats.module.css';
@@ -20,6 +20,7 @@ function minutesToHours(minutes: number): number {
 export function ProfileStats() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,101 +42,71 @@ export function ProfileStats() {
     };
   }, []);
 
+  const cards = [
+    {
+      key: 'total',
+      icon: <IconClock width={14} height={14} />,
+      label: 'Tempo total',
+      value: loading ? null : minutesToHours(stats?.totalMinutesWatched ?? 0),
+      unit: 'HORAS',
+    },
+    {
+      key: 'series-time',
+      icon: <IconTv width={14} height={14} />,
+      label: 'Tempo em séries',
+      value: loading ? null : minutesToHours(stats?.seriesMinutesWatched ?? 0),
+      unit: 'h',
+    },
+    {
+      key: 'movies-time',
+      icon: <IconClapperboard width={14} height={14} />,
+      label: 'Tempo em filmes',
+      value: loading ? null : minutesToHours(stats?.moviesMinutesWatched ?? 0),
+      unit: 'h',
+    },
+    {
+      key: 'episodes',
+      icon: <IconTv width={14} height={14} />,
+      label: 'Episódios assistidos',
+      value: loading ? null : (stats?.totalEpisodesWatched ?? 0),
+      unit: null,
+    },
+    {
+      key: 'movies',
+      icon: <IconClapperboard width={14} height={14} />,
+      label: 'Filmes assistidos',
+      value: loading ? null : (stats?.totalMoviesWatched ?? 0),
+      unit: null,
+    },
+  ];
+
   return (
-    <div className={styles.grid}>
-      {/* Tempo total */}
-      <div className={`${styles.card} ${styles.cardWide}`}>
-        <div className={styles.cardTitle}>
-          <IconClock width={14} height={14} />
-          Tempo total assistido
+    <div
+      className={styles.carousel}
+      ref={carouselRef}
+      role="list"
+      aria-label="Estatísticas de tempo assistido"
+    >
+      {cards.map((card) => (
+        <div key={card.key} className={styles.card} role="listitem">
+          <div className={styles.cardTitle}>
+            {card.icon}
+            {card.label}
+          </div>
+          <div className={styles.cardNumbers}>
+            {card.value === null ? (
+              <span className={styles.skeletonNumber} aria-hidden="true" />
+            ) : (
+              <>
+                <span className={styles.bigNumber}>{card.value}</span>
+                {card.unit && (
+                  <span className={styles.unit}>{card.unit}</span>
+                )}
+              </>
+            )}
+          </div>
         </div>
-        <div className={styles.cardNumbers}>
-          {loading ? (
-            <span className={styles.skeletonNumber} aria-hidden="true" />
-          ) : (
-            <>
-              <span className={styles.bigNumber}>
-                {minutesToHours(stats?.totalMinutesWatched ?? 0)}
-              </span>
-              <span className={styles.unit}>HORAS</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Tempo de séries */}
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <IconTv width={14} height={14} />
-          Tempo em séries
-        </div>
-        <div className={styles.cardNumbers}>
-          {loading ? (
-            <span className={styles.skeletonNumber} aria-hidden="true" />
-          ) : (
-            <>
-              <span className={styles.bigNumber}>
-                {minutesToHours(stats?.seriesMinutesWatched ?? 0)}
-              </span>
-              <span className={styles.unit}>h</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Tempo de filmes */}
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <IconClapperboard width={14} height={14} />
-          Tempo em filmes
-        </div>
-        <div className={styles.cardNumbers}>
-          {loading ? (
-            <span className={styles.skeletonNumber} aria-hidden="true" />
-          ) : (
-            <>
-              <span className={styles.bigNumber}>
-                {minutesToHours(stats?.moviesMinutesWatched ?? 0)}
-              </span>
-              <span className={styles.unit}>h</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Episódios assistidos */}
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <IconTv width={14} height={14} />
-          Episódios assistidos
-        </div>
-        <div className={styles.cardNumbers}>
-          {loading ? (
-            <span className={styles.skeletonNumber} aria-hidden="true" />
-          ) : (
-            <span className={styles.bigNumber}>
-              {stats?.totalEpisodesWatched ?? 0}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Filmes assistidos */}
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <IconClapperboard width={14} height={14} />
-          Filmes assistidos
-        </div>
-        <div className={styles.cardNumbers}>
-          {loading ? (
-            <span className={styles.skeletonNumber} aria-hidden="true" />
-          ) : (
-            <span className={styles.bigNumber}>
-              {stats?.totalMoviesWatched ?? 0}
-            </span>
-          )}
-        </div>
-      </div>
+      ))}
     </div>
   );
 }

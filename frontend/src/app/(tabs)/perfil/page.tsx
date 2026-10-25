@@ -39,9 +39,9 @@ export default function PerfilPage() {
           <h2 className={styles.sectionTitle} id="stats-title">
             Estatísticas
           </h2>
-          <span className={styles.sectionLink}>
+          <Link href="/perfil/estatisticas" className={styles.sectionLink} aria-label="Ver todas as estatísticas">
             <IconChevronRight width={16} height={16} />
-          </span>
+          </Link>
         </div>
 
         <ProfileStats />
