@@ -238,27 +238,33 @@ export class WatchService {
   // ---------------------------------------------------------------------------
 
   async getUserStats(userId: string): Promise<UserStats> {
-    const [episodesWatched, moviesWatched] = await Promise.all([
-      this.prisma.watchProgress.count({ where: { userId } }),
-      this.prisma.movieWatch.count({
-        where: { userId, status: 'WATCHED' },
-      }),
-    ]);
+    const [episodesWatched, moviesWatched, episodeRuntimeRows, movieRuntimeRows] =
+      await Promise.all([
+        this.prisma.watchProgress.count({ where: { userId } }),
+        this.prisma.movieWatch.count({
+          where: { userId, status: 'WATCHED' },
+        }),
+        this.prisma.watchProgress.findMany({
+          where: { userId },
+          select: { episode: { select: { runtime: true } } },
+        }),
+        this.prisma.movieWatch.findMany({
+          where: { userId, status: 'WATCHED' },
+          select: { movie: { select: { runtime: true } } },
+        }),
+      ]);
 
-    const runtimeResult = await this.prisma.watchProgress.findMany({
-      where: { userId },
-      select: {
-        episode: { select: { runtime: true } },
-      },
-    });
-
-    const totalMinutes = runtimeResult.reduce((acc, row) => {
+    const episodeMinutes = episodeRuntimeRows.reduce((acc, row) => {
       return acc + (row.episode.runtime ?? 25);
+    }, 0);
+
+    const movieMinutes = movieRuntimeRows.reduce((acc, row) => {
+      return acc + (row.movie.runtime ?? 120);
     }, 0);
 
     return {
       totalEpisodesWatched: episodesWatched,
-      totalMinutesWatched: totalMinutes,
+      totalMinutesWatched: episodeMinutes + movieMinutes,
       totalMoviesWatched: moviesWatched,
     };
   }

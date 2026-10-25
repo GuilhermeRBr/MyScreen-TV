@@ -27,6 +27,7 @@ const mockPrisma = {
     update: jest.fn(),
     upsert: jest.fn(),
     count: jest.fn(),
+    findMany: jest.fn(),
   },
   userShowSubscription: {
     findMany: jest.fn(),
@@ -96,7 +97,7 @@ describe('WatchService', () => {
   // ---------------------------------------------------------------------------
 
   describe('getUserStats', () => {
-    it('deve retornar stats calculadas corretamente', async () => {
+    it('deve retornar stats calculadas corretamente, incluindo runtime de filmes assistidos', async () => {
       const userId = 'user-1';
 
       mockPrisma.watchProgress.count.mockResolvedValue(150);
@@ -106,12 +107,19 @@ describe('WatchService', () => {
         { episode: { runtime: 30 } },
         { episode: { runtime: null } }, // usa fallback de 25min
       ]);
+      mockPrisma.movieWatch.findMany
+        .mockResolvedValueOnce([
+          { movie: { runtime: 120 } },
+          { movie: { runtime: 95 } },
+          { movie: { runtime: null } }, // usa fallback de 120min
+        ]);
 
       const result = await service.getUserStats(userId);
 
       expect(result.totalEpisodesWatched).toBe(150);
       expect(result.totalMoviesWatched).toBe(20);
-      expect(result.totalMinutesWatched).toBe(25 + 30 + 25); // 80 minutos
+      // 25 + 30 + 25 (episódios) + 120 + 95 + 120 (filmes) = 415
+      expect(result.totalMinutesWatched).toBe(415);
     });
   });
 
