@@ -2,6 +2,8 @@
   padding-bottom: calc(var(--nav-height) + var(--space-6));
 }
 
+/* ---- Continuar acompanhando ---- */
+
 .continueSection {
   padding: var(--space-4);
 }
@@ -26,7 +28,7 @@
 
 .continueCard {
   flex-shrink: 0;
-  width: 200px;
+  width: 220px;
   background-color: var(--color-bg-card);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -34,7 +36,14 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2);
-  position: relative;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s;
+  color: var(--color-text-primary);
+}
+
+.continueCard:hover {
+  background-color: var(--color-bg-elevated);
 }
 
 .continueStill {
@@ -71,6 +80,8 @@
   text-overflow: ellipsis;
 }
 
+/* ---- Check circle ---- */
+
 .checkCircle {
   width: 28px;
   height: 28px;
@@ -82,6 +93,8 @@
   flex-shrink: 0;
   color: var(--color-text-muted);
   transition: background-color 0.15s, border-color 0.15s;
+  background: none;
+  cursor: pointer;
 }
 
 .checkCircleWatched {
@@ -89,6 +102,8 @@
   border-color: var(--color-progress);
   color: white;
 }
+
+/* ---- Todos os episódios ---- */
 
 .allEpisodesSection {
   padding: var(--space-4) var(--space-4) 0;
@@ -105,6 +120,8 @@
   font-size: var(--font-size-sm);
   font-weight: 600;
 }
+
+/* ---- Acordeão de temporadas ---- */
 
 .seasonAccordion {
   border-top: 1px solid var(--color-border);
@@ -147,11 +164,22 @@
   flex-shrink: 0;
 }
 
+.chevron {
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* ---- Barra de progresso da temporada ---- */
+
 .progressBarSeason {
   height: 3px;
   background-color: var(--color-border);
   border-radius: var(--radius-full);
-  margin-top: -1px;
   overflow: hidden;
 }
 
@@ -159,4 +187,103 @@
   height: 100%;
   background-color: var(--color-progress);
   border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+/* ---- Lista de episódios (interior do acordeão) ---- */
+
+.episodeList {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.episodeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: var(--color-text-primary);
+  transition: background-color 0.15s;
+}
+
+.episodeRow:last-child {
+  border-bottom: none;
+}
+
+.episodeRow:hover {
+  background-color: var(--color-bg-elevated);
+}
+
+.episodeStill {
+  width: 80px;
+  height: 56px;
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.episodeStillImage {
+  object-fit: cover;
+}
+
+.episodeStillPlaceholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-elevated);
+}
+
+.episodeInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.episodeCode {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.episodeName {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Skeletons ---- */
+
+.skeletonList {
+  padding: var(--space-4);
+}
+
+.skeletonRow {
+  height: 56px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-elevated);
+  margin-bottom: var(--space-3);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.episodeListLoading {
+  padding: var(--space-2) 0;
+}
+
+.skeletonEpisode {
+  height: 64px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-elevated);
+  margin-bottom: var(--space-2);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
