@@ -20,8 +20,10 @@ export interface ShowProgress {
 
 export interface UserStats {
   totalEpisodesWatched: number;
-  totalMinutesWatched: number;
   totalMoviesWatched: number;
+  totalMinutesWatched: number;
+  seriesMinutesWatched: number;
+  moviesMinutesWatched: number;
 }
 
 @Injectable()
@@ -264,8 +266,10 @@ export class WatchService {
 
     return {
       totalEpisodesWatched: episodesWatched,
-      totalMinutesWatched: episodeMinutes + movieMinutes,
       totalMoviesWatched: moviesWatched,
+      totalMinutesWatched: episodeMinutes + movieMinutes,
+      seriesMinutesWatched: episodeMinutes,
+      moviesMinutesWatched: movieMinutes,
     };
   }
 

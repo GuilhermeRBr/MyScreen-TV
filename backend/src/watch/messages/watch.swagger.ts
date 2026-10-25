@@ -88,10 +88,10 @@ export const WATCH_SWAGGER = {
     operation: {
       summary: 'Estatísticas do usuário',
       description:
-        'Retorna o total de episódios assistidos, tempo total assistido (séries + filmes, em minutos) e a quantidade de filmes assistidos pelo usuário autenticado.',
+        'Retorna o total de episódios assistidos, filmes assistidos, tempo total (séries + filmes), tempo somente de séries e tempo somente de filmes, todos em minutos.',
     },
     responses: {
-      200: 'Estatísticas de consumo: episodesWatched, totalMinutes (séries + filmes), moviesWatched.',
+      200: 'Estatísticas: totalEpisodesWatched, totalMoviesWatched, totalMinutesWatched, seriesMinutesWatched, moviesMinutesWatched.',
       401: 'Não autenticado.',
     },
   },

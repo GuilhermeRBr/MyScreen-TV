@@ -7,8 +7,14 @@ import styles from './ProfileStats.module.css';
 
 interface UserStats {
   totalEpisodesWatched: number;
-  totalMinutesWatched: number;
   totalMoviesWatched: number;
+  totalMinutesWatched: number;
+  seriesMinutesWatched: number;
+  moviesMinutesWatched: number;
+}
+
+function minutesToHours(minutes: number): number {
+  return Math.floor(minutes / 60);
 }
 
 export function ProfileStats() {
@@ -25,7 +31,6 @@ export function ProfileStats() {
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 401) return;
-        // Silencioso: stats ficam zeradas se houver erro
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -36,29 +41,69 @@ export function ProfileStats() {
     };
   }, []);
 
-  const hours = stats ? Math.floor(stats.totalMinutesWatched / 60) : 0;
-  const episodes = stats?.totalEpisodesWatched ?? 0;
-  const movies = stats?.totalMoviesWatched ?? 0;
-
   return (
     <div className={styles.grid}>
-      <div className={styles.card}>
+      {/* Tempo total */}
+      <div className={`${styles.card} ${styles.cardWide}`}>
         <div className={styles.cardTitle}>
           <IconClock width={14} height={14} />
-          Tempo vendo TV
+          Tempo total assistido
         </div>
         <div className={styles.cardNumbers}>
           {loading ? (
             <span className={styles.skeletonNumber} aria-hidden="true" />
           ) : (
             <>
-              <span className={styles.bigNumber}>{hours}</span>
+              <span className={styles.bigNumber}>
+                {minutesToHours(stats?.totalMinutesWatched ?? 0)}
+              </span>
               <span className={styles.unit}>HORAS</span>
             </>
           )}
         </div>
       </div>
 
+      {/* Tempo de séries */}
+      <div className={styles.card}>
+        <div className={styles.cardTitle}>
+          <IconTv width={14} height={14} />
+          Tempo em séries
+        </div>
+        <div className={styles.cardNumbers}>
+          {loading ? (
+            <span className={styles.skeletonNumber} aria-hidden="true" />
+          ) : (
+            <>
+              <span className={styles.bigNumber}>
+                {minutesToHours(stats?.seriesMinutesWatched ?? 0)}
+              </span>
+              <span className={styles.unit}>h</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Tempo de filmes */}
+      <div className={styles.card}>
+        <div className={styles.cardTitle}>
+          <IconClapperboard width={14} height={14} />
+          Tempo em filmes
+        </div>
+        <div className={styles.cardNumbers}>
+          {loading ? (
+            <span className={styles.skeletonNumber} aria-hidden="true" />
+          ) : (
+            <>
+              <span className={styles.bigNumber}>
+                {minutesToHours(stats?.moviesMinutesWatched ?? 0)}
+              </span>
+              <span className={styles.unit}>h</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Episódios assistidos */}
       <div className={styles.card}>
         <div className={styles.cardTitle}>
           <IconTv width={14} height={14} />
@@ -68,11 +113,14 @@ export function ProfileStats() {
           {loading ? (
             <span className={styles.skeletonNumber} aria-hidden="true" />
           ) : (
-            <span className={styles.bigNumber}>{episodes}</span>
+            <span className={styles.bigNumber}>
+              {stats?.totalEpisodesWatched ?? 0}
+            </span>
           )}
         </div>
       </div>
 
+      {/* Filmes assistidos */}
       <div className={styles.card}>
         <div className={styles.cardTitle}>
           <IconClapperboard width={14} height={14} />
@@ -82,7 +130,9 @@ export function ProfileStats() {
           {loading ? (
             <span className={styles.skeletonNumber} aria-hidden="true" />
           ) : (
-            <span className={styles.bigNumber}>{movies}</span>
+            <span className={styles.bigNumber}>
+              {stats?.totalMoviesWatched ?? 0}
+            </span>
           )}
         </div>
       </div>
