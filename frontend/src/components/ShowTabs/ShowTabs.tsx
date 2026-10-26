@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import styles from './ShowTabs.module.css';
 
 interface ShowTabsProps {
@@ -11,6 +11,7 @@ interface ShowTabsProps {
 
 export function ShowTabs({ showId, from }: ShowTabsProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const sobreHref = from
     ? `/show/${showId}/sobre?from=${from}`
@@ -23,22 +24,28 @@ export function ShowTabs({ showId, from }: ShowTabsProps) {
   const isSobre = pathname.includes('/sobre');
   const isEpisodios = pathname.includes('/episodios');
 
+  // Usa replace para não criar entrada extra no histórico ao trocar de aba
+  function handleTabClick(href: string, isActive: boolean) {
+    if (isActive) return;
+    router.replace(href);
+  }
+
   return (
     <nav className={styles.tabs} aria-label="Seções da série">
-      <Link
-        href={sobreHref}
+      <button
         className={`${styles.tab} ${isSobre ? styles.tabActive : ''}`}
         aria-current={isSobre ? 'page' : undefined}
+        onClick={() => handleTabClick(sobreHref, isSobre)}
       >
         SOBRE
-      </Link>
-      <Link
-        href={episodiosHref}
+      </button>
+      <button
         className={`${styles.tab} ${isEpisodios ? styles.tabActive : ''}`}
         aria-current={isEpisodios ? 'page' : undefined}
+        onClick={() => handleTabClick(episodiosHref, isEpisodios)}
       >
         EPISÓDIOS
-      </Link>
+      </button>
     </nav>
   );
 }

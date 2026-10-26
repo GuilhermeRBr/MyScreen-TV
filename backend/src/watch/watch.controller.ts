@@ -69,6 +69,22 @@ export class WatchController {
     return this.watchService.unmarkSeasonWatched(user.sub, seasonId);
   }
 
+  @Get('shows/:showId/watched-episodes')
+  @ApiOperation({
+    summary: 'IDs dos episódios assistidos de uma série',
+    description: 'Retorna a lista de IDs de episódios que o usuário assistiu para a série informada.',
+  })
+  @ApiParam({ name: 'showId', description: 'UUID interno da série' })
+  @ApiResponse({ status: 200, description: 'Array de episodeId (strings).' })
+  @ApiResponse({ status: 401, description: 'Não autenticado.' })
+  async getWatchedEpisodeIds(
+    @CurrentUser() user: JwtPayload,
+    @Param('showId', ParseUUIDPipe) showId: string,
+  ) {
+    const ids = await this.watchService.getWatchedEpisodeIds(user.sub, showId);
+    return { watchedEpisodeIds: [...ids] };
+  }
+
   @Get('shows/:showId/progress')
   @ApiOperation(WATCH_SWAGGER.getShowProgress.operation)
   @ApiParam({ name: 'showId', description: 'UUID da série', example: '550e8400-e29b-41d4-a716-446655440000' })
