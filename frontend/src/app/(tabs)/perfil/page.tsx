@@ -1,8 +1,9 @@
 import styles from './page.module.css';
 import Link from 'next/link';
-import { IconChevronRight, IconBell, IconClock, IconUser } from '@/components/icons';
+import { IconChevronRight, IconBell } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
 import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
+import { ProfileStats } from '@/components/ProfileStats/ProfileStats';
 import { ProfileMoviesPreview } from '@/components/ProfileMoviesPreview/ProfileMoviesPreview';
 import { ProfileSeriesPreview } from '@/components/ProfileSeriesPreview/ProfileSeriesPreview';
 
@@ -38,33 +39,12 @@ export default function PerfilPage() {
           <h2 className={styles.sectionTitle} id="stats-title">
             Estatísticas
           </h2>
-          <span className={styles.sectionLink}>
+          <Link href="/perfil/estatisticas" className={styles.sectionLink} aria-label="Ver todas as estatísticas">
             <IconChevronRight width={16} height={16} />
-          </span>
+          </Link>
         </div>
 
-        <div className={styles.watchTimeGrid}>
-          <div className={styles.watchTimeCard}>
-            <div className={styles.watchTimeCardTitle}>
-              <IconClock width={14} height={14} />
-              Tempo vendo TV
-            </div>
-            <div className={styles.watchTimeNumbers}>
-              <span className={styles.watchTimeBig}>0</span>
-              <span className={styles.watchTimeUnit}>HORAS</span>
-            </div>
-          </div>
-
-          <div className={styles.watchTimeCard}>
-            <div className={styles.watchTimeCardTitle}>
-              <IconUser width={14} height={14} />
-              Episódios assistidos
-            </div>
-            <div className={styles.watchTimeNumbers}>
-              <span className={styles.episodesCount}>0</span>
-            </div>
-          </div>
-        </div>
+        <ProfileStats />
       </section>
 
       <div className={styles.divider} />

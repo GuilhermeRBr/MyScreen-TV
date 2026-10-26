@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ShowSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WATCH_MESSAGES } from './messages/watch.messages';
@@ -20,8 +20,10 @@ export interface ShowProgress {
 
 export interface UserStats {
   totalEpisodesWatched: number;
-  totalMinutesWatched: number;
   totalMoviesWatched: number;
+  totalMinutesWatched: number;
+  seriesMinutesWatched: number;
+  moviesMinutesWatched: number;
 }
 
 @Injectable()
@@ -93,6 +95,29 @@ export class WatchService {
     await this.prisma.watchProgress.createMany({ data: toCreate });
 
     return { markedCount: toCreate.length };
+  }
+
+  async unmarkSeasonWatched(
+    userId: string,
+    seasonId: string,
+  ): Promise<{ removedCount: number }> {
+    const season = await this.prisma.season.findUnique({
+      where: { id: seasonId },
+      include: { episodes: { select: { id: true } } },
+    });
+
+    if (!season) {
+      throw new NotFoundException(WATCH_MESSAGES.SEASON_NOT_FOUND);
+    }
+
+    const { count } = await this.prisma.watchProgress.deleteMany({
+      where: {
+        userId,
+        episodeId: { in: season.episodes.map((e) => e.id) },
+      },
+    });
+
+    return { removedCount: count };
   }
 
   async getShowProgress(userId: string, showId: string): Promise<ShowProgress> {
@@ -238,28 +263,36 @@ export class WatchService {
   // ---------------------------------------------------------------------------
 
   async getUserStats(userId: string): Promise<UserStats> {
-    const [episodesWatched, moviesWatched] = await Promise.all([
-      this.prisma.watchProgress.count({ where: { userId } }),
-      this.prisma.movieWatch.count({
-        where: { userId, status: 'WATCHED' },
-      }),
-    ]);
+    const [episodesWatched, moviesWatched, episodeRuntimeRows, movieRuntimeRows] =
+      await Promise.all([
+        this.prisma.watchProgress.count({ where: { userId } }),
+        this.prisma.movieWatch.count({
+          where: { userId, status: 'WATCHED' },
+        }),
+        this.prisma.watchProgress.findMany({
+          where: { userId },
+          select: { episode: { select: { runtime: true } } },
+        }),
+        this.prisma.movieWatch.findMany({
+          where: { userId, status: 'WATCHED' },
+          select: { movie: { select: { runtime: true } } },
+        }),
+      ]);
 
-    const runtimeResult = await this.prisma.watchProgress.findMany({
-      where: { userId },
-      select: {
-        episode: { select: { runtime: true } },
-      },
-    });
-
-    const totalMinutes = runtimeResult.reduce((acc, row) => {
+    const episodeMinutes = episodeRuntimeRows.reduce((acc, row) => {
       return acc + (row.episode.runtime ?? 25);
+    }, 0);
+
+    const movieMinutes = movieRuntimeRows.reduce((acc, row) => {
+      return acc + (row.movie.runtime ?? 120);
     }, 0);
 
     return {
       totalEpisodesWatched: episodesWatched,
-      totalMinutesWatched: totalMinutes,
       totalMoviesWatched: moviesWatched,
+      totalMinutesWatched: episodeMinutes + movieMinutes,
+      seriesMinutesWatched: episodeMinutes,
+      moviesMinutesWatched: movieMinutes,
     };
   }
 

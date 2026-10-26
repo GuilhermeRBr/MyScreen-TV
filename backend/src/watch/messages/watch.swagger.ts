@@ -18,10 +18,22 @@ export const WATCH_SWAGGER = {
     operation: {
       summary: 'Marcar temporada inteira como assistida',
       description:
-        'Marca todos os episódios de uma temporada como assistidos de uma só vez. Útil para séries que o usuário já assistiu anteriormente.',
+        'Marca todos os episódios de uma temporada como assistidos de uma só vez.',
     },
     responses: {
-      201: 'Todos os episódios marcados. Retorna a quantidade de episódios afetados.',
+      201: 'Episódios marcados. Retorna a quantidade de episódios afetados.',
+      401: 'Não autenticado.',
+      404: 'Temporada não encontrada.',
+    },
+  },
+  unmarkSeasonWatched: {
+    operation: {
+      summary: 'Desmarcar temporada inteira como assistida',
+      description:
+        'Remove o registro de assistido de todos os episódios de uma temporada de uma só vez.',
+    },
+    responses: {
+      200: 'Episódios desmarcados. Retorna a quantidade de registros removidos.',
       401: 'Não autenticado.',
       404: 'Temporada não encontrada.',
     },
@@ -88,10 +100,10 @@ export const WATCH_SWAGGER = {
     operation: {
       summary: 'Estatísticas do usuário',
       description:
-        'Retorna o total de episódios assistidos, tempo total estimado de TV (em minutos), e a quantidade de filmes assistidos pelo usuário autenticado.',
+        'Retorna o total de episódios assistidos, filmes assistidos, tempo total (séries + filmes), tempo somente de séries e tempo somente de filmes, todos em minutos.',
     },
     responses: {
-      200: 'Estatísticas de consumo: episodesWatched, totalMinutes, moviesWatched.',
+      200: 'Estatísticas: totalEpisodesWatched, totalMoviesWatched, totalMinutesWatched, seriesMinutesWatched, moviesMinutesWatched.',
       401: 'Não autenticado.',
     },
   },
