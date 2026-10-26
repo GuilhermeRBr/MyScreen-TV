@@ -7,13 +7,15 @@ import { BackButton } from '@/components/BackButton/BackButton';
 import { ShowTabs } from '@/components/ShowTabs/ShowTabs';
 
 interface Show {
-  id: number;
+  id: string;
   name: string;
-  backdrop_path: string | null;
+  backdropPath: string | null;
   number_of_seasons?: number;
+  numberOfSeasons?: number;
   status?: string;
   networks?: Array<{ name: string }>;
-  vote_average?: number;
+  network?: string | null;
+  voteAverage?: number;
 }
 
 async function getShow(id: string): Promise<Show | null> {
@@ -46,9 +48,9 @@ export default async function ShowLayout({
     notFound();
   }
 
-  const backdropUrl = tmdbImage(show.backdrop_path, 'w780');
-  const rating = show.vote_average
-    ? Math.round(show.vote_average * 10) / 10
+  const backdropUrl = tmdbImage(show.backdropPath, 'w780');
+  const rating = show.voteAverage
+    ? Math.round(show.voteAverage * 10) / 10
     : null;
 
   const from = searchParams?.from ?? null;
@@ -88,22 +90,14 @@ export default async function ShowLayout({
 
       {/* Meta */}
       <div className={styles.meta}>
-        {show.number_of_seasons !== undefined && (
-          <>
-            <span>{show.number_of_seasons} temporadas</span>
-            <span className={styles.metaSeparator}>•</span>
-          </>
-        )}
         {show.status && (
           <>
             <span>{show.status === 'Ended' ? 'Encerrada' : show.status}</span>
             <span className={styles.metaSeparator}>•</span>
           </>
         )}
-        {show.networks?.[0]?.name && (
-          <>
-            <span>{show.networks[0].name}</span>
-          </>
+        {show.network && (
+          <span>{show.network}</span>
         )}
         {rating && (
           <span
