@@ -54,6 +54,13 @@ const envSchema = z.object({
     .pipe(z.boolean().default(false)),
   BULL_BOARD_USER: z.string().optional(),
   BULL_BOARD_PASSWORD: z.string().optional(),
+
+  // Workers BullMQ — desative em dev para não consumir cota do Redis
+  ENABLE_WORKERS: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true')
+    .pipe(z.boolean().default(false)),
 });
 
 export type Env = z.infer<typeof envSchema>;
