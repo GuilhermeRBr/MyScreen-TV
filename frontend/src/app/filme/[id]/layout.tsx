@@ -33,11 +33,9 @@ async function getMovie(id: string): Promise<Movie | null> {
 export default async function FilmeLayout({
   children,
   params,
-  searchParams,
 }: {
   children: React.ReactNode;
   params: { id: string };
-  searchParams?: { from?: string };
 }) {
   const movie = await getMovie(params.id);
 
@@ -53,8 +51,6 @@ export default async function FilmeLayout({
   const releaseYear = movie.releaseDate
     ? new Date(movie.releaseDate).getFullYear()
     : null;
-
-  const from = searchParams?.from ?? null;
 
   return (
     <div className="page-container">
@@ -74,7 +70,7 @@ export default async function FilmeLayout({
 
         {/* Barra topo */}
         <div className={styles.topBar}>
-          <BackButton fallbackHref="/filmes" from={from} label="Voltar" />
+          <BackButton fallbackHref="/filmes" label="Voltar" />
           <span className={styles.movieTitle}>{movie.title}</span>
           <button className={styles.backButton} aria-label="Mais opções">
             <IconDots width={20} height={20} />
