@@ -12,7 +12,7 @@ interface UseInfiniteScrollOptions<T> {
 interface UseInfiniteScrollResult<T> {
   items: T[];
   isLoading: boolean;
-  sentinelRef: React.RefObject<HTMLDivElement>;
+  sentinelRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function useInfiniteScroll<T>({
@@ -25,8 +25,7 @@ export function useInfiniteScroll<T>({
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [isLoading, setIsLoading] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sentinelRef = useRef<HTMLDivElement>(null as any);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   // Refs para evitar stale closures no callback do IntersectionObserver
   const currentPageRef = useRef(currentPage);
   const totalPagesRef = useRef(totalPages);
