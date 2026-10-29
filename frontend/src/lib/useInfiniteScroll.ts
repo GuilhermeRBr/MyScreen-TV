@@ -12,7 +12,7 @@ interface UseInfiniteScrollOptions<T> {
 interface UseInfiniteScrollResult<T> {
   items: T[];
   isLoading: boolean;
-  sentinelRef: React.RefObject<HTMLDivElement | null>;
+  sentinelRef: React.MutableRefObject<HTMLDivElement | null>;
 }
 
 export function useInfiniteScroll<T>({
