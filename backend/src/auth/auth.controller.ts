@@ -144,7 +144,10 @@ export class AuthController {
     const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict' as const,
+      // 'lax' é necessário em produção: 'strict' bloqueia o cookie em navegações
+      // cross-site (frontend e backend em domínios diferentes na Vercel/Railway),
+      // impedindo que o middleware do Next.js leia o token logo após o login.
+      sameSite: 'lax' as const,
       path: '/',
     };
 
