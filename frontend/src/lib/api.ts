@@ -1,4 +1,25 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+/**
+ * Cliente HTTP do frontend.
+ *
+ * Em produção o browser nunca fala diretamente com o backend externo:
+ * todas as requisições passam pelo proxy interno do Next.js (/api/[...path]),
+ * que repassa ao backend e cuida de reescrever os cookies no domínio correto.
+ *
+ * Em desenvolvimento, NEXT_PUBLIC_API_URL aponta para localhost:3001 diretamente
+ * para evitar a camada extra de proxy local.
+ */
+
+// No browser: '' faz a requisição ir para a própria origem (Vercel), que proxy
+// para o backend via app/api/[...path]/route.ts.
+// No servidor (SSR/RSC): usa a URL interna do backend diretamente.
+function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    // Client-side: sempre passa pelo proxy do Next.js
+    return '/api';
+  }
+  // Server-side: chama o backend diretamente (sem hop desnecessário)
+  return process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+}
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -42,7 +63,8 @@ async function request<T>(
     init.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${API_URL}${path}`, init);
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}${path}`, init);
 
   if (response.status === 401) {
     // Tenta refresh automático
@@ -50,7 +72,7 @@ async function request<T>(
 
     if (refreshed) {
       // Reexecuta a requisição original após refresh
-      const retryResponse = await fetch(`${API_URL}${path}`, init);
+      const retryResponse = await fetch(`${baseUrl}${path}`, init);
 
       if (!retryResponse.ok) {
         const errorData = await retryResponse.json().catch(() => ({}));
@@ -91,7 +113,8 @@ async function request<T>(
 
 async function tryRefresh(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/auth/refresh`, {
+    const baseUrl = getBaseUrl();
+    const response = await fetch(`${baseUrl}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
     });

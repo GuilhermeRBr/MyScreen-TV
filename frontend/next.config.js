@@ -22,10 +22,13 @@ const nextConfig = {
       ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
       : "script-src 'self' 'unsafe-inline'";
 
-    // Em dev o webpack se conecta via WebSocket para hot reload.
+    // Em dev o webpack se conecta via WebSocket para hot reload e o browser
+    // ainda chama o backend diretamente (sem proxy local).
+    // Em produção o browser só fala com a própria origem (/api/...) — o proxy
+    // Next.js repassa ao backend internamente, então backendUrl não é necessário.
     const connectSrc = isDev
       ? `connect-src 'self' ${backendUrl} ws://localhost:3000`
-      : `connect-src 'self' ${backendUrl}`;
+      : `connect-src 'self'`;
 
     return [
       {
