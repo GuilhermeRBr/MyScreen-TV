@@ -26,7 +26,10 @@ async function getMovieDetail(id: string): Promise<MovieDetail | null> {
 
   try {
     const res = await fetch(`${apiUrl}/movies/${id}`, {
-      next: { revalidate: 3600 },
+      // Sem cache: garante que o id interno do banco está sempre atualizado.
+      // Evita o 404 no watch quando o banco foi recriado ou o upsert ainda
+      // não foi cacheado pelo Next.js.
+      cache: 'no-store',
     });
 
     if (!res.ok) return null;
