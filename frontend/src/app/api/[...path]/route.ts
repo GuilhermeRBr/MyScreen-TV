@@ -18,8 +18,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = (process.env.BACKEND_URL ?? '').replace(/\/$/, '');
 
-/** Cabeçalhos hop-by-hop que não devem ser repassados. */
-const HOP_BY_HOP = new Set([
+/** Cabeçalhos que não devem ser repassados ao backend. */
+const SKIP_REQUEST_HEADERS = new Set([
   'connection',
   'keep-alive',
   'proxy-authenticate',
@@ -29,13 +29,33 @@ const HOP_BY_HOP = new Set([
   'transfer-encoding',
   'upgrade',
   'host',
+  // Não repassar encoding ao backend — o fetch do Node já lida com descompressão
+  'accept-encoding',
 ]);
 
-function buildForwardHeaders(request: NextRequest): Headers {
+/** Cabeçalhos que não devem ser repassados ao browser. */
+const SKIP_RESPONSE_HEADERS = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailers',
+  'transfer-encoding',
+  'upgrade',
+  // O Node já descomprimiu — não repassar o encoding original
+  'content-encoding',
+  // Será recalculado pelo Next.js
+  'content-length',
+  // Tratado separadamente
+  'set-cookie',
+]);
+
+function buildRequestHeaders(request: NextRequest): Headers {
   const out = new Headers();
 
   request.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase())) {
+    if (!SKIP_REQUEST_HEADERS.has(key.toLowerCase())) {
       out.set(key, value);
     }
   });
@@ -44,7 +64,7 @@ function buildForwardHeaders(request: NextRequest): Headers {
     try {
       out.set('host', new URL(BACKEND_URL).host);
     } catch {
-      // BACKEND_URL inválido — será tratado abaixo
+      // URL inválida — tratada abaixo
     }
   }
 
@@ -67,7 +87,7 @@ async function proxyRequest(
   const search = request.nextUrl.search;
   const targetUrl = `${BACKEND_URL}${backendPath}${search}`;
 
-  const outHeaders = buildForwardHeaders(request);
+  const outHeaders = buildRequestHeaders(request);
 
   const body =
     request.method !== 'GET' && request.method !== 'HEAD'
@@ -90,17 +110,17 @@ async function proxyRequest(
     );
   }
 
-  // Copia headers da resposta, exceto hop-by-hop
+  // Lê o body descomprimido (o fetch do Node descomprime automaticamente)
+  const responseBody =
+    backendResponse.status === 204 ? null : await backendResponse.text();
+
+  // Monta headers da resposta sem os que devem ser ignorados
   const responseHeaders = new Headers();
   backendResponse.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase()) && key.toLowerCase() !== 'set-cookie') {
+    if (!SKIP_RESPONSE_HEADERS.has(key.toLowerCase())) {
       responseHeaders.set(key, value);
     }
   });
-
-  // Lê o corpo antes de criar a resposta
-  const responseBody =
-    backendResponse.status === 204 ? null : await backendResponse.arrayBuffer();
 
   const response = new NextResponse(responseBody, {
     status: backendResponse.status,
@@ -108,18 +128,22 @@ async function proxyRequest(
   });
 
   // Repassa cada Set-Cookie individualmente para o domínio Vercel
-  const setCookies = backendResponse.headers.getSetCookie?.();
-  if (setCookies && setCookies.length > 0) {
+  const setCookies = backendResponse.headers.getSetCookie?.() ?? [];
+  if (setCookies.length > 0) {
     setCookies.forEach((value) => {
       response.headers.append('set-cookie', value);
     });
   } else {
-    // Fallback para ambientes onde getSetCookie não existe
-    const single = backendResponse.headers.get('set-cookie');
-    if (single) {
-      response.headers.append('set-cookie', single);
+    // Fallback para runtimes mais antigos onde getSetCookie não existe
+    const raw = backendResponse.headers.get('set-cookie');
+    if (raw) {
+      response.headers.append('set-cookie', raw);
     }
   }
+
+  console.log(
+    `[proxy] ${request.method} ${backendPath} → ${backendResponse.status} | cookies: ${setCookies.length}`,
+  );
 
   return response;
 }
