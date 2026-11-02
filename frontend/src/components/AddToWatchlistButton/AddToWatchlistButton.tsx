@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { IconPlus, IconCheck, IconEye } from '@/components/icons';
+import { api } from '@/lib/api';
 import styles from './AddToWatchlistButton.module.css';
 
 type WatchStatus = 'WATCHLIST' | 'WATCHED' | null;
@@ -11,15 +12,9 @@ interface AddToWatchlistButtonProps {
   initialStatus: WatchStatus;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
 async function fetchStatus(movieId: string): Promise<WatchStatus> {
   try {
-    const res = await fetch(`${API_URL}/watch/movies/${movieId}/status`, {
-      credentials: 'include',
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { status: WatchStatus };
+    const data = await api.get<{ status: WatchStatus }>(`/watch/movies/${movieId}/status`);
     return data.status;
   } catch {
     return null;
@@ -27,28 +22,15 @@ async function fetchStatus(movieId: string): Promise<WatchStatus> {
 }
 
 async function addToWatchlist(movieId: string): Promise<void> {
-  await fetch(`${API_URL}/watch/movies/watchlist`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ movieId }),
-  });
+  await api.post('/watch/movies/watchlist', { movieId });
 }
 
 async function markWatched(movieId: string): Promise<void> {
-  await fetch(`${API_URL}/watch/movies/toggle`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ movieId }),
-  });
+  await api.post('/watch/movies/toggle', { movieId });
 }
 
 async function removeFromList(movieId: string): Promise<void> {
-  await fetch(`${API_URL}/watch/movies/${movieId}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
+  await api.delete(`/watch/movies/${movieId}`);
 }
 
 export function AddToWatchlistButton({

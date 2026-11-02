@@ -77,33 +77,25 @@ export default function EpisodiosPage() {
   // ---- Carregamento inicial: temporadas + episódios + progresso em paralelo ----
   useEffect(() => {
     let cancelled = false;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
     async function load() {
       try {
         // 1. Série (UUID interno) + temporadas em paralelo
-        const [showRes, seasonsRes] = await Promise.all([
-          fetch(`${apiUrl}/shows/${showId}`),
-          fetch(`${apiUrl}/shows/${showId}/seasons`),
+        const [showData, rawSeasons] = await Promise.all([
+          api.get<{ id: string }>(`/shows/${showId}`),
+          api.get<RawSeason[]>(`/shows/${showId}/seasons`),
         ]);
 
-        if (!showRes.ok || !seasonsRes.ok || cancelled) return;
-
-        const show = await showRes.json() as { id: string };
-        const rawSeasons = await seasonsRes.json() as RawSeason[];
         if (cancelled) return;
 
-        setInternalShowId(show.id);
+        setInternalShowId(showData.id);
 
         // 2. Progresso do usuário + todos os episódios de todas as temporadas + IDs assistidos em paralelo
         const [progress, watchedIdsRes, ...episodeResults] = await Promise.all([
-          api.get<WatchProgressResponse>(`/watch/shows/${show.id}/progress`).catch(() => null),
-          api.get<{ watchedEpisodeIds: string[] }>(`/watch/shows/${show.id}/watched-episodes`).catch(() => null),
+          api.get<WatchProgressResponse>(`/watch/shows/${showData.id}/progress`).catch(() => null),
+          api.get<{ watchedEpisodeIds: string[] }>(`/watch/shows/${showData.id}/watched-episodes`).catch(() => null),
           ...rawSeasons.map((s) =>
-            fetch(`${apiUrl}/shows/${showId}/seasons/${s.seasonNumber}/episodes`, {
-              cache: 'no-store',
-            })
-              .then((r) => (r.ok ? r.json() as Promise<{ episodes: RawEpisode[] }> : { episodes: [] }))
+            api.get<{ episodes: RawEpisode[] }>(`/shows/${showId}/seasons/${s.seasonNumber}/episodes`)
               .catch(() => ({ episodes: [] as RawEpisode[] })),
           ),
         ]);
