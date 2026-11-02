@@ -29,6 +29,16 @@
   color: var(--color-text-muted);
 }
 
+/* Remove o botão de limpar nativo do input[type=search] em todos os browsers */
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+  appearance: none;
+}
+
+.searchInput::-webkit-search-decoration {
+  appearance: none;
+}
+
 .tabsRow {
   display: flex;
   gap: var(--space-2);

@@ -1,8 +1,10 @@
 import Image from 'next/image';
+import { Suspense } from 'react';
 import styles from './page.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconPlay, IconClapperboard, IconPlus } from '@/components/icons';
 import { ExplorarClient } from './ExplorarClient';
+import { SearchResults } from './SearchResults';
 
 interface TmdbMovieItem {
   id: number;
@@ -12,6 +14,10 @@ interface TmdbMovieItem {
   backdrop_path: string | null;
   runtime?: number;
   genres?: Array<{ name: string }>;
+}
+
+interface ExplorarPageProps {
+  searchParams: { q?: string };
 }
 
 async function getTrending() {
@@ -31,8 +37,12 @@ async function getTrending() {
   }
 }
 
-export default async function ExplorarPage() {
-  const trending = await getTrending();
+export default async function ExplorarPage({ searchParams }: ExplorarPageProps) {
+  const initialQuery = searchParams.q ?? '';
+  const isSearching = initialQuery.trim().length >= 2;
+
+  // Só busca o trending se não há busca ativa — evita fetch desnecessário
+  const trending = isSearching ? [] : await getTrending();
 
   const trendingFeed = (
     <section className={styles.feed} aria-label="Filmes em destaque">
@@ -92,7 +102,19 @@ export default async function ExplorarPage() {
 
   return (
     <div className={styles.container}>
-      <ExplorarClient trendingFeed={trendingFeed} />
+      <Suspense>
+        <ExplorarClient
+          initialQuery={initialQuery}
+          trendingFeed={trendingFeed}
+          // Quando há busca ativa, passa o slot de resultados pré-renderizado
+          // para que o HTML inicial já contenha o estado correto — sem flash
+          searchResultsSlot={
+            isSearching ? (
+              <SearchResults query={initialQuery} />
+            ) : null
+          }
+        />
+      </Suspense>
     </div>
   );
 }

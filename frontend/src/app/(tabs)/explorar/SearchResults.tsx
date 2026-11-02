@@ -49,18 +49,20 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export function SearchResults({ query }: SearchResultsProps) {
   const [results, setResults] = useState<SearchItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  // fetching controla apenas se há uma requisição em andamento, sem apagar os resultados visíveis
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Guarda a query que gerou os resultados atualmente exibidos
+  const [displayedQuery, setDisplayedQuery] = useState('');
   const debouncedQuery = useDebounce(query.trim(), 400);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchResults = useCallback(async (q: string) => {
-    // Cancela requisição anterior se ainda estiver em andamento
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setLoading(true);
+    setFetching(true);
     setError(null);
 
     try {
@@ -103,19 +105,21 @@ export function SearchResults({ query }: SearchResultsProps) {
       }
 
       setResults(merged);
+      setDisplayedQuery(q);
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;
       setError('Não foi possível carregar os resultados. Tente novamente.');
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
   }, []);
 
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setResults([]);
+      setDisplayedQuery('');
       setError(null);
-      setLoading(false);
+      setFetching(false);
       return;
     }
 
@@ -126,14 +130,7 @@ export function SearchResults({ query }: SearchResultsProps) {
     };
   }, [debouncedQuery, fetchResults]);
 
-  if (loading) {
-    return (
-      <div className={styles.searchState} aria-live="polite" aria-busy="true">
-        <p className={styles.searchStateText}>Buscando...</p>
-      </div>
-    );
-  }
-
+  // Erro substitui tudo
   if (error) {
     return (
       <div className={styles.searchState} aria-live="polite">
@@ -142,11 +139,21 @@ export function SearchResults({ query }: SearchResultsProps) {
     );
   }
 
-  if (debouncedQuery.length >= 2 && results.length === 0) {
+  // Primeira carga: ainda sem resultados e buscando
+  if (fetching && results.length === 0) {
+    return (
+      <div className={styles.searchState} aria-live="polite" aria-busy="true">
+        <p className={styles.searchStateText}>Buscando...</p>
+      </div>
+    );
+  }
+
+  // Busca concluída sem resultados
+  if (!fetching && displayedQuery.length >= 2 && results.length === 0) {
     return (
       <div className={styles.searchState} aria-live="polite">
         <p className={styles.searchStateText}>
-          Nenhum resultado encontrado para &ldquo;{debouncedQuery}&rdquo;.
+          Nenhum resultado encontrado para &ldquo;{displayedQuery}&rdquo;.
         </p>
       </div>
     );
@@ -155,7 +162,12 @@ export function SearchResults({ query }: SearchResultsProps) {
   if (results.length === 0) return null;
 
   return (
-    <section className={styles.searchResultsGrid} aria-label={`Resultados para "${debouncedQuery}"`}>
+    <section
+      className={styles.searchResultsGrid}
+      aria-label={`Resultados para "${displayedQuery}"`}
+      // Opacidade reduzida enquanto atualiza em background — sem piscar
+      style={{ opacity: fetching ? 0.6 : 1, transition: 'opacity 0.15s' }}
+    >
       {results.map((item) => {
         const isShow = item.mediaType === 'show';
         const title = isShow ? (item as ShowResult).name : (item as MovieResult).title;
@@ -164,9 +176,10 @@ export function SearchResults({ query }: SearchResultsProps) {
           : (item as MovieResult).release_date?.substring(0, 4);
         const posterUrl = tmdbImage(item.poster_path, 'w342');
         const rating = item.vote_average ? item.vote_average.toFixed(1) : null;
+        const from = encodeURIComponent(`/explorar?q=${encodeURIComponent(query.trim())}`);
         const href = isShow
-          ? `/show/${item.id}/sobre?from=/explorar`
-          : `/filme/${item.id}?from=/explorar`;
+          ? `/show/${item.id}/sobre?from=${from}`
+          : `/filme/${item.id}?from=${from}`;
 
         return (
           <article key={`${item.mediaType}-${item.id}`} className={styles.searchResultCard}>

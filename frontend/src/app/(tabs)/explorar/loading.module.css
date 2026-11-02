@@ -1,0 +1,84 @@
+.container {
+  padding-bottom: calc(var(--nav-height) + var(--space-6));
+}
+
+/* Animação de pulso para os skeletons */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.skeleton {
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+/* ---- Barra de busca ---- */
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.searchIcon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.searchInputSkeleton {
+  composes: skeleton;
+  flex: 1;
+  height: 20px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Grid de posters ---- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+@media (min-width: 480px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 768px) {
+  .grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.poster {
+  composes: skeleton;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+}
+
+.titleLine {
+  composes: skeleton;
+  height: 13px;
+  width: 85%;
+}
+
+.subtitleLine {
+  composes: skeleton;
+  height: 11px;
+  width: 50%;
+}
