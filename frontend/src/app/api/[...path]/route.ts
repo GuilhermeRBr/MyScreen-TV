@@ -2,28 +2,24 @@
  * Proxy reverso para o backend NestJS.
  *
  * Por que existe este proxy:
- * - O backend roda em domínio diferente do frontend (ex: Railway vs Vercel).
+ * - O backend roda em domínio diferente do frontend (Render vs Vercel).
  * - Cookies HttpOnly só funcionam quando setados pelo mesmo domínio que o browser
- *   está acessando. Se o browser fizer fetch direto para o backend externo,
- *   o Set-Cookie chega ao browser mas fica associado ao domínio do backend —
- *   o middleware do Next.js (que roda no domínio da Vercel) nunca enxerga o cookie.
- * - Com o proxy, o browser chama /api/proxy/... (mesmo domínio Vercel), o Next.js
- *   repassa ao backend, captura o Set-Cookie da resposta e o reescreve como cookie
- *   do domínio Vercel. O middleware passa a ler o token normalmente.
+ *   acessa. Se o browser chamar o backend diretamente, o Set-Cookie fica associado
+ *   ao domínio do backend — o middleware do Next.js nunca enxerga o cookie.
+ * - Com o proxy, o browser chama /api/... (domínio Vercel), o Next.js repassa ao
+ *   backend, captura o Set-Cookie e o reescreve no domínio Vercel.
  *
  * Rota: /api/[...path] → BACKEND_URL/[...path]
  *
- * Nota: BACKEND_URL não é NEXT_PUBLIC_ — a URL interna do backend nunca é exposta
- * ao browser.
+ * BACKEND_URL é server-only (sem prefixo NEXT_PUBLIC_).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
-const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:3001';
+const BACKEND_URL = (process.env.BACKEND_URL ?? '').replace(/\/$/, '');
 
-/** Cabeçalhos que não devem ser repassados ao backend nem ao cliente. */
-const HOP_BY_HOP_HEADERS = new Set([
+/** Cabeçalhos hop-by-hop que não devem ser repassados. */
+const HOP_BY_HOP = new Set([
   'connection',
   'keep-alive',
   'proxy-authenticate',
@@ -35,61 +31,74 @@ const HOP_BY_HOP_HEADERS = new Set([
   'host',
 ]);
 
-function stripHopByHop(headers: Headers): Headers {
-  const clean = new Headers(headers);
-  HOP_BY_HOP_HEADERS.forEach((h) => clean.delete(h));
-  return clean;
+function buildForwardHeaders(request: NextRequest): Headers {
+  const out = new Headers();
+
+  request.headers.forEach((value, key) => {
+    if (!HOP_BY_HOP.has(key.toLowerCase())) {
+      out.set(key, value);
+    }
+  });
+
+  if (BACKEND_URL) {
+    try {
+      out.set('host', new URL(BACKEND_URL).host);
+    } catch {
+      // BACKEND_URL inválido — será tratado abaixo
+    }
+  }
+
+  return out;
 }
 
 async function proxyRequest(
   request: NextRequest,
   pathSegments: string[],
 ): Promise<NextResponse> {
+  if (!BACKEND_URL) {
+    console.error('[proxy] BACKEND_URL não configurado nas variáveis de ambiente.');
+    return NextResponse.json(
+      { message: 'Serviço temporariamente indisponível.' },
+      { status: 503 },
+    );
+  }
+
   const backendPath = '/' + pathSegments.join('/');
   const search = request.nextUrl.search;
   const targetUrl = `${BACKEND_URL}${backendPath}${search}`;
 
-  // Repassa os cookies do browser para o backend (ex: access_token, refresh_token)
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
-
-  // Constrói os headers de saída
-  const outHeaders = stripHopByHop(request.headers);
-  if (cookieHeader) {
-    outHeaders.set('cookie', cookieHeader);
-  }
-  // Garante que o backend receba o Content-Type correto
-  outHeaders.set('host', new URL(BACKEND_URL).host);
+  const outHeaders = buildForwardHeaders(request);
 
   const body =
     request.method !== 'GET' && request.method !== 'HEAD'
       ? await request.arrayBuffer()
       : undefined;
 
-  const backendResponse = await fetch(targetUrl, {
-    method: request.method,
-    headers: outHeaders,
-    body: body ?? null,
-    // Não seguir redirects — repassamos tal como está
-    redirect: 'manual',
+  let backendResponse: Response;
+  try {
+    backendResponse = await fetch(targetUrl, {
+      method: request.method,
+      headers: outHeaders,
+      body: body ?? null,
+      redirect: 'manual',
+    });
+  } catch (err) {
+    console.error('[proxy] Falha ao contactar o backend:', targetUrl, err);
+    return NextResponse.json(
+      { message: 'Não foi possível conectar ao servidor.' },
+      { status: 502 },
+    );
+  }
+
+  // Copia headers da resposta, exceto hop-by-hop
+  const responseHeaders = new Headers();
+  backendResponse.headers.forEach((value, key) => {
+    if (!HOP_BY_HOP.has(key.toLowerCase()) && key.toLowerCase() !== 'set-cookie') {
+      responseHeaders.set(key, value);
+    }
   });
 
-  // Copia os headers da resposta do backend
-  const responseHeaders = stripHopByHop(backendResponse.headers);
-
-  // Repassa cookies do backend para o browser (Set-Cookie)
-  // O cookie ficará associado ao domínio Vercel (correto).
-  const setCookieValues = backendResponse.headers.getSetCookie?.() ??
-    (backendResponse.headers.get('set-cookie')
-      ? [backendResponse.headers.get('set-cookie')!]
-      : []);
-
-  // Remove o set-cookie consolidado antes de adicionar individualmente
-  responseHeaders.delete('set-cookie');
-
+  // Lê o corpo antes de criar a resposta
   const responseBody =
     backendResponse.status === 204 ? null : await backendResponse.arrayBuffer();
 
@@ -98,10 +107,19 @@ async function proxyRequest(
     headers: responseHeaders,
   });
 
-  // Adiciona cada Set-Cookie individualmente
-  setCookieValues.forEach((value) => {
-    response.headers.append('set-cookie', value);
-  });
+  // Repassa cada Set-Cookie individualmente para o domínio Vercel
+  const setCookies = backendResponse.headers.getSetCookie?.();
+  if (setCookies && setCookies.length > 0) {
+    setCookies.forEach((value) => {
+      response.headers.append('set-cookie', value);
+    });
+  } else {
+    // Fallback para ambientes onde getSetCookie não existe
+    const single = backendResponse.headers.get('set-cookie');
+    if (single) {
+      response.headers.append('set-cookie', single);
+    }
+  }
 
   return response;
 }
@@ -110,38 +128,33 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ): Promise<NextResponse> {
-  const { path } = await params;
-  return proxyRequest(request, path);
+  return proxyRequest(request, (await params).path);
 }
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ): Promise<NextResponse> {
-  const { path } = await params;
-  return proxyRequest(request, path);
+  return proxyRequest(request, (await params).path);
 }
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ): Promise<NextResponse> {
-  const { path } = await params;
-  return proxyRequest(request, path);
+  return proxyRequest(request, (await params).path);
 }
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ): Promise<NextResponse> {
-  const { path } = await params;
-  return proxyRequest(request, path);
+  return proxyRequest(request, (await params).path);
 }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ): Promise<NextResponse> {
-  const { path } = await params;
-  return proxyRequest(request, path);
+  return proxyRequest(request, (await params).path);
 }
