@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, Suspense, ComponentType, SVGProps } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { Logo } from '@/components/Logo/Logo';
 import {
@@ -53,6 +53,7 @@ const FEATURES: Feature[] = [
 ];
 
 function LoginForm() {
+  const router      = useRouter();
   const searchParams = useSearchParams();
   const redirect    = searchParams.get('redirect') ?? '/series';
 
@@ -69,10 +70,11 @@ function LoginForm() {
     setLoading(true);
     try {
       await api.post('/auth/login', { email, password });
-      // Navegação completa (não client-side) para garantir que o cookie
-      // access_token já esteja disponível quando o middleware do Next.js
-      // verificar a autenticação na rota de destino.
-      window.location.href = redirect;
+      // router.refresh() força o Next.js a revalidar o estado do servidor
+      // (incluindo cookies) antes de navegar, evitando race condition onde
+      // o middleware bloqueia a rota por não ver o cookie ainda.
+      router.refresh();
+      router.push(redirect);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 429) {
