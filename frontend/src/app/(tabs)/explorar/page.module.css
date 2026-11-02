@@ -235,6 +235,14 @@
   cursor: pointer;
 }
 
+.searchResultLink {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: inherit;
+}
+
 .searchResultPoster {
   width: 100%;
   aspect-ratio: 2 / 3;
@@ -249,7 +257,8 @@
   transition: transform 0.2s;
 }
 
-.searchResultCard:hover .searchResultPosterImage {
+.searchResultCard:hover .searchResultPosterImage,
+.searchResultLink:hover .searchResultPosterImage {
   transform: scale(1.03);
 }
 

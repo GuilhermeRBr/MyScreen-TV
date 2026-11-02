@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconTv, IconFilm, IconStar } from '@/components/icons';
 import styles from './page.module.css';
@@ -163,56 +164,61 @@ export function SearchResults({ query }: SearchResultsProps) {
           : (item as MovieResult).release_date?.substring(0, 4);
         const posterUrl = tmdbImage(item.poster_path, 'w342');
         const rating = item.vote_average ? item.vote_average.toFixed(1) : null;
+        const href = isShow
+          ? `/show/${item.id}/sobre?from=/explorar`
+          : `/filme/${item.id}?from=/explorar`;
 
         return (
           <article key={`${item.mediaType}-${item.id}`} className={styles.searchResultCard}>
-            <div className={styles.searchResultPoster}>
-              {posterUrl ? (
-                <Image
-                  src={posterUrl}
-                  alt={title}
-                  fill
-                  className={styles.searchResultPosterImage}
-                  sizes="(max-width: 480px) 28vw, (max-width: 768px) 20vw, 150px"
-                />
-              ) : (
-                <div className={styles.searchResultPosterPlaceholder} aria-hidden="true">
+            <Link href={href} className={styles.searchResultLink} aria-label={`Ver detalhes de ${title}`}>
+              <div className={styles.searchResultPoster}>
+                {posterUrl ? (
+                  <Image
+                    src={posterUrl}
+                    alt={title}
+                    fill
+                    className={styles.searchResultPosterImage}
+                    sizes="(max-width: 480px) 28vw, (max-width: 768px) 20vw, 150px"
+                  />
+                ) : (
+                  <div className={styles.searchResultPosterPlaceholder} aria-hidden="true">
+                    {isShow ? (
+                      <IconTv width={32} height={32} />
+                    ) : (
+                      <IconFilm width={32} height={32} />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.searchResultInfo}>
+                <div className={styles.searchResultTypeBadge}>
                   {isShow ? (
-                    <IconTv width={32} height={32} />
+                    <>
+                      <IconTv width={12} height={12} aria-hidden="true" />
+                      <span>Série</span>
+                    </>
                   ) : (
-                    <IconFilm width={32} height={32} />
+                    <>
+                      <IconFilm width={12} height={12} aria-hidden="true" />
+                      <span>Filme</span>
+                    </>
                   )}
                 </div>
-              )}
-            </div>
 
-            <div className={styles.searchResultInfo}>
-              <div className={styles.searchResultTypeBadge}>
-                {isShow ? (
-                  <>
-                    <IconTv width={12} height={12} aria-hidden="true" />
-                    <span>Série</span>
-                  </>
-                ) : (
-                  <>
-                    <IconFilm width={12} height={12} aria-hidden="true" />
-                    <span>Filme</span>
-                  </>
-                )}
+                <h3 className={styles.searchResultTitle}>{title}</h3>
+
+                <div className={styles.searchResultMeta}>
+                  {year && <span className={styles.searchResultYear}>{year}</span>}
+                  {rating && parseFloat(rating) > 0 && (
+                    <span className={styles.searchResultRating}>
+                      <IconStar width={11} height={11} aria-hidden="true" />
+                      {rating}
+                    </span>
+                  )}
+                </div>
               </div>
-
-              <h3 className={styles.searchResultTitle}>{title}</h3>
-
-              <div className={styles.searchResultMeta}>
-                {year && <span className={styles.searchResultYear}>{year}</span>}
-                {rating && parseFloat(rating) > 0 && (
-                  <span className={styles.searchResultRating}>
-                    <IconStar width={11} height={11} aria-hidden="true" />
-                    {rating}
-                  </span>
-                )}
-              </div>
-            </div>
+            </Link>
           </article>
         );
       })}
