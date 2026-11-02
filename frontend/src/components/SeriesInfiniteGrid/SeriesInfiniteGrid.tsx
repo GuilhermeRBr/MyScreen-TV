@@ -2,6 +2,7 @@
 
 import { PosterCard } from '@/components/PosterCard/PosterCard';
 import { useInfiniteScroll } from '@/lib/useInfiniteScroll';
+import { api } from '@/lib/api';
 import styles from './SeriesInfiniteGrid.module.css';
 
 interface Show {
@@ -23,12 +24,8 @@ export function SeriesInfiniteGrid({
   totalPages,
   gridClassName,
 }: SeriesInfiniteGridProps) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function fetchPage(page: number): Promise<Show[]> {
-    const res = await fetch(`${apiUrl}/shows/popular?page=${page}`);
-    if (!res.ok) return [];
-    const data = (await res.json()) as { results: Show[] };
+    const data = await api.get<{ results: Show[] }>(`/shows/popular?page=${page}`);
     return data.results ?? [];
   }
 

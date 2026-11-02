@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { IconPlus, IconCheck, IconEye } from '@/components/icons';
+import { api } from '@/lib/api';
 import styles from './AddToSubscriptionButton.module.css';
 
 type ShowStatus =
@@ -36,15 +37,9 @@ interface AddToSubscriptionButtonProps {
   initialStatus: ShowStatus;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
 async function fetchStatus(showId: string): Promise<ShowStatus> {
   try {
-    const res = await fetch(`${API_URL}/watch/shows/${showId}/subscription`, {
-      credentials: 'include',
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { status: ShowStatus };
+    const data = await api.get<{ status: ShowStatus }>(`/watch/shows/${showId}/subscription`);
     return data.status;
   } catch {
     return null;
@@ -53,13 +48,8 @@ async function fetchStatus(showId: string): Promise<ShowStatus> {
 
 async function subscribe(showId: string, status: NonNullable<ShowStatus>): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/watch/shows/subscribe`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ showId, status }),
-    });
-    return res.ok;
+    await api.post('/watch/shows/subscribe', { showId, status });
+    return true;
   } catch {
     return false;
   }
@@ -67,11 +57,8 @@ async function subscribe(showId: string, status: NonNullable<ShowStatus>): Promi
 
 async function unsubscribe(showId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/watch/shows/${showId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    return res.ok;
+    await api.delete(`/watch/shows/${showId}`);
+    return true;
   } catch {
     return false;
   }
