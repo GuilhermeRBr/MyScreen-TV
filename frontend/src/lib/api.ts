@@ -42,6 +42,26 @@ class ApiError extends Error {
   }
 }
 
+async function parseResponse<T>(response: Response): Promise<T> {
+  if (response.status === 204) {
+    return undefined as unknown as T;
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const contentLength = response.headers.get('content-length');
+
+  if (!contentType.includes('application/json') || contentLength === '0') {
+    return undefined as unknown as T;
+  }
+
+  const text = await response.text();
+  if (!text) {
+    return undefined as unknown as T;
+  }
+
+  return JSON.parse(text) as T;
+}
+
 async function request<T>(
   path: string,
   options: RequestOptions = {},
@@ -83,7 +103,7 @@ async function request<T>(
         );
       }
 
-      return retryResponse.json() as Promise<T>;
+      return parseResponse<T>(retryResponse);
     }
 
     // Refresh falhou — redireciona para login (apenas no client)
@@ -103,12 +123,7 @@ async function request<T>(
     );
   }
 
-  // 204 No Content
-  if (response.status === 204) {
-    return undefined as unknown as T;
-  }
-
-  return response.json() as Promise<T>;
+  return parseResponse<T>(response);
 }
 
 async function tryRefresh(): Promise<boolean> {
