@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { PosterCard } from '@/components/PosterCard/PosterCard';
 import { api, ApiError } from '@/lib/api';
+import { useInfiniteRecommendations } from '@/lib/useInfiniteRecommendations';
 import styles from './MySeriesList.module.css';
 
 interface ShowSubscriptionWithProgress {
@@ -23,7 +24,16 @@ interface ShowSubscriptionWithProgress {
 
 export function MySeriesList() {
   const [items, setItems] = useState<ShowSubscriptionWithProgress[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [subscriptionsLoaded, setSubscriptionsLoaded] = useState(false);
+
+  // Set de tmdbIds já na lista — memorizado para estabilidade referencial
+  const excludedIds = useMemo(
+    () => new Set(items.map((s) => s.show.tmdbId)),
+    [items],
+  );
+
+  const { items: recommendations, isLoading: recLoading, sentinelRef } =
+    useInfiniteRecommendations({ excludedIds, ready: subscriptionsLoaded });
 
   useEffect(() => {
     let cancelled = false;
@@ -32,14 +42,17 @@ export function MySeriesList() {
       api
         .get<ShowSubscriptionWithProgress[]>('/watch/subscriptions/with-progress')
         .then((data) => {
-          if (!cancelled) setItems(data);
+          if (!cancelled) {
+            setItems(data);
+            setSubscriptionsLoaded(true);
+          }
         })
         .catch((err: unknown) => {
           if (err instanceof ApiError && err.status === 401) return;
-          if (!cancelled) setItems([]);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
+          if (!cancelled) {
+            setItems([]);
+            setSubscriptionsLoaded(true);
+          }
         });
     }
 
@@ -47,7 +60,7 @@ export function MySeriesList() {
 
     function handleVisibilityChange() {
       if (document.visibilityState === 'visible') {
-        setLoading(true);
+        setSubscriptionsLoaded(false);
         load();
       }
     }
@@ -60,7 +73,7 @@ export function MySeriesList() {
     };
   }, []);
 
-  if (loading) {
+  if (!subscriptionsLoaded) {
     return (
       <div className={styles.container}>
         <div className={styles.grid} aria-label="Carregando séries...">
@@ -72,28 +85,24 @@ export function MySeriesList() {
     );
   }
 
-  if (items.length === 0) {
-    return (
-      <p className={styles.empty}>
-        Nenhuma série adicionada ainda.{' '}
-        <Link href="/explorar" className={styles.emptyLink}>
-          Explorar séries
-        </Link>
-      </p>
-    );
-  }
-
   const started = items.filter((item) => item.progress.totalWatched > 0);
   const notStarted = items.filter((item) => item.progress.totalWatched === 0);
 
   return (
     <div className={styles.container}>
+      {items.length === 0 && (
+        <p className={styles.empty}>
+          Nenhuma série adicionada ainda.{' '}
+          <Link href="/explorar" className={styles.emptyLink}>
+            Explorar séries
+          </Link>
+        </p>
+      )}
+
       {/* Séries iniciadas */}
       {started.length > 0 && (
         <>
-          <p className={styles.sectionTitle}>
-            Assistir a seguir
-          </p>
+          <p className={styles.sectionTitle}>Assistir a seguir</p>
           <div className={styles.grid}>
             {started.map(({ show, progress }) => {
               const progressPercent =
@@ -115,7 +124,7 @@ export function MySeriesList() {
         </>
       )}
 
-      {/* Divisor entre seções */}
+      {/* Divisor entre séries iniciadas e não iniciadas */}
       {started.length > 0 && notStarted.length > 0 && (
         <div className={styles.divider} aria-hidden="true" />
       )}
@@ -123,9 +132,7 @@ export function MySeriesList() {
       {/* Séries não iniciadas */}
       {notStarted.length > 0 && (
         <>
-          <p className={styles.sectionTitle}>
-            Minhas séries
-          </p>
+          <p className={styles.sectionTitle}>Minhas séries</p>
           <div className={styles.grid}>
             {notStarted.map(({ show }) => (
               <PosterCard
@@ -138,6 +145,35 @@ export function MySeriesList() {
           </div>
         </>
       )}
+
+      {/* Recomendações com rolagem infinita */}
+      {recommendations.length > 0 && (
+        <>
+          <div className={styles.divider} aria-hidden="true" />
+          <p className={styles.sectionTitle}>Recomendações</p>
+          <div className={styles.grid}>
+            {recommendations.map((show) => (
+              <PosterCard
+                key={show.id}
+                title={show.name}
+                posterPath={show.poster_path}
+                href={`/show/${show.id}/sobre`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Sentinel sempre montado — o observer dispara o load ao entrar na viewport */}
+      <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true">
+        {recLoading && (
+          <div className={styles.loadingRow}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className={styles.skeleton} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
