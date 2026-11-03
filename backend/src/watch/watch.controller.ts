@@ -205,4 +205,20 @@ export class WatchController {
   ) {
     return this.watchService.removeShowSubscription(user.sub, showId);
   }
+
+  @Get('recently-watched')
+  @ApiOperation(WATCH_SWAGGER.getRecentlyWatched.operation)
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.getRecentlyWatched.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.getRecentlyWatched.responses[401] })
+  getRecentlyWatched(@CurrentUser() user: JwtPayload) {
+    return this.watchService.getRecentlyWatched(user.sub);
+  }
+
+  @Get('subscriptions/with-progress')
+  @ApiOperation(WATCH_SWAGGER.getSubscriptionsWithProgress.operation)
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.getSubscriptionsWithProgress.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.getSubscriptionsWithProgress.responses[401] })
+  getSubscriptionsWithProgress(@CurrentUser() user: JwtPayload) {
+    return this.watchService.getSubscriptionsWithProgress(user.sub);
+  }
 }

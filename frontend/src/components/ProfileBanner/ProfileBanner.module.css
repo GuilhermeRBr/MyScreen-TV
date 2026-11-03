@@ -1,0 +1,33 @@
+.banner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.slideActive {
+  opacity: 1;
+}
+
+.image {
+  object-fit: cover;
+  object-position: center top;
+}
+
+/* Gradiente que escurece o backdrop para manter legibilidade dos botões */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+  pointer-events: none;
+}

@@ -40,6 +40,14 @@ export class UsersController {
     return this.usersService.getProfile(user.sub);
   }
 
+  @Get('me/banner-images')
+  @ApiOperation(USERS_SWAGGER.getBannerImages.operation)
+  @ApiResponse({ status: 200, description: USERS_SWAGGER.getBannerImages.responses[200] })
+  @ApiResponse({ status: 401, description: USERS_SWAGGER.getBannerImages.responses[401] })
+  getBannerImages(@CurrentUser() user: JwtPayload) {
+    return this.usersService.getBannerImages(user.sub);
+  }
+
   @Patch('me')
   @ApiOperation(USERS_SWAGGER.updateProfile.operation)
   @ApiResponse({ status: 200, description: USERS_SWAGGER.updateProfile.responses[200] })

@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 import { AUTH_DTO_MESSAGES } from '../messages/auth.dto.messages';
 
 export class LoginDto {
@@ -11,4 +11,12 @@ export class LoginDto {
   @IsString()
   @MinLength(8, { message: AUTH_DTO_MESSAGES.PASSWORD_MIN })
   password!: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Mantém a sessão ativa por mais tempo (30 dias vs. 7 dias)',
+  })
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
 }

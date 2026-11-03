@@ -142,6 +142,39 @@ export class UsersService {
     return { following: false };
   }
 
+  async getBannerImages(userId: string): Promise<{ backdropPath: string }[]> {
+    const [showBackdrops, movieBackdrops] = await Promise.all([
+      this.prisma.userShowSubscription.findMany({
+        where: { userId },
+        select: { show: { select: { backdropPath: true } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.movieWatch.findMany({
+        where: { userId },
+        select: { movie: { select: { backdropPath: true } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 20,
+      }),
+    ]);
+
+    const images: { backdropPath: string }[] = [];
+
+    for (const sub of showBackdrops) {
+      if (sub.show.backdropPath) {
+        images.push({ backdropPath: sub.show.backdropPath });
+      }
+    }
+
+    for (const watch of movieBackdrops) {
+      if (watch.movie.backdropPath) {
+        images.push({ backdropPath: watch.movie.backdropPath });
+      }
+    }
+
+    return images;
+  }
+
   async adminListUsers(): Promise<SafeUser[]> {
     return this.prisma.user.findMany({
       select: {
