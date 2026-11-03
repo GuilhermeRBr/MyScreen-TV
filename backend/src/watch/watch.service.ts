@@ -398,4 +398,98 @@ export class WatchService {
       where: { id: existing.id },
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Visto por último
+  // ---------------------------------------------------------------------------
+
+  async getRecentlyWatched(userId: string, limit = 20) {
+    const [episodeRows, movieRows] = await Promise.all([
+      this.prisma.watchProgress.findMany({
+        where: { userId },
+        orderBy: { watchedAt: 'desc' },
+        take: limit,
+        select: {
+          watchedAt: true,
+          episode: {
+            select: {
+              season: {
+                select: {
+                  show: {
+                    select: {
+                      id: true,
+                      tmdbId: true,
+                      name: true,
+                      posterPath: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.movieWatch.findMany({
+        where: { userId, status: 'WATCHED' },
+        orderBy: { watchedAt: 'desc' },
+        take: limit,
+        select: {
+          watchedAt: true,
+          movie: {
+            select: {
+              id: true,
+              tmdbId: true,
+              title: true,
+              posterPath: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    type RecentItem =
+      | {
+          type: 'show';
+          watchedAt: Date;
+          show: { id: string; tmdbId: number; name: string; posterPath: string | null };
+        }
+      | {
+          type: 'movie';
+          watchedAt: Date;
+          movie: { id: string; tmdbId: number; title: string; posterPath: string | null };
+        };
+
+    const showItems: RecentItem[] = episodeRows
+      .filter((r) => r.watchedAt !== null)
+      .map((r) => ({
+        type: 'show' as const,
+        watchedAt: r.watchedAt as Date,
+        show: r.episode.season.show,
+      }));
+
+    const movieItems: RecentItem[] = movieRows
+      .filter((r) => r.watchedAt !== null)
+      .map((r) => ({
+        type: 'movie' as const,
+        watchedAt: r.watchedAt as Date,
+        movie: r.movie,
+      }));
+
+    // Mescla e ordena por data mais recente, removendo shows duplicados
+    const seenShowIds = new Set<string>();
+    const combined: RecentItem[] = [];
+
+    for (const item of [...showItems, ...movieItems].sort(
+      (a, b) => b.watchedAt.getTime() - a.watchedAt.getTime(),
+    )) {
+      if (item.type === 'show') {
+        if (seenShowIds.has(item.show.id)) continue;
+        seenShowIds.add(item.show.id);
+      }
+      combined.push(item);
+      if (combined.length >= limit) break;
+    }
+
+    return combined;
+  }
 }

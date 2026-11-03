@@ -110,46 +110,6 @@
   color: var(--color-text-primary);
 }
 
-.listCarousel {
-  display: flex;
-  gap: var(--space-3);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.listCarousel::-webkit-scrollbar {
-  display: none;
-}
-
-.listCard {
-  flex-shrink: 0;
-  width: 180px;
-  height: 100px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  position: relative;
-  background-color: var(--color-bg-elevated);
-}
-
-.listCardImage {
-  object-fit: cover;
-}
-
-.listCardOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
-  display: flex;
-  align-items: flex-end;
-  padding: var(--space-2);
-}
-
-.listCardName {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: white;
-}
-
 .showsGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
