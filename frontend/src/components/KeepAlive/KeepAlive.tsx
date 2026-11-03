@@ -15,11 +15,6 @@ const PING_INTERVAL_MS = 10 * 60 * 1000;
  */
 export function KeepAlive() {
   useEffect(() => {
-    // Não pingar em desenvolvimento para não gerar ruído nos logs
-    if (process.env.NODE_ENV !== 'production') {
-      return;
-    }
-
     async function ping() {
       try {
         await fetch('/api/keepalive', { method: 'GET' });
