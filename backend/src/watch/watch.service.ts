@@ -347,6 +347,65 @@ export class WatchService {
     }));
   }
 
+  /**
+   * Retorna todas as assinaturas do usuário com o progresso de cada série
+   * (total de episódios assistidos e total disponível).
+   * Usado para separar séries iniciadas de não iniciadas na aba "Minha Lista".
+   */
+  async getSubscriptionsWithProgress(userId: string) {
+    const subscriptions = await this.prisma.userShowSubscription.findMany({
+      where: { userId },
+      include: {
+        show: {
+          select: {
+            id: true,
+            tmdbId: true,
+            name: true,
+            posterPath: true,
+            status: true,
+            seasons: {
+              select: {
+                episodes: {
+                  select: {
+                    id: true,
+                    watchProgresses: {
+                      where: { userId },
+                      select: { id: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return subscriptions.map((s) => {
+      const allEpisodes = s.show.seasons.flatMap((season) => season.episodes);
+      const totalEpisodes = allEpisodes.length;
+      const totalWatched = allEpisodes.filter(
+        (e) => e.watchProgresses.length > 0,
+      ).length;
+
+      return {
+        status: s.status,
+        show: {
+          id: s.show.id,
+          tmdbId: s.show.tmdbId,
+          name: s.show.name,
+          posterPath: s.show.posterPath,
+          status: s.show.status,
+        },
+        progress: {
+          totalWatched,
+          totalEpisodes,
+        },
+      };
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Assinatura de série
   // ---------------------------------------------------------------------------

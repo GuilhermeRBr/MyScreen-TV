@@ -175,4 +175,15 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  getSubscriptionsWithProgress: {
+    operation: {
+      summary: 'Assinaturas com progresso',
+      description:
+        'Retorna todas as séries que o usuário acompanha, com o status da assinatura e o progresso de episódios assistidos (totalWatched / totalEpisodes). Usado para separar séries iniciadas de não iniciadas na aba "Minha Lista".',
+    },
+    responses: {
+      200: 'Array de { status, show, progress: { totalWatched, totalEpisodes } }',
+      401: 'Não autenticado.',
+    },
+  },
 } as const;
