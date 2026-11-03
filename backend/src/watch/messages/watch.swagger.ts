@@ -164,4 +164,26 @@ export const WATCH_SWAGGER = {
       404: 'Assinatura não encontrada.',
     },
   },
+  getRecentlyWatched: {
+    operation: {
+      summary: 'Visto por último',
+      description:
+        'Retorna os itens assistidos mais recentemente pelo usuário, combinando episódios de séries e filmes marcados como assistidos, ordenados da atividade mais recente para a mais antiga. Cada item indica o tipo ("show" ou "movie") e os dados do conteúdo.',
+    },
+    responses: {
+      200: 'Array de itens recentes: { type: "show" | "movie", watchedAt, show? | movie? }',
+      401: 'Não autenticado.',
+    },
+  },
+  getSubscriptionsWithProgress: {
+    operation: {
+      summary: 'Assinaturas com progresso',
+      description:
+        'Retorna todas as séries que o usuário acompanha, com o status da assinatura e o progresso de episódios assistidos (totalWatched / totalEpisodes). Usado para separar séries iniciadas de não iniciadas na aba "Minha Lista".',
+    },
+    responses: {
+      200: 'Array de { status, show, progress: { totalWatched, totalEpisodes } }',
+      401: 'Não autenticado.',
+    },
+  },
 } as const;

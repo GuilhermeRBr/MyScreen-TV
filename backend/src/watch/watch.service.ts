@@ -347,6 +347,65 @@ export class WatchService {
     }));
   }
 
+  /**
+   * Retorna todas as assinaturas do usuário com o progresso de cada série
+   * (total de episódios assistidos e total disponível).
+   * Usado para separar séries iniciadas de não iniciadas na aba "Minha Lista".
+   */
+  async getSubscriptionsWithProgress(userId: string) {
+    const subscriptions = await this.prisma.userShowSubscription.findMany({
+      where: { userId },
+      include: {
+        show: {
+          select: {
+            id: true,
+            tmdbId: true,
+            name: true,
+            posterPath: true,
+            status: true,
+            seasons: {
+              select: {
+                episodes: {
+                  select: {
+                    id: true,
+                    watchProgresses: {
+                      where: { userId },
+                      select: { id: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return subscriptions.map((s) => {
+      const allEpisodes = s.show.seasons.flatMap((season) => season.episodes);
+      const totalEpisodes = allEpisodes.length;
+      const totalWatched = allEpisodes.filter(
+        (e) => e.watchProgresses.length > 0,
+      ).length;
+
+      return {
+        status: s.status,
+        show: {
+          id: s.show.id,
+          tmdbId: s.show.tmdbId,
+          name: s.show.name,
+          posterPath: s.show.posterPath,
+          status: s.show.status,
+        },
+        progress: {
+          totalWatched,
+          totalEpisodes,
+        },
+      };
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Assinatura de série
   // ---------------------------------------------------------------------------
@@ -397,5 +456,99 @@ export class WatchService {
     await this.prisma.userShowSubscription.delete({
       where: { id: existing.id },
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Visto por último
+  // ---------------------------------------------------------------------------
+
+  async getRecentlyWatched(userId: string, limit = 20) {
+    const [episodeRows, movieRows] = await Promise.all([
+      this.prisma.watchProgress.findMany({
+        where: { userId },
+        orderBy: { watchedAt: 'desc' },
+        take: limit,
+        select: {
+          watchedAt: true,
+          episode: {
+            select: {
+              season: {
+                select: {
+                  show: {
+                    select: {
+                      id: true,
+                      tmdbId: true,
+                      name: true,
+                      posterPath: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.movieWatch.findMany({
+        where: { userId, status: 'WATCHED' },
+        orderBy: { watchedAt: 'desc' },
+        take: limit,
+        select: {
+          watchedAt: true,
+          movie: {
+            select: {
+              id: true,
+              tmdbId: true,
+              title: true,
+              posterPath: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    type RecentItem =
+      | {
+          type: 'show';
+          watchedAt: Date;
+          show: { id: string; tmdbId: number; name: string; posterPath: string | null };
+        }
+      | {
+          type: 'movie';
+          watchedAt: Date;
+          movie: { id: string; tmdbId: number; title: string; posterPath: string | null };
+        };
+
+    const showItems: RecentItem[] = episodeRows
+      .filter((r) => r.watchedAt !== null)
+      .map((r) => ({
+        type: 'show' as const,
+        watchedAt: r.watchedAt as Date,
+        show: r.episode.season.show,
+      }));
+
+    const movieItems: RecentItem[] = movieRows
+      .filter((r) => r.watchedAt !== null)
+      .map((r) => ({
+        type: 'movie' as const,
+        watchedAt: r.watchedAt as Date,
+        movie: r.movie,
+      }));
+
+    // Mescla e ordena por data mais recente, removendo shows duplicados
+    const seenShowIds = new Set<string>();
+    const combined: RecentItem[] = [];
+
+    for (const item of [...showItems, ...movieItems].sort(
+      (a, b) => b.watchedAt.getTime() - a.watchedAt.getTime(),
+    )) {
+      if (item.type === 'show') {
+        if (seenShowIds.has(item.show.id)) continue;
+        seenShowIds.add(item.show.id);
+      }
+      combined.push(item);
+      if (combined.length >= limit) break;
+    }
+
+    return combined;
   }
 }

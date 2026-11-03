@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { IconChevronRight, IconBell } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
 import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
+import { ProfileBanner } from '@/components/ProfileBanner/ProfileBanner';
 import { ProfileStats } from '@/components/ProfileStats/ProfileStats';
 import { ProfileMoviesPreview } from '@/components/ProfileMoviesPreview/ProfileMoviesPreview';
 import { ProfileSeriesPreview } from '@/components/ProfileSeriesPreview/ProfileSeriesPreview';
+import { ProfileRecentlyWatched } from '@/components/ProfileRecentlyWatched/ProfileRecentlyWatched';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +19,7 @@ export default function PerfilPage() {
       {/* Header com backdrop */}
       <header className={styles.header}>
         <div className={styles.backdrop}>
+          <ProfileBanner />
           <div className={styles.topBar}>
             <button className={styles.bellButton} aria-label="Notificações">
               <IconBell width={18} height={18} />
@@ -49,27 +52,14 @@ export default function PerfilPage() {
 
       <div className={styles.divider} />
 
-      {/* Listas */}
-      <section className={styles.section} aria-labelledby="lists-title">
+      {/* Visto por último */}
+      <section className={styles.section} aria-labelledby="recently-watched-title">
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle} id="lists-title">
-            Listas
+          <h2 className={styles.sectionTitle} id="recently-watched-title">
+            Visto por último
           </h2>
-          <span className={styles.sectionLink}>
-            <IconChevronRight width={16} height={16} />
-          </span>
         </div>
-        <div className={styles.listCarousel} role="list">
-          <div
-            className={styles.listCard}
-            style={{ background: 'var(--color-bg-elevated)' }}
-            role="listitem"
-          >
-            <div className={styles.listCardOverlay}>
-              <span className={styles.listCardName}>Minha Lista</span>
-            </div>
-          </div>
-        </div>
+        <ProfileRecentlyWatched />
       </section>
 
       <div className={styles.divider} />

@@ -70,4 +70,15 @@ export const USERS_SWAGGER = {
       403: 'Acesso negado. Requer role ADMIN.',
     },
   },
+  getBannerImages: {
+    operation: {
+      summary: 'Imagens de banner do perfil',
+      description:
+        'Retorna os caminhos de backdrop das séries que o usuário acompanha e dos filmes na sua lista, para exibição no banner do perfil.',
+    },
+    responses: {
+      200: 'Array de objetos com backdropPath.',
+      401: 'Não autenticado.',
+    },
+  },
 } as const;
