@@ -200,6 +200,76 @@ export default function EpisodiosPage() {
     });
   }
 
+  // ---- Scroll para o próximo não assistido após marcar um episódio ----
+  const lastWatchedIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!lastWatchedIdRef.current) return;
+
+    const container = continueScrollRef.current;
+    if (!container) return;
+
+    // Encontra o próximo não assistido após o último marcado
+    const flat: Array<{ id: string; watched: boolean }> = [];
+    for (const season of seasons) {
+      for (const ep of season.episodes) {
+        flat.push({ id: ep.id, watched: ep.watched });
+      }
+    }
+
+    const markedIndex = flat.findIndex((e) => e.id === lastWatchedIdRef.current);
+    if (markedIndex === -1) return;
+
+    const nextUnwatched = flat.slice(markedIndex + 1).find((e) => !e.watched);
+    if (!nextUnwatched) return;
+
+    const targetIndex = flat.findIndex((e) => e.id === nextUnwatched.id);
+    if (targetIndex === -1) return;
+
+    const card = container.children[targetIndex] as HTMLElement | undefined;
+    if (!card) return;
+
+    const containerWidth = container.offsetWidth;
+    const scrollTarget = card.offsetLeft - containerWidth / 2 + card.offsetWidth / 2;
+
+    container.scrollTo({ left: scrollTarget, behavior: 'smooth' });
+    lastWatchedIdRef.current = null;
+  }, [seasons]);
+
+  /**
+   * Centraliza o card de um episódio no carrossel pelo seu índice em allFlat.
+   */
+  function scrollToEpisodeIndex(episodeId: string, updatedSeasons: SeasonWithEpisodes[]) {
+    const container = continueScrollRef.current;
+    if (!container) return;
+
+    // Reconstrói o flat com o estado atualizado para encontrar o índice correto
+    let flatIndex = 0;
+    let targetIndex = -1;
+    for (const season of updatedSeasons) {
+      for (const ep of season.episodes) {
+        if (ep.id === episodeId) {
+          targetIndex = flatIndex;
+          break;
+        }
+        flatIndex++;
+      }
+      if (targetIndex !== -1) break;
+    }
+
+    if (targetIndex === -1) return;
+
+    const card = container.children[targetIndex] as HTMLElement | undefined;
+    if (!card) return;
+
+    const containerWidth = container.offsetWidth;
+    const cardLeft = card.offsetLeft;
+    const cardWidth = card.offsetWidth;
+    const scrollTarget = cardLeft - containerWidth / 2 + cardWidth / 2;
+
+    container.scrollTo({ left: scrollTarget, behavior: 'smooth' });
+  }
+
   async function toggleEpisode(episodeId: string) {
     try {
       const result = await api.post<{ watched: boolean }>(
@@ -207,8 +277,13 @@ export default function EpisodiosPage() {
         { episodeId },
       );
 
-      setSeasons((prev) =>
-        prev.map((s) => {
+      if (result.watched) {
+        // Registra qual episódio foi marcado — o useEffect vai rolar após o render
+        lastWatchedIdRef.current = episodeId;
+      }
+
+      setSeasons((prev) => {
+        const next = prev.map((s) => {
           const hasEp = s.episodes.some((e) => e.id === episodeId);
           if (!hasEp) return s;
 
@@ -220,8 +295,9 @@ export default function EpisodiosPage() {
             episodes: updatedEps,
             watchedCount: updatedEps.filter((e) => e.watched).length,
           };
-        }),
-      );
+        });
+        return next;
+      });
 
       // Verifica se há episódios anteriores não assistidos somente ao marcar
       if (result.watched) {
