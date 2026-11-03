@@ -8,6 +8,7 @@ import styles from './page.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconCheck, IconChevronDown } from '@/components/icons';
 import { api } from '@/lib/api';
+import { ConfirmMarkPreviousModal } from '@/components/ConfirmMarkPreviousModal/ConfirmMarkPreviousModal';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -73,6 +74,9 @@ export default function EpisodiosPage() {
   const [loading, setLoading] = useState(true);
   const [openSeasons, setOpenSeasons] = useState<Set<string>>(new Set());
   const [internalShowId, setInternalShowId] = useState<string | null>(null);
+
+  // Modal "marcar anteriores"
+  const [pendingEpisodeId, setPendingEpisodeId] = useState<string | null>(null);
 
   // ---- Carregamento inicial: temporadas + episódios + progresso em paralelo ----
   useEffect(() => {
@@ -185,9 +189,106 @@ export default function EpisodiosPage() {
           };
         }),
       );
+
+      // Verifica se há episódios anteriores não assistidos somente ao marcar
+      if (result.watched) {
+        const hasPrevious = hasPreviousUnwatchedEpisodes(episodeId, seasons);
+        if (hasPrevious) {
+          setPendingEpisodeId(episodeId);
+        }
+      }
     } catch {
       // falha silenciosa
     }
+  }
+
+  /**
+   * Retorna true se existir ao menos um episódio anterior ao informado
+   * (dentro da mesma temporada ou em temporadas anteriores) ainda não assistido.
+   */
+  function hasPreviousUnwatchedEpisodes(
+    episodeId: string,
+    currentSeasons: SeasonWithEpisodes[],
+  ): boolean {
+    for (const season of currentSeasons) {
+      const epIndex = season.episodes.findIndex((e) => e.id === episodeId);
+
+      if (epIndex === -1) {
+        // Temporada anterior ao episódio clicado — qualquer não assistido conta
+        if (season.episodes.some((e) => !e.watched)) return true;
+        continue;
+      }
+
+      // Temporada do episódio clicado — apenas os que vêm antes na lista
+      const previousInSeason = season.episodes.slice(0, epIndex);
+      if (previousInSeason.some((e) => !e.watched)) return true;
+
+      // Encontrou a temporada, não precisa continuar
+      break;
+    }
+
+    return false;
+  }
+
+  async function markAllPreviousEpisodes(targetEpisodeId: string) {
+    // Coleta os episódios a marcar: todos os anteriores ao alvo ainda não assistidos
+    const toMarkBySeasonId = new Map<string, string[]>();
+
+    for (const season of seasons) {
+      const epIndex = season.episodes.findIndex((e) => e.id === targetEpisodeId);
+
+      if (epIndex === -1) {
+        // Temporada inteiramente anterior — marca os não assistidos
+        const unwatched = season.episodes.filter((e) => !e.watched).map((e) => e.id);
+        if (unwatched.length > 0) toMarkBySeasonId.set(season.id, unwatched);
+        continue;
+      }
+
+      // Temporada do alvo — apenas os anteriores não assistidos
+      const unwatched = season.episodes
+        .slice(0, epIndex)
+        .filter((e) => !e.watched)
+        .map((e) => e.id);
+      if (unwatched.length > 0) toMarkBySeasonId.set(season.id, unwatched);
+
+      break;
+    }
+
+    // Usa mark-all para temporadas totalmente contidas; toggle individual para parciais
+    for (const [seasonId, episodeIds] of toMarkBySeasonId) {
+      const season = seasons.find((s) => s.id === seasonId);
+      if (!season) continue;
+
+      const allInSeason = season.episodes.filter((e) => !e.watched).map((e) => e.id);
+      const isFullSeason =
+        allInSeason.length > 0 &&
+        allInSeason.every((id) => episodeIds.includes(id));
+
+      if (isFullSeason) {
+        await api.post(`/watch/seasons/${seasonId}/mark-all`);
+      } else {
+        for (const epId of episodeIds) {
+          await api.post<{ watched: boolean }>('/watch/episodes/toggle', { episodeId: epId });
+        }
+      }
+    }
+
+    // Atualiza o estado local com os episódios marcados
+    setSeasons((prev) =>
+      prev.map((season) => {
+        const markedIds = toMarkBySeasonId.get(season.id);
+        if (!markedIds || markedIds.length === 0) return season;
+
+        const updatedEps = season.episodes.map((e) =>
+          markedIds.includes(e.id) ? { ...e, watched: true } : e,
+        );
+        return {
+          ...season,
+          episodes: updatedEps,
+          watchedCount: updatedEps.filter((e) => e.watched).length,
+        };
+      }),
+    );
   }
 
   async function toggleSeasonWatched(season: SeasonWithEpisodes, e: React.MouseEvent) {
@@ -277,6 +378,17 @@ export default function EpisodiosPage() {
 
   return (
     <div className={styles.container}>
+      {pendingEpisodeId && (
+        <ConfirmMarkPreviousModal
+          onConfirm={async () => {
+            const epId = pendingEpisodeId;
+            setPendingEpisodeId(null);
+            await markAllPreviousEpisodes(epId);
+          }}
+          onDecline={() => setPendingEpisodeId(null)}
+        />
+      )}
+
       {/* Continuar acompanhando */}
       {continueEpisodes.length > 0 && (
         <section className={styles.continueSection}>
