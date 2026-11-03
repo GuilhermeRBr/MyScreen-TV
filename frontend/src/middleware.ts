@@ -10,10 +10,19 @@ const PROTECTED_PATHS = [
 
 const PUBLIC_PATHS = ['/login', '/cadastro', '/forgot-password', '/reset-password'];
 
+// Tempo máximo que o middleware aguarda o backend responder ao refresh.
+// Se o Render estiver em cold start, não bloqueamos a navegação do usuário:
+// ele vai para a página normalmente e o lib/api.ts cuida do refresh na
+// primeira chamada de API (que também vai acordar o servidor).
+const REFRESH_TIMEOUT_MS = 3000;
+
 /**
  * Tenta renovar o access_token usando o refresh_token via chamada server-side
  * ao backend. Retorna a resposta do endpoint /auth/refresh para que os cookies
  * renovados possam ser repassados ao browser.
+ *
+ * Aborta após REFRESH_TIMEOUT_MS para não travar a navegação em caso de
+ * cold start do backend (Render plano gratuito, etc.).
  */
 async function tryRefreshServerSide(
   request: NextRequest,
@@ -29,12 +38,16 @@ async function tryRefreshServerSide(
     process.env.NEXT_PUBLIC_API_URL ??
     'http://localhost:3001';
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS);
+
   try {
     const response = await fetch(`${backendUrl}/auth/refresh`, {
       method: 'POST',
       headers: {
         Cookie: `refresh_token=${refreshToken}`,
       },
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -43,7 +56,10 @@ async function tryRefreshServerSide(
 
     return response;
   } catch {
+    // Timeout ou erro de rede — deixa o lib/api.ts tratar no client
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
