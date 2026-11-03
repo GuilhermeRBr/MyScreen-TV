@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { IconChevronRight, IconBell } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu/ProfileMenu';
 import { ProfileHeader } from '@/components/ProfileHeader/ProfileHeader';
+import { ProfileBanner } from '@/components/ProfileBanner/ProfileBanner';
 import { ProfileStats } from '@/components/ProfileStats/ProfileStats';
 import { ProfileMoviesPreview } from '@/components/ProfileMoviesPreview/ProfileMoviesPreview';
 import { ProfileSeriesPreview } from '@/components/ProfileSeriesPreview/ProfileSeriesPreview';
@@ -17,6 +18,7 @@ export default function PerfilPage() {
       {/* Header com backdrop */}
       <header className={styles.header}>
         <div className={styles.backdrop}>
+          <ProfileBanner />
           <div className={styles.topBar}>
             <button className={styles.bellButton} aria-label="Notificações">
               <IconBell width={18} height={18} />
