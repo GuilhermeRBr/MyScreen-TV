@@ -494,22 +494,19 @@ export default function EpisodiosPage() {
                   aria-label={`${season.name}, ${watched} de ${total} episodios assistidos`}
                 >
                   <span className={styles.seasonName}>{season.name}</span>
+                  <IconChevronDown
+                    width={20}
+                    height={20}
+                    className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}
+                  />
                   <span className={styles.seasonCount}>{watched}/{total}</span>
-                  {isComplete ? (
-                    <button
-                      className={styles.seasonCheckCircle}
-                      aria-label={`Desmarcar ${season.name} como assistida`}
-                      onClick={(e) => toggleSeasonWatched(season, e)}
-                    >
-                      <IconCheck width={14} height={14} />
-                    </button>
-                  ) : (
-                    <IconChevronDown
-                      width={20}
-                      height={20}
-                      className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}
-                    />
-                  )}
+                  <button
+                    className={`${styles.seasonCheckCircle} ${isComplete ? styles.seasonCheckCircleComplete : styles.seasonCheckCircleIncomplete}`}
+                    aria-label={isComplete ? `Desmarcar ${season.name} como assistida` : `Marcar ${season.name} como assistida`}
+                    onClick={(e) => toggleSeasonWatched(season, e)}
+                  >
+                    <IconCheck width={14} height={14} />
+                  </button>
                 </button>
 
                 <div className={styles.progressBarSeason} aria-hidden="true">

@@ -161,7 +161,6 @@
 .seasonCount {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  margin-right: var(--space-2);
 }
 
 .seasonCheckCircle {
@@ -171,8 +170,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-progress);
-  color: white;
   flex-shrink: 0;
   cursor: pointer;
   transition: opacity 0.15s;
@@ -180,6 +177,18 @@
 
 .seasonCheckCircle:hover {
   opacity: 0.75;
+}
+
+.seasonCheckCircleComplete {
+  background-color: var(--color-progress);
+  border: 2px solid var(--color-progress);
+  color: white;
+}
+
+.seasonCheckCircleIncomplete {
+  background: none;
+  border: 2px solid var(--color-border);
+  color: var(--color-text-muted);
 }
 
 .chevron {
