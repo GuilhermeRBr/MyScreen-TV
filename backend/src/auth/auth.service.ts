@@ -21,6 +21,7 @@ import { EmailQueueService } from '../email/email.queue.service';
 interface TokenPair {
   accessToken: string;
   refreshToken: string;
+  refreshMaxAge: number;
 }
 
 const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000; // 15 minutos
@@ -98,7 +99,7 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    return this.generateTokenPair(user.id, user.email, user.role);
+    return this.generateTokenPair(user.id, user.email, user.role, dto.rememberMe ?? false);
   }
 
   async refresh(
@@ -128,10 +129,17 @@ export class AuthService {
       data: { revokedAt: new Date() },
     });
 
+    // Preserva "lembrar de mim": se o token original expira em mais de 8 dias,
+    // foi criado com o flag ativado — o novo token mantém a mesma duração longa.
+    const EIGHT_DAYS_MS = 8 * 24 * 60 * 60 * 1000;
+    const remainingMs = storedToken.expiresAt.getTime() - Date.now();
+    const rememberMe = remainingMs > EIGHT_DAYS_MS;
+
     return this.generateTokenPair(
       storedToken.user.id,
       storedToken.user.email,
       storedToken.user.role,
+      rememberMe,
     );
   }
 
@@ -219,15 +227,18 @@ export class AuthService {
     userId: string,
     email: string,
     role: User['role'],
+    rememberMe = false,
   ): Promise<TokenPair> {
     const accessPayload: JwtPayload = { sub: userId, email, role };
 
     const jti = randomUUID();
     const refreshPayload: RefreshTokenPayload = { sub: userId, jti };
 
-    const refreshExpiration = this.config.get<string>('JWT_REFRESH_EXPIRATION', {
-      infer: true,
-    })!;
+    // "Lembrar de mim" usa JWT_REFRESH_EXPIRATION_REMEMBER (padrão 30d);
+    // sem o flag usa JWT_REFRESH_EXPIRATION (padrão 7d).
+    const refreshExpiration = rememberMe
+      ? this.config.get<string>('JWT_REFRESH_EXPIRATION_REMEMBER', { infer: true })!
+      : this.config.get<string>('JWT_REFRESH_EXPIRATION', { infer: true })!;
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(accessPayload),
@@ -249,7 +260,9 @@ export class AuthService {
       },
     });
 
-    return { accessToken, refreshToken };
+    const refreshMaxAge = expiresAt.getTime() - Date.now();
+
+    return { accessToken, refreshToken, refreshMaxAge };
   }
 
   private hashToken(token: string): string {

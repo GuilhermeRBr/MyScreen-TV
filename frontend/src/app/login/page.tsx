@@ -69,7 +69,7 @@ function LoginForm() {
     setError(null);
     setLoading(true);
     try {
-      await api.post('/auth/login', { email, password });
+      await api.post('/auth/login', { email, password, rememberMe: remember });
       // router.refresh() força o Next.js a revalidar o estado do servidor
       // (incluindo cookies) antes de navegar, evitando race condition onde
       // o middleware bloqueia a rota por não ver o cookie ainda.
