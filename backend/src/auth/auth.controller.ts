@@ -47,8 +47,8 @@ export class AuthController {
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { accessToken, refreshToken } = await this.authService.register(dto);
-    this.setTokenCookies(res, accessToken, refreshToken);
+    const { accessToken, refreshToken, refreshMaxAge } = await this.authService.register(dto);
+    this.setTokenCookies(res, accessToken, refreshToken, refreshMaxAge);
     return { message: AUTH_MESSAGES.REGISTER_SUCCESS };
   }
 
@@ -63,8 +63,8 @@ export class AuthController {
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { accessToken, refreshToken } = await this.authService.login(dto);
-    this.setTokenCookies(res, accessToken, refreshToken);
+    const { accessToken, refreshToken, refreshMaxAge } = await this.authService.login(dto);
+    this.setTokenCookies(res, accessToken, refreshToken, refreshMaxAge);
     return { message: AUTH_MESSAGES.LOGIN_SUCCESS };
   }
 
@@ -80,12 +80,12 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const rawRefreshToken = (req.cookies as Record<string, string>).refresh_token;
-    const { accessToken, refreshToken } = await this.authService.refresh(
+    const { accessToken, refreshToken, refreshMaxAge } = await this.authService.refresh(
       req.user.userId,
       req.user.jti,
       rawRefreshToken,
     );
-    this.setTokenCookies(res, accessToken, refreshToken);
+    this.setTokenCookies(res, accessToken, refreshToken, refreshMaxAge);
     return { message: AUTH_MESSAGES.REFRESH_SUCCESS };
   }
 
@@ -137,6 +137,7 @@ export class AuthController {
     res: Response,
     accessToken: string,
     refreshToken: string,
+    refreshMaxAge: number,
   ): void {
     const isProduction =
       this.config.get<string>('NODE_ENV', { infer: true }) === 'production';
@@ -144,24 +145,28 @@ export class AuthController {
     const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict' as const,
+      // 'lax' é necessário em produção: 'strict' bloqueia o cookie em navegações
+      // cross-site (frontend e backend em domínios diferentes na Vercel/Railway),
+      // impedindo que o middleware do Next.js leia o token logo após o login.
+      sameSite: 'lax' as const,
       path: '/',
     };
 
     res.cookie('access_token', accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000, // 15 minutos
+      maxAge: 15 * 60 * 1000, // 15 minutos — sincronizado com JWT_EXPIRATION
     });
 
+    // path: '/' garante que o browser envie o cookie tanto para /auth/refresh
+    // (dev direto no backend) quanto para /api/auth/refresh (prod via proxy Next.js).
     res.cookie('refresh_token', refreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
-      path: '/auth/refresh',
+      maxAge: refreshMaxAge,
     });
   }
 
   private clearTokenCookies(res: Response): void {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token', { path: '/auth/refresh' });
+    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('refresh_token', { path: '/' });
   }
 }

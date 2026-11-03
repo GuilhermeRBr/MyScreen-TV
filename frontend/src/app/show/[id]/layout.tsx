@@ -36,11 +36,9 @@ async function getShow(id: string): Promise<Show | null> {
 export default async function ShowLayout({
   children,
   params,
-  searchParams,
 }: {
   children: React.ReactNode;
   params: { id: string };
-  searchParams?: { from?: string };
 }) {
   const show = await getShow(params.id);
 
@@ -52,8 +50,6 @@ export default async function ShowLayout({
   const rating = show.voteAverage
     ? Math.round(show.voteAverage * 10) / 10
     : null;
-
-  const from = searchParams?.from ?? null;
 
   return (
     <div className="page-container">
@@ -73,7 +69,7 @@ export default async function ShowLayout({
 
         {/* Barra topo */}
         <div className={styles.topBar}>
-          <BackButton fallbackHref="/series" from={from} label="Voltar" />
+          <BackButton fallbackHref="/series" label="Voltar" />
           <span className={styles.showTitle}>{show.name}</span>
           <button className={styles.backButton} aria-label="Mais opções">
             <IconDots width={20} height={20} />
@@ -102,7 +98,7 @@ export default async function ShowLayout({
         {rating && (
           <span
             className={styles.ratingBadge}
-            aria-label={`Avaliacao: ${rating}`}
+            aria-label={`Avaliação: ${rating}`}
           >
             T {rating}%
           </span>
@@ -110,7 +106,7 @@ export default async function ShowLayout({
       </div>
 
       {/* Tabs */}
-      <ShowTabs showId={String(params.id)} from={from} />
+      <ShowTabs showId={String(params.id)} />
 
       {children}
     </div>

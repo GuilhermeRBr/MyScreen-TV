@@ -39,7 +39,8 @@ async function getShowDetail(id: string): Promise<ShowDetail | null> {
 
   try {
     const res = await fetch(`${apiUrl}/shows/${id}`, {
-      next: { revalidate: 3600 },
+      // Sem cache: garante que o id interno do banco está sempre atualizado.
+      cache: 'no-store',
     });
 
     if (!res.ok) return null;

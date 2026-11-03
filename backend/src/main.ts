@@ -4,8 +4,8 @@ import { ValidationError } from 'class-validator';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
-import * as cookieParser from 'cookie-parser';
-import * as basicAuth from 'express-basic-auth';
+import cookieParser from 'cookie-parser';
+import basicAuth from 'express-basic-auth';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { Env } from './env.validation';
@@ -122,6 +122,18 @@ async function bootstrap(): Promise<void> {
 
     logger.log(`Swagger disponível em http://localhost:${port}/api/docs`);
   }
+
+  // Graceful shutdown — encerra workers BullMQ antes de sair
+  app.enableShutdownHooks();
+
+  const shutdown = async (signal: string): Promise<void> => {
+    logger.log(`Sinal ${signal} recebido. Encerrando a aplicação...`);
+    await app.close();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => void shutdown('SIGINT'));
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
 
   await app.listen(port);
   logger.log(`Backend rodando em http://localhost:${port}`);

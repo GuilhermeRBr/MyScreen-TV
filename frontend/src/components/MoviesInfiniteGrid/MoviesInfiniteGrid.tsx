@@ -2,6 +2,7 @@
 
 import { PosterCard } from '@/components/PosterCard/PosterCard';
 import { useInfiniteScroll } from '@/lib/useInfiniteScroll';
+import { api } from '@/lib/api';
 import styles from './MoviesInfiniteGrid.module.css';
 
 interface Movie {
@@ -23,12 +24,8 @@ export function MoviesInfiniteGrid({
   totalPages,
   gridClassName,
 }: MoviesInfiniteGridProps) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function fetchPage(page: number): Promise<Movie[]> {
-    const res = await fetch(`${apiUrl}/movies/popular?page=${page}`);
-    if (!res.ok) return [];
-    const data = (await res.json()) as { results: Movie[] };
+    const data = await api.get<{ results: Movie[] }>(`/movies/popular?page=${page}`);
     return data.results ?? [];
   }
 

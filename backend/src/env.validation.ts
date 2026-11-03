@@ -10,6 +10,8 @@ const envSchema = z.object({
     .string()
     .min(32, 'JWT_REFRESH_SECRET deve ter pelo menos 32 caracteres'),
   JWT_REFRESH_EXPIRATION: z.string().default('7d'),
+  // Expiração do refresh token quando "lembrar de mim" está marcado
+  JWT_REFRESH_EXPIRATION_REMEMBER: z.string().default('30d'),
   FRONTEND_URL: z.string().url('FRONTEND_URL deve ser uma URL válida'),
   TMDB_API_KEY: z.string().min(1, 'TMDB_API_KEY é obrigatório'),
   TMDB_BASE_URL: z
@@ -54,6 +56,13 @@ const envSchema = z.object({
     .pipe(z.boolean().default(false)),
   BULL_BOARD_USER: z.string().optional(),
   BULL_BOARD_PASSWORD: z.string().optional(),
+
+  // Workers BullMQ — desative em dev para não consumir cota do Redis
+  ENABLE_WORKERS: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true')
+    .pipe(z.boolean().default(false)),
 });
 
 export type Env = z.infer<typeof envSchema>;

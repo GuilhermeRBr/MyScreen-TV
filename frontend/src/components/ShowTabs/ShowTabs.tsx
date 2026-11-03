@@ -1,17 +1,17 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import styles from './ShowTabs.module.css';
 
 interface ShowTabsProps {
   showId: string;
-  from: string | null;
 }
 
-export function ShowTabs({ showId, from }: ShowTabsProps) {
+export function ShowTabs({ showId }: ShowTabsProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from');
 
   const sobreHref = from
     ? `/show/${showId}/sobre?from=${from}`

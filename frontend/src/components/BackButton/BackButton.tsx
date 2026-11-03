@@ -1,27 +1,25 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { IconChevronLeft } from '@/components/icons';
 import styles from './BackButton.module.css';
 
 interface BackButtonProps {
   fallbackHref?: string;
-  from?: string | null;
   label?: string;
 }
 
 export function BackButton({
   fallbackHref = '/',
-  from,
   label = 'Voltar',
 }: BackButtonProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from');
 
   function handleClick() {
-    const destination = from ?? null;
-
-    if (destination) {
-      router.push(destination);
+    if (from) {
+      router.push(from);
     } else if (window.history.length > 1) {
       router.back();
     } else {
