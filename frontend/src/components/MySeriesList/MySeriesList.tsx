@@ -33,7 +33,7 @@ export function MySeriesList() {
   );
 
   const { items: recommendations, isLoading: recLoading, sentinelRef } =
-    useInfiniteRecommendations({ excludedIds, ready: subscriptionsLoaded });
+    useInfiniteRecommendations({ endpoint: '/shows/popular', excludedIds, ready: subscriptionsLoaded });
 
   useEffect(() => {
     let cancelled = false;
@@ -155,7 +155,7 @@ export function MySeriesList() {
             {recommendations.map((show) => (
               <PosterCard
                 key={show.id}
-                title={show.name}
+                title={show.name ?? show.title ?? ''}
                 posterPath={show.poster_path}
                 href={`/show/${show.id}/sobre`}
               />

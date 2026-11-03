@@ -3,21 +3,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
 
-export interface RecommendedShow {
+export interface RecommendedItem {
   id: number;
-  name: string;
+  name?: string;
+  title?: string;
   poster_path: string | null;
 }
 
 interface UseInfiniteRecommendationsOptions {
-  /** IDs (tmdbId) das séries que o usuário já tem na lista — serão excluídas. */
+  /** Endpoint paginado — deve retornar `{ results, total_pages }`. Ex: `/shows/popular` */
+  endpoint: string;
+  /** IDs (tmdbId) a excluir do resultado. */
   excludedIds: Set<number>;
   /** Indica se os excludedIds já foram carregados (aguarda antes de iniciar). */
   ready: boolean;
 }
 
 interface UseInfiniteRecommendationsResult {
-  items: RecommendedShow[];
+  items: RecommendedItem[];
   isLoading: boolean;
   sentinelRef: React.RefCallback<HTMLDivElement>;
 }
@@ -25,10 +28,11 @@ interface UseInfiniteRecommendationsResult {
 const MAX_PAGES = 10;
 
 export function useInfiniteRecommendations({
+  endpoint,
   excludedIds,
   ready,
 }: UseInfiniteRecommendationsOptions): UseInfiniteRecommendationsResult {
-  const [items, setItems] = useState<RecommendedShow[]>([]);
+  const [items, setItems] = useState<RecommendedItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const nextPageRef = useRef(1);
@@ -36,11 +40,13 @@ export function useInfiniteRecommendations({
   const isLoadingRef = useRef(false);
   const excludedIdsRef = useRef(excludedIds);
   const readyRef = useRef(ready);
+  const endpointRef = useRef(endpoint);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelNodeRef = useRef<HTMLDivElement | null>(null);
 
   excludedIdsRef.current = excludedIds;
   readyRef.current = ready;
+  endpointRef.current = endpoint;
 
   const loadNextPage = useCallback(async () => {
     if (isLoadingRef.current) return;
@@ -54,15 +60,15 @@ export function useInfiniteRecommendations({
       while (nextPageRef.current <= totalPagesRef.current) {
         const page = nextPageRef.current;
         const data = await api.get<{
-          results: RecommendedShow[];
+          results: RecommendedItem[];
           total_pages: number;
-        }>(`/shows/popular?page=${page}`);
+        }>(`${endpointRef.current}?page=${page}`);
 
         totalPagesRef.current = Math.min(data.total_pages, MAX_PAGES);
         nextPageRef.current = page + 1;
 
         const filtered = data.results.filter(
-          (show) => !excludedIdsRef.current.has(show.id),
+          (item) => !excludedIdsRef.current.has(item.id),
         );
 
         if (filtered.length > 0) {
@@ -80,7 +86,6 @@ export function useInfiniteRecommendations({
     }
   }, []);
 
-  // Conecta/reconecta o observer sempre que o nó sentinel mudar
   function connectObserver(node: HTMLDivElement) {
     observerRef.current?.disconnect();
 
@@ -96,7 +101,6 @@ export function useInfiniteRecommendations({
     observerRef.current.observe(node);
   }
 
-  // RefCallback: chamado toda vez que o elemento é montado/desmontado
   const sentinelRef: React.RefCallback<HTMLDivElement> = useCallback(
     (node) => {
       sentinelNodeRef.current = node;
@@ -112,14 +116,11 @@ export function useInfiniteRecommendations({
     [],
   );
 
-  // Quando ready se torna true, carrega a primeira página e reconecta o observer
   useEffect(() => {
     if (!ready) return;
 
-    // Carrega primeira página
     void loadNextPage();
 
-    // Reconecta o observer caso o sentinel já esteja montado
     if (sentinelNodeRef.current) {
       connectObserver(sentinelNodeRef.current);
     }
