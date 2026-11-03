@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
@@ -64,8 +64,7 @@ interface RawEpisode {
 // Página
 // ---------------------------------------------------------------------------
 
-const CONTINUE_LIMIT = 8; // quantos cards no carrossel "continuar"
-
+// Nenhum limite — o carrossel exibe todos os episódios da série
 export default function EpisodiosPage() {
   const params = useParams<{ id: string }>();
   const showId = params.id;
@@ -77,6 +76,14 @@ export default function EpisodiosPage() {
 
   // Modal "marcar anteriores"
   const [pendingEpisodeId, setPendingEpisodeId] = useState<string | null>(null);
+
+  // Ref para o scroll do carrossel "continuar acompanhando"
+  const continueScrollRef = useRef<HTMLDivElement>(null);
+  const firstUnwatchedRef = useRef<HTMLButtonElement>(null);
+
+  // Índice do primeiro não assistido fixado na carga inicial — não muda com toggles
+  const anchorIndexRef = useRef<number>(-1);
+  const scrolledRef = useRef(false);
 
   // ---- Carregamento inicial: temporadas + episódios + progresso em paralelo ----
   useEffect(() => {
@@ -140,17 +147,43 @@ export default function EpisodiosPage() {
   }, [showId]);
 
   // ---- Episódios para "continuar acompanhando" ----
-  // Todos os não assistidos em ordem, limitados a CONTINUE_LIMIT
-  const continueEpisodes: Array<{ episode: Episode; season: SeasonWithEpisodes }> = [];
+  // Todos os episódios da série em ordem. O scroll começa posicionado no
+  // primeiro não assistido; o usuário pode rolar livremente para qualquer lado.
+  const allFlat: Array<{ episode: Episode; season: SeasonWithEpisodes }> = [];
   for (const season of seasons) {
     for (const ep of season.episodes) {
-      if (!ep.watched) {
-        continueEpisodes.push({ episode: ep, season });
-        if (continueEpisodes.length >= CONTINUE_LIMIT) break;
-      }
+      allFlat.push({ episode: ep, season });
     }
-    if (continueEpisodes.length >= CONTINUE_LIMIT) break;
   }
+
+  // Fixa o índice de ancoragem na primeira vez que os dados chegam
+  if (allFlat.length > 0 && anchorIndexRef.current === -1) {
+    const firstUnwatched = allFlat.findIndex(({ episode }) => !episode.watched);
+    anchorIndexRef.current = firstUnwatched === -1 ? 0 : firstUnwatched;
+  }
+
+  const anchorIndex = anchorIndexRef.current;
+
+  // ---- Scroll automático até o ponto de ancoragem (só na carga inicial) ----
+  useEffect(() => {
+    if (scrolledRef.current) return;
+    if (!continueScrollRef.current || !firstUnwatchedRef.current) return;
+
+    const container = continueScrollRef.current;
+    const target = firstUnwatchedRef.current;
+
+    const timer = setTimeout(() => {
+      const containerLeft = container.getBoundingClientRect().left;
+      const targetLeft = target.getBoundingClientRect().left;
+      const scrollOffset = targetLeft - containerLeft + container.scrollLeft;
+
+      container.scrollTo({ left: scrollOffset, behavior: 'instant' });
+      scrolledRef.current = true;
+    }, 50);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allFlat.length]); // dispara quando os episódios chegam pela primeira vez
 
   // ---- Totais ----
   const totalWatched = seasons.reduce((acc, s) => acc + s.watchedCount, 0);
@@ -390,14 +423,15 @@ export default function EpisodiosPage() {
       )}
 
       {/* Continuar acompanhando */}
-      {continueEpisodes.length > 0 && (
+      {allFlat.length > 0 && (
         <section className={styles.continueSection}>
           <h2 className={styles.continueSectionTitle}>Continuar acompanhando</h2>
-          <div className={styles.continueScroll}>
-            {continueEpisodes.map(({ episode: ep, season: s }) => (
+          <div className={styles.continueScroll} ref={continueScrollRef}>
+            {allFlat.map(({ episode: ep, season: s }, index) => (
               <button
                 key={ep.id}
-                className={styles.continueCard}
+                ref={index === anchorIndex ? firstUnwatchedRef : null}
+                className={`${styles.continueCard} ${ep.watched ? styles.continueCardWatched : ''}`}
                 onClick={() => toggleEpisode(ep.id)}
                 aria-label={`Marcar ${ep.name} como assistido`}
               >
