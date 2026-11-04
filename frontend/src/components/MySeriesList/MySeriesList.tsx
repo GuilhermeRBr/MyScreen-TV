@@ -115,7 +115,7 @@ export function MySeriesList() {
                   key={show.id}
                   title={show.name}
                   posterPath={show.posterPath}
-                  href={`/show/${show.tmdbId}/sobre`}
+                  href={`/show/${show.tmdbId}/episodios`}
                   progressPercent={progressPercent}
                 />
               );
@@ -139,7 +139,7 @@ export function MySeriesList() {
                 key={show.id}
                 title={show.name}
                 posterPath={show.posterPath}
-                href={`/show/${show.tmdbId}/sobre`}
+                href={`/show/${show.tmdbId}/episodios`}
               />
             ))}
           </div>
