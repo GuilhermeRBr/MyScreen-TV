@@ -132,7 +132,7 @@ export function ProfileRecentlyWatched() {
                 key={`show-${item.show.id}`}
                 title={item.show.name}
                 posterPath={item.show.posterPath}
-                href={`/show/${item.show.tmdbId}/sobre?from=/perfil`}
+                href={`/show/${item.show.tmdbId}/episodios?from=/perfil`}
               />
             );
           }

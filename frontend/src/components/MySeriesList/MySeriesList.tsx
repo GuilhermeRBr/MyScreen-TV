@@ -102,7 +102,7 @@ export function MySeriesList() {
       {/* Séries iniciadas */}
       {started.length > 0 && (
         <>
-          <p className={styles.sectionTitle}>Assistir a seguir</p>
+          <p className={styles.sectionTitle}>Assistindo</p>
           <div className={styles.grid}>
             {started.map(({ show, progress }) => {
               const progressPercent =
@@ -115,7 +115,7 @@ export function MySeriesList() {
                   key={show.id}
                   title={show.name}
                   posterPath={show.posterPath}
-                  href={`/show/${show.tmdbId}/sobre`}
+                  href={`/show/${show.tmdbId}/episodios`}
                   progressPercent={progressPercent}
                 />
               );
@@ -132,14 +132,14 @@ export function MySeriesList() {
       {/* Séries não iniciadas */}
       {notStarted.length > 0 && (
         <>
-          <p className={styles.sectionTitle}>Minhas séries</p>
+          <p className={styles.sectionTitle}>Assistir a seguir</p>
           <div className={styles.grid}>
             {notStarted.map(({ show }) => (
               <PosterCard
                 key={show.id}
                 title={show.name}
                 posterPath={show.posterPath}
-                href={`/show/${show.tmdbId}/sobre`}
+                href={`/show/${show.tmdbId}/episodios`}
               />
             ))}
           </div>
