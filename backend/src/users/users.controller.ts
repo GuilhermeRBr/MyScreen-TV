@@ -4,8 +4,10 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -14,6 +16,7 @@ import {
   ApiResponse,
   ApiCookieAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -98,9 +101,32 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation(USERS_SWAGGER.adminListUsers.operation)
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página (padrão: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 50, description: 'Usuários por página (padrão: 50, máximo: 100)' })
   @ApiResponse({ status: 200, description: USERS_SWAGGER.adminListUsers.responses[200] })
   @ApiResponse({ status: 403, description: USERS_SWAGGER.adminListUsers.responses[403] })
-  adminListUsers() {
-    return this.usersService.adminListUsers();
+  adminListUsers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const parsedPage = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit ?? '50', 10) || 50));
+    return this.usersService.adminListUsers(parsedPage, parsedLimit);
+  }
+
+  @Patch('admin/:id/toggle-active')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation(USERS_SWAGGER.toggleUserActive.operation)
+  @ApiParam({ name: 'id', description: 'UUID do usuário alvo', example: '550e8400-e29b-41d4-a716-446655440001' })
+  @ApiResponse({ status: 200, description: USERS_SWAGGER.toggleUserActive.responses[200] })
+  @ApiResponse({ status: 400, description: USERS_SWAGGER.toggleUserActive.responses[400] })
+  @ApiResponse({ status: 403, description: USERS_SWAGGER.toggleUserActive.responses[403] })
+  @ApiResponse({ status: 404, description: USERS_SWAGGER.toggleUserActive.responses[404] })
+  toggleUserActive(
+    @CurrentUser() admin: JwtPayload,
+    @Param('id', ParseUUIDPipe) targetUserId: string,
+  ) {
+    return this.usersService.toggleUserActive(admin.sub, targetUserId);
   }
 }

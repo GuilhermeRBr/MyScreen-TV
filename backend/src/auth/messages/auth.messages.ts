@@ -14,6 +14,7 @@ export const AUTH_MESSAGES = {
   USERNAME_IN_USE: 'Username já está em uso',
   INVALID_CREDENTIALS: 'Credenciais inválidas',
   INVALID_REFRESH_TOKEN: 'Refresh token inválido ou expirado',
+  ACCOUNT_INACTIVE: 'Esta conta foi desativada. Entre em contato com o suporte.',
 
   // Recuperação de senha
   FORGOT_PASSWORD_SENT: 'Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.',

@@ -14,6 +14,7 @@ type SafeUser = {
   avatarUrl: string | null;
   bio: string | null;
   role: string;
+  isActive: boolean;
   lastLoginAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -34,6 +35,7 @@ export class UsersService {
         avatarUrl: true,
         bio: true,
         role: true,
+        isActive: true,
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
@@ -88,6 +90,7 @@ export class UsersService {
         avatarUrl: true,
         bio: true,
         role: true,
+        isActive: true,
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
@@ -175,21 +178,74 @@ export class UsersService {
     return images;
   }
 
-  async adminListUsers(): Promise<SafeUser[]> {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        displayName: true,
-        avatarUrl: true,
-        bio: true,
-        role: true,
-        lastLoginAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
+  async adminListUsers(page: number, limit: number): Promise<{
+    data: SafeUser[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          bio: true,
+          role: true,
+          isActive: true,
+          lastLoginAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async toggleUserActive(
+    adminId: string,
+    targetUserId: string,
+  ): Promise<{ id: string; isActive: boolean }> {
+    // Impede que o admin desative a própria conta
+    if (adminId === targetUserId) {
+      throw new BadRequestException(USERS_MESSAGES.CANNOT_DEACTIVATE_SELF);
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, isActive: true },
     });
+
+    if (!target) {
+      throw new NotFoundException(USERS_MESSAGES.USER_NOT_FOUND);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { isActive: !target.isActive },
+      select: { id: true, isActive: true },
+    });
+
+    // Ao desativar: revoga todos os refresh tokens ativos para encerrar sessões
+    if (!updated.isActive) {
+      await this.prisma.refreshToken.updateMany({
+        where: { userId: targetUserId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+
+    return updated;
   }
 }

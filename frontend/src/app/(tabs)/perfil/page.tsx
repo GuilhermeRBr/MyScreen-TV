@@ -20,12 +20,14 @@ export default function PerfilPage() {
       <header className={styles.header}>
         <div className={styles.backdrop}>
           <ProfileBanner />
-          <div className={styles.topBar}>
-            <button className={styles.bellButton} aria-label="Notificações">
-              <IconBell width={18} height={18} />
-            </button>
-            <ProfileMenu />
-          </div>
+        </div>
+
+        {/* topBar fica fora do backdrop para o dropdown do menu não ser cortado */}
+        <div className={styles.topBar}>
+          <button className={styles.bellButton} aria-label="Notificações">
+            <IconBell width={18} height={18} />
+          </button>
+          <ProfileMenu />
         </div>
 
         {/* Avatar + nome + username */}
