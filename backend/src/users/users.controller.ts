@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -14,6 +15,7 @@ import {
   ApiResponse,
   ApiCookieAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -98,9 +100,16 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation(USERS_SWAGGER.adminListUsers.operation)
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página (padrão: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 50, description: 'Usuários por página (padrão: 50, máximo: 100)' })
   @ApiResponse({ status: 200, description: USERS_SWAGGER.adminListUsers.responses[200] })
   @ApiResponse({ status: 403, description: USERS_SWAGGER.adminListUsers.responses[403] })
-  adminListUsers() {
-    return this.usersService.adminListUsers();
+  adminListUsers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const parsedPage = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit ?? '50', 10) || 50));
+    return this.usersService.adminListUsers(parsedPage, parsedLimit);
   }
 }

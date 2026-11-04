@@ -63,10 +63,10 @@ export const USERS_SWAGGER = {
     operation: {
       summary: 'Listar usuários (admin)',
       description:
-        'Retorna todos os usuários cadastrados com dados de perfil, role e lastLoginAt. Restrito a usuários com role ADMIN.',
+        'Retorna usuários cadastrados de forma paginada, com dados de perfil, role e lastLoginAt. Parâmetros: page (padrão 1) e limit (padrão 50, máximo 100). Restrito a usuários com role ADMIN.',
     },
     responses: {
-      200: 'Array de usuários ordenado por data de cadastro (mais recente primeiro).',
+      200: '{ data: AdminUser[], total: number, page: number, totalPages: number }',
       403: 'Acesso negado. Requer role ADMIN.',
     },
   },

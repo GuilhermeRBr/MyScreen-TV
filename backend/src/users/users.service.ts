@@ -175,21 +175,38 @@ export class UsersService {
     return images;
   }
 
-  async adminListUsers(): Promise<SafeUser[]> {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        displayName: true,
-        avatarUrl: true,
-        bio: true,
-        role: true,
-        lastLoginAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async adminListUsers(page: number, limit: number): Promise<{
+    data: SafeUser[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          bio: true,
+          role: true,
+          lastLoginAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }
