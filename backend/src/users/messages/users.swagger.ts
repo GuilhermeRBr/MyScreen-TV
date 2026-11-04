@@ -81,4 +81,17 @@ export const USERS_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  toggleUserActive: {
+    operation: {
+      summary: 'Ativar ou desativar usuário (admin)',
+      description:
+        'Alterna o status isActive do usuário alvo. Ao desativar, todos os refresh tokens ativos são revogados imediatamente, encerrando todas as sessões. O admin não pode desativar a própria conta. Restrito a usuários com role ADMIN.',
+    },
+    responses: {
+      200: '{ id: string, isActive: boolean }',
+      400: 'Tentativa de desativar a própria conta.',
+      403: 'Acesso negado. Requer role ADMIN.',
+      404: 'Usuário não encontrado.',
+    },
+  },
 } as const;

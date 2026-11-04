@@ -97,6 +97,13 @@
   gap: 2px;
 }
 
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 .displayName {
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -156,6 +163,73 @@
   font-size: 10px;
   color: var(--color-text-muted);
   text-align: right;
+}
+
+/* ---- Badge ativo/inativo ---- */
+
+.activeBadge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.activeBadgeOn {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: rgb(34, 197, 94);
+}
+
+.activeBadgeOff {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: rgb(239, 68, 68);
+}
+
+/* ---- Linha inativa ---- */
+
+.rowInactive {
+  opacity: 0.6;
+}
+
+/* ---- Botão toggle ativo/inativo ---- */
+
+.toggleButton {
+  margin-top: var(--space-1);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.toggleButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggleButtonDeactivate {
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: rgb(239, 68, 68);
+}
+
+.toggleButtonDeactivate:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.22);
+}
+
+.toggleButtonActivate {
+  background-color: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: rgb(34, 197, 94);
+}
+
+.toggleButtonActivate:hover:not(:disabled) {
+  background-color: rgba(34, 197, 94, 0.22);
 }
 
 /* ---- Estados ---- */

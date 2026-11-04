@@ -14,6 +14,7 @@ interface AdminUser {
   displayName: string | null;
   avatarUrl: string | null;
   role: 'USER' | 'MODERATOR' | 'ADMIN';
+  isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;
 }
@@ -50,6 +51,7 @@ export default function AdminUsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const load = useCallback(async (page: number) => {
     setLoading(true);
@@ -78,7 +80,22 @@ export default function AdminUsuariosPage() {
     load(1);
   }, [load]);
 
-  // Busca é client-side dentro da página atual
+  async function handleToggleActive(user: AdminUser) {
+    setTogglingId(user.id);
+    try {
+      const res = await api.patch<{ id: string; isActive: boolean }>(
+        `/users/admin/${user.id}/toggle-active`,
+      );
+      setUsers((prev) =>
+        prev.map((u) => (u.id === res.id ? { ...u, isActive: res.isActive } : u)),
+      );
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Erro ao alterar status.');
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
   const filtered = search.trim()
     ? users.filter((u) => {
         const term = search.toLowerCase();
@@ -139,7 +156,10 @@ export default function AdminUsuariosPage() {
         <>
           <ul className={styles.list} aria-label="Lista de usuários">
             {filtered.map((user) => (
-              <li key={user.id} className={styles.row}>
+              <li
+                key={user.id}
+                className={`${styles.row} ${!user.isActive ? styles.rowInactive : ''}`}
+              >
                 <div className={styles.avatar} aria-hidden="true">
                   {user.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -154,9 +174,18 @@ export default function AdminUsuariosPage() {
                 </div>
 
                 <div className={styles.info}>
-                  <span className={styles.displayName}>
-                    {user.displayName ?? user.username}
-                  </span>
+                  <div className={styles.nameRow}>
+                    <span className={styles.displayName}>
+                      {user.displayName ?? user.username}
+                    </span>
+                    <span
+                      className={`${styles.activeBadge} ${
+                        user.isActive ? styles.activeBadgeOn : styles.activeBadgeOff
+                      }`}
+                    >
+                      {user.isActive ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
                   <span className={styles.username}>@{user.username}</span>
                   <span className={styles.email}>{user.email}</span>
                 </div>
@@ -173,12 +202,25 @@ export default function AdminUsuariosPage() {
                   <span className={styles.date}>
                     Último acesso: {formatDate(user.lastLoginAt)}
                   </span>
+                  <button
+                    className={`${styles.toggleButton} ${
+                      user.isActive ? styles.toggleButtonDeactivate : styles.toggleButtonActivate
+                    }`}
+                    onClick={() => handleToggleActive(user)}
+                    disabled={togglingId === user.id}
+                    aria-label={user.isActive ? `Desativar ${user.username}` : `Ativar ${user.username}`}
+                  >
+                    {togglingId === user.id
+                      ? 'Aguarde...'
+                      : user.isActive
+                      ? 'Desativar'
+                      : 'Ativar'}
+                  </button>
                 </div>
               </li>
             ))}
           </ul>
 
-          {/* Paginação — só mostra se não está filtrando */}
           {!search.trim() && totalPages > 1 && (
             <nav className={styles.pagination} aria-label="Paginação de usuários">
               <span className={styles.paginationInfo}>

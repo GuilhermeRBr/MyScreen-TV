@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -111,5 +112,21 @@ export class UsersController {
     const parsedPage = Math.max(1, parseInt(page ?? '1', 10) || 1);
     const parsedLimit = Math.min(100, Math.max(1, parseInt(limit ?? '50', 10) || 50));
     return this.usersService.adminListUsers(parsedPage, parsedLimit);
+  }
+
+  @Patch('admin/:id/toggle-active')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation(USERS_SWAGGER.toggleUserActive.operation)
+  @ApiParam({ name: 'id', description: 'UUID do usuário alvo', example: '550e8400-e29b-41d4-a716-446655440001' })
+  @ApiResponse({ status: 200, description: USERS_SWAGGER.toggleUserActive.responses[200] })
+  @ApiResponse({ status: 400, description: USERS_SWAGGER.toggleUserActive.responses[400] })
+  @ApiResponse({ status: 403, description: USERS_SWAGGER.toggleUserActive.responses[403] })
+  @ApiResponse({ status: 404, description: USERS_SWAGGER.toggleUserActive.responses[404] })
+  toggleUserActive(
+    @CurrentUser() admin: JwtPayload,
+    @Param('id', ParseUUIDPipe) targetUserId: string,
+  ) {
+    return this.usersService.toggleUserActive(admin.sub, targetUserId);
   }
 }

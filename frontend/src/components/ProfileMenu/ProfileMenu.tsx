@@ -66,9 +66,11 @@ export function ProfileMenu() {
     try {
       await api.post('/auth/logout');
     } catch {
-      // Mesmo se o endpoint falhar, limpa a sessão do lado do cliente
+      // Mesmo se o endpoint falhar, força o redirect para limpar o estado
     } finally {
-      router.push('/login');
+      // window.location força reload completo — necessário para que o middleware
+      // releia os cookies após o backend tê-los limpado via Set-Cookie Max-Age=0
+      window.location.href = '/login';
     }
   }
 
