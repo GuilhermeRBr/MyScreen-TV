@@ -1,0 +1,187 @@
+.container {
+  padding: var(--space-4);
+}
+
+/* ---- Toolbar ---- */
+
+.toolbar {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.heading {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---- Busca ---- */
+
+.searchWrapper {
+  margin-bottom: var(--space-4);
+}
+
+.searchInput {
+  width: 100%;
+  padding: var(--space-3) var(--space-3);
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.searchInput:focus {
+  border-color: var(--color-accent);
+}
+
+/* ---- Lista ---- */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+/* ---- Avatar ---- */
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---- Info ---- */
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.displayName {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.username {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.email {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Meta (role + datas) ---- */
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.roleBadge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.roleUSER {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+}
+
+.roleMODERATOR {
+  background-color: rgba(234, 179, 8, 0.15);
+  color: rgb(234, 179, 8);
+}
+
+.roleADMIN {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: rgb(239, 68, 68);
+}
+
+.date {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+/* ---- Estados ---- */
+
+.errorMessage {
+  font-size: var(--font-size-sm);
+  color: rgb(239, 68, 68);
+  padding: var(--space-4) 0;
+}
+
+.emptyMessage {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  padding: var(--space-4) 0;
+}
+
+/* ---- Skeleton ---- */
+
+.skeletonRow {
+  height: 74px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

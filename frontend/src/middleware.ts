@@ -8,22 +8,12 @@ const PROTECTED_PATHS = [
   '/explorar',
 ];
 
+const ADMIN_PATHS = ['/admin'];
+
 const PUBLIC_PATHS = ['/login', '/cadastro', '/forgot-password', '/reset-password'];
 
-// Tempo máximo que o middleware aguarda o backend responder ao refresh.
-// Se o Render estiver em cold start, não bloqueamos a navegação do usuário:
-// ele vai para a página normalmente e o lib/api.ts cuida do refresh na
-// primeira chamada de API (que também vai acordar o servidor).
 const REFRESH_TIMEOUT_MS = 3000;
 
-/**
- * Tenta renovar o access_token usando o refresh_token via chamada server-side
- * ao backend. Retorna a resposta do endpoint /auth/refresh para que os cookies
- * renovados possam ser repassados ao browser.
- *
- * Aborta após REFRESH_TIMEOUT_MS para não travar a navegação em caso de
- * cold start do backend (Render plano gratuito, etc.).
- */
 async function tryRefreshServerSide(
   request: NextRequest,
 ): Promise<Response | null> {
@@ -56,10 +46,24 @@ async function tryRefreshServerSide(
 
     return response;
   } catch {
-    // Timeout ou erro de rede — deixa o lib/api.ts tratar no client
     return null;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * Decodifica o payload do JWT sem verificar a assinatura.
+ * Usado apenas para leitura de claims públicos (role) no middleware.
+ */
+function decodeJwtPayload(token: string): { role?: string } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = Buffer.from(parts[1], 'base64url').toString('utf-8');
+    return JSON.parse(payload) as { role?: string };
+  } catch {
+    return null;
   }
 }
 
@@ -73,15 +77,28 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 
+  const isAdmin = ADMIN_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+
   const isPublicOnly = PUBLIC_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 
-  // Access token presente: segue normalmente
+  // Access token presente
   if (accessToken) {
     if (isPublicOnly) {
       return NextResponse.redirect(new URL('/series', request.url));
     }
+
+    // Rotas admin: verifica role no payload do token
+    if (isAdmin) {
+      const payload = decodeJwtPayload(accessToken);
+      if (!payload || payload.role !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/series', request.url));
+      }
+    }
+
     return NextResponse.next();
   }
 
@@ -90,13 +107,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     const refreshResponse = await tryRefreshServerSide(request);
 
     if (refreshResponse) {
-      // Refresh bem-sucedido: repassa os cookies renovados ao browser
-      // e permite a navegação normalmente
       const nextResponse = isPublicOnly
         ? NextResponse.redirect(new URL('/series', request.url))
         : NextResponse.next();
 
-      // Copia os Set-Cookie do backend para a resposta do middleware
       const setCookieHeader = refreshResponse.headers.get('set-cookie');
       if (setCookieHeader) {
         nextResponse.headers.set('set-cookie', setCookieHeader);
@@ -104,12 +118,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
       return nextResponse;
     }
-
-    // Refresh falhou (token revogado ou expirado): trata como não autenticado
   }
 
   // Sem tokens válidos
-  if (isProtected) {
+  if (isProtected || isAdmin) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);

@@ -2,15 +2,28 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { IconDots } from '@/components/icons';
 import { api } from '@/lib/api';
 import styles from './ProfileMenu.module.css';
 
+interface UserProfile {
+  role: 'USER' | 'MODERATOR' | 'ADMIN';
+}
+
 export function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    api
+      .get<UserProfile>('/users/me')
+      .then((data) => setIsAdmin(data.role === 'ADMIN'))
+      .catch(() => {});
+  }, []);
 
   // Fecha o menu ao clicar fora
   useEffect(() => {
@@ -77,6 +90,17 @@ export function ProfileMenu() {
           role="menu"
           aria-label="Opções do perfil"
         >
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={styles.menuItem}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              <IconShield width={16} height={16} />
+              Painel administrativo
+            </Link>
+          )}
           <button
             className={`${styles.menuItem} ${styles.menuItemDanger}`}
             role="menuitem"
@@ -109,6 +133,24 @@ function IconSignOut(props: React.SVGProps<SVGSVGElement>) {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+function IconShield(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   );
 }
