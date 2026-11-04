@@ -17,6 +17,7 @@ import { FeedModule } from './feed/feed.module';
 import { TmdbModule } from './tmdb/tmdb.module';
 import { QueueModule } from './queue/queue.module';
 import { QUEUE_NAMES } from './queue/queue.constants';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { QUEUE_NAMES } from './queue/queue.constants';
     ListsModule,
     FeedModule,
     TmdbModule,
+    HealthModule,
   ],
   providers: [
     {

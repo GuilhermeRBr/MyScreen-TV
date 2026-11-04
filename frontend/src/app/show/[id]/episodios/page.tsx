@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
@@ -8,6 +8,7 @@ import styles from './page.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconCheck, IconChevronDown } from '@/components/icons';
 import { api } from '@/lib/api';
+import { ConfirmMarkPreviousModal } from '@/components/ConfirmMarkPreviousModal/ConfirmMarkPreviousModal';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -63,8 +64,7 @@ interface RawEpisode {
 // Página
 // ---------------------------------------------------------------------------
 
-const CONTINUE_LIMIT = 8; // quantos cards no carrossel "continuar"
-
+// Nenhum limite — o carrossel exibe todos os episódios da série
 export default function EpisodiosPage() {
   const params = useParams<{ id: string }>();
   const showId = params.id;
@@ -73,6 +73,17 @@ export default function EpisodiosPage() {
   const [loading, setLoading] = useState(true);
   const [openSeasons, setOpenSeasons] = useState<Set<string>>(new Set());
   const [internalShowId, setInternalShowId] = useState<string | null>(null);
+
+  // Modal "marcar anteriores"
+  const [pendingEpisodeId, setPendingEpisodeId] = useState<string | null>(null);
+
+  // Ref para o scroll do carrossel "continuar acompanhando"
+  const continueScrollRef = useRef<HTMLDivElement>(null);
+  const firstUnwatchedRef = useRef<HTMLButtonElement>(null);
+
+  // Índice do primeiro não assistido fixado na carga inicial — não muda com toggles
+  const anchorIndexRef = useRef<number>(-1);
+  const scrolledRef = useRef(false);
 
   // ---- Carregamento inicial: temporadas + episódios + progresso em paralelo ----
   useEffect(() => {
@@ -136,17 +147,43 @@ export default function EpisodiosPage() {
   }, [showId]);
 
   // ---- Episódios para "continuar acompanhando" ----
-  // Todos os não assistidos em ordem, limitados a CONTINUE_LIMIT
-  const continueEpisodes: Array<{ episode: Episode; season: SeasonWithEpisodes }> = [];
+  // Todos os episódios da série em ordem. O scroll começa posicionado no
+  // primeiro não assistido; o usuário pode rolar livremente para qualquer lado.
+  const allFlat: Array<{ episode: Episode; season: SeasonWithEpisodes }> = [];
   for (const season of seasons) {
     for (const ep of season.episodes) {
-      if (!ep.watched) {
-        continueEpisodes.push({ episode: ep, season });
-        if (continueEpisodes.length >= CONTINUE_LIMIT) break;
-      }
+      allFlat.push({ episode: ep, season });
     }
-    if (continueEpisodes.length >= CONTINUE_LIMIT) break;
   }
+
+  // Fixa o índice de ancoragem na primeira vez que os dados chegam
+  if (allFlat.length > 0 && anchorIndexRef.current === -1) {
+    const firstUnwatched = allFlat.findIndex(({ episode }) => !episode.watched);
+    anchorIndexRef.current = firstUnwatched === -1 ? 0 : firstUnwatched;
+  }
+
+  const anchorIndex = anchorIndexRef.current;
+
+  // ---- Scroll automático até o ponto de ancoragem (só na carga inicial) ----
+  useEffect(() => {
+    if (scrolledRef.current) return;
+    if (!continueScrollRef.current || !firstUnwatchedRef.current) return;
+
+    const container = continueScrollRef.current;
+    const target = firstUnwatchedRef.current;
+
+    const timer = setTimeout(() => {
+      const containerLeft = container.getBoundingClientRect().left;
+      const targetLeft = target.getBoundingClientRect().left;
+      const scrollOffset = targetLeft - containerLeft + container.scrollLeft;
+
+      container.scrollTo({ left: scrollOffset, behavior: 'instant' });
+      scrolledRef.current = true;
+    }, 50);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allFlat.length]); // dispara quando os episódios chegam pela primeira vez
 
   // ---- Totais ----
   const totalWatched = seasons.reduce((acc, s) => acc + s.watchedCount, 0);
@@ -163,6 +200,76 @@ export default function EpisodiosPage() {
     });
   }
 
+  // ---- Scroll para o próximo não assistido após marcar um episódio ----
+  const lastWatchedIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!lastWatchedIdRef.current) return;
+
+    const container = continueScrollRef.current;
+    if (!container) return;
+
+    // Encontra o próximo não assistido após o último marcado
+    const flat: Array<{ id: string; watched: boolean }> = [];
+    for (const season of seasons) {
+      for (const ep of season.episodes) {
+        flat.push({ id: ep.id, watched: ep.watched });
+      }
+    }
+
+    const markedIndex = flat.findIndex((e) => e.id === lastWatchedIdRef.current);
+    if (markedIndex === -1) return;
+
+    const nextUnwatched = flat.slice(markedIndex + 1).find((e) => !e.watched);
+    if (!nextUnwatched) return;
+
+    const targetIndex = flat.findIndex((e) => e.id === nextUnwatched.id);
+    if (targetIndex === -1) return;
+
+    const card = container.children[targetIndex] as HTMLElement | undefined;
+    if (!card) return;
+
+    const containerWidth = container.offsetWidth;
+    const scrollTarget = card.offsetLeft - containerWidth / 2 + card.offsetWidth / 2;
+
+    container.scrollTo({ left: scrollTarget, behavior: 'smooth' });
+    lastWatchedIdRef.current = null;
+  }, [seasons]);
+
+  /**
+   * Centraliza o card de um episódio no carrossel pelo seu índice em allFlat.
+   */
+  function scrollToEpisodeIndex(episodeId: string, updatedSeasons: SeasonWithEpisodes[]) {
+    const container = continueScrollRef.current;
+    if (!container) return;
+
+    // Reconstrói o flat com o estado atualizado para encontrar o índice correto
+    let flatIndex = 0;
+    let targetIndex = -1;
+    for (const season of updatedSeasons) {
+      for (const ep of season.episodes) {
+        if (ep.id === episodeId) {
+          targetIndex = flatIndex;
+          break;
+        }
+        flatIndex++;
+      }
+      if (targetIndex !== -1) break;
+    }
+
+    if (targetIndex === -1) return;
+
+    const card = container.children[targetIndex] as HTMLElement | undefined;
+    if (!card) return;
+
+    const containerWidth = container.offsetWidth;
+    const cardLeft = card.offsetLeft;
+    const cardWidth = card.offsetWidth;
+    const scrollTarget = cardLeft - containerWidth / 2 + cardWidth / 2;
+
+    container.scrollTo({ left: scrollTarget, behavior: 'smooth' });
+  }
+
   async function toggleEpisode(episodeId: string) {
     try {
       const result = await api.post<{ watched: boolean }>(
@@ -170,8 +277,13 @@ export default function EpisodiosPage() {
         { episodeId },
       );
 
-      setSeasons((prev) =>
-        prev.map((s) => {
+      if (result.watched) {
+        // Registra qual episódio foi marcado — o useEffect vai rolar após o render
+        lastWatchedIdRef.current = episodeId;
+      }
+
+      setSeasons((prev) => {
+        const next = prev.map((s) => {
           const hasEp = s.episodes.some((e) => e.id === episodeId);
           if (!hasEp) return s;
 
@@ -183,11 +295,109 @@ export default function EpisodiosPage() {
             episodes: updatedEps,
             watchedCount: updatedEps.filter((e) => e.watched).length,
           };
-        }),
-      );
+        });
+        return next;
+      });
+
+      // Verifica se há episódios anteriores não assistidos somente ao marcar
+      if (result.watched) {
+        const hasPrevious = hasPreviousUnwatchedEpisodes(episodeId, seasons);
+        if (hasPrevious) {
+          setPendingEpisodeId(episodeId);
+        }
+      }
     } catch {
       // falha silenciosa
     }
+  }
+
+  /**
+   * Retorna true se existir ao menos um episódio anterior ao informado
+   * (dentro da mesma temporada ou em temporadas anteriores) ainda não assistido.
+   */
+  function hasPreviousUnwatchedEpisodes(
+    episodeId: string,
+    currentSeasons: SeasonWithEpisodes[],
+  ): boolean {
+    for (const season of currentSeasons) {
+      const epIndex = season.episodes.findIndex((e) => e.id === episodeId);
+
+      if (epIndex === -1) {
+        // Temporada anterior ao episódio clicado — qualquer não assistido conta
+        if (season.episodes.some((e) => !e.watched)) return true;
+        continue;
+      }
+
+      // Temporada do episódio clicado — apenas os que vêm antes na lista
+      const previousInSeason = season.episodes.slice(0, epIndex);
+      if (previousInSeason.some((e) => !e.watched)) return true;
+
+      // Encontrou a temporada, não precisa continuar
+      break;
+    }
+
+    return false;
+  }
+
+  async function markAllPreviousEpisodes(targetEpisodeId: string) {
+    // Coleta os episódios a marcar: todos os anteriores ao alvo ainda não assistidos
+    const toMarkBySeasonId = new Map<string, string[]>();
+
+    for (const season of seasons) {
+      const epIndex = season.episodes.findIndex((e) => e.id === targetEpisodeId);
+
+      if (epIndex === -1) {
+        // Temporada inteiramente anterior — marca os não assistidos
+        const unwatched = season.episodes.filter((e) => !e.watched).map((e) => e.id);
+        if (unwatched.length > 0) toMarkBySeasonId.set(season.id, unwatched);
+        continue;
+      }
+
+      // Temporada do alvo — apenas os anteriores não assistidos
+      const unwatched = season.episodes
+        .slice(0, epIndex)
+        .filter((e) => !e.watched)
+        .map((e) => e.id);
+      if (unwatched.length > 0) toMarkBySeasonId.set(season.id, unwatched);
+
+      break;
+    }
+
+    // Usa mark-all para temporadas totalmente contidas; toggle individual para parciais
+    for (const [seasonId, episodeIds] of toMarkBySeasonId) {
+      const season = seasons.find((s) => s.id === seasonId);
+      if (!season) continue;
+
+      const allInSeason = season.episodes.filter((e) => !e.watched).map((e) => e.id);
+      const isFullSeason =
+        allInSeason.length > 0 &&
+        allInSeason.every((id) => episodeIds.includes(id));
+
+      if (isFullSeason) {
+        await api.post(`/watch/seasons/${seasonId}/mark-all`);
+      } else {
+        for (const epId of episodeIds) {
+          await api.post<{ watched: boolean }>('/watch/episodes/toggle', { episodeId: epId });
+        }
+      }
+    }
+
+    // Atualiza o estado local com os episódios marcados
+    setSeasons((prev) =>
+      prev.map((season) => {
+        const markedIds = toMarkBySeasonId.get(season.id);
+        if (!markedIds || markedIds.length === 0) return season;
+
+        const updatedEps = season.episodes.map((e) =>
+          markedIds.includes(e.id) ? { ...e, watched: true } : e,
+        );
+        return {
+          ...season,
+          episodes: updatedEps,
+          watchedCount: updatedEps.filter((e) => e.watched).length,
+        };
+      }),
+    );
   }
 
   async function toggleSeasonWatched(season: SeasonWithEpisodes, e: React.MouseEvent) {
@@ -277,15 +487,27 @@ export default function EpisodiosPage() {
 
   return (
     <div className={styles.container}>
+      {pendingEpisodeId && (
+        <ConfirmMarkPreviousModal
+          onConfirm={async () => {
+            const epId = pendingEpisodeId;
+            setPendingEpisodeId(null);
+            await markAllPreviousEpisodes(epId);
+          }}
+          onDecline={() => setPendingEpisodeId(null)}
+        />
+      )}
+
       {/* Continuar acompanhando */}
-      {continueEpisodes.length > 0 && (
+      {allFlat.length > 0 && (
         <section className={styles.continueSection}>
           <h2 className={styles.continueSectionTitle}>Continuar acompanhando</h2>
-          <div className={styles.continueScroll}>
-            {continueEpisodes.map(({ episode: ep, season: s }) => (
+          <div className={styles.continueScroll} ref={continueScrollRef}>
+            {allFlat.map(({ episode: ep, season: s }, index) => (
               <button
                 key={ep.id}
-                className={styles.continueCard}
+                ref={index === anchorIndex ? firstUnwatchedRef : null}
+                className={`${styles.continueCard} ${ep.watched ? styles.continueCardWatched : ''}`}
                 onClick={() => toggleEpisode(ep.id)}
                 aria-label={`Marcar ${ep.name} como assistido`}
               >
@@ -348,22 +570,19 @@ export default function EpisodiosPage() {
                   aria-label={`${season.name}, ${watched} de ${total} episodios assistidos`}
                 >
                   <span className={styles.seasonName}>{season.name}</span>
+                  <IconChevronDown
+                    width={20}
+                    height={20}
+                    className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}
+                  />
                   <span className={styles.seasonCount}>{watched}/{total}</span>
-                  {isComplete ? (
-                    <button
-                      className={styles.seasonCheckCircle}
-                      aria-label={`Desmarcar ${season.name} como assistida`}
-                      onClick={(e) => toggleSeasonWatched(season, e)}
-                    >
-                      <IconCheck width={14} height={14} />
-                    </button>
-                  ) : (
-                    <IconChevronDown
-                      width={20}
-                      height={20}
-                      className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}
-                    />
-                  )}
+                  <button
+                    className={`${styles.seasonCheckCircle} ${isComplete ? styles.seasonCheckCircleComplete : styles.seasonCheckCircleIncomplete}`}
+                    aria-label={isComplete ? `Desmarcar ${season.name} como assistida` : `Marcar ${season.name} como assistida`}
+                    onClick={(e) => toggleSeasonWatched(season, e)}
+                  >
+                    <IconCheck width={14} height={14} />
+                  </button>
                 </button>
 
                 <div className={styles.progressBarSeason} aria-hidden="true">
