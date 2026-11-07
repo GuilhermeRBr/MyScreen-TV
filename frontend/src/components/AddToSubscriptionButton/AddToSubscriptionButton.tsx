@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
-import { IconPlus, IconCheck, IconEye } from '@/components/icons';
+import { useEffect, useState, useTransition } from 'react';
+import { IconPlus, IconCheck } from '@/components/icons';
 import { api } from '@/lib/api';
 import styles from './AddToSubscriptionButton.module.css';
 
@@ -13,24 +13,6 @@ type ShowStatus =
   | 'PLAN_TO_WATCH'
   | 'NOT_WATCHING_FOR_A_WHILE'
   | null;
-
-const STATUS_LABEL: Record<NonNullable<ShowStatus>, string> = {
-  WATCHING: 'Assistindo',
-  REWATCHING: 'Revendo',
-  PAUSED: 'Pausado',
-  STOPPED: 'Parado',
-  PLAN_TO_WATCH: 'Quero assistir',
-  NOT_WATCHING_FOR_A_WHILE: 'Em pausa longa',
-};
-
-const MENU_OPTIONS: Array<{ value: NonNullable<ShowStatus>; label: string }> = [
-  { value: 'WATCHING', label: 'Assistindo' },
-  { value: 'PLAN_TO_WATCH', label: 'Quero assistir' },
-  { value: 'REWATCHING', label: 'Revendo' },
-  { value: 'PAUSED', label: 'Pausado' },
-  { value: 'STOPPED', label: 'Parado' },
-  { value: 'NOT_WATCHING_FOR_A_WHILE', label: 'Em pausa longa' },
-];
 
 interface AddToSubscriptionButtonProps {
   showId: string;
@@ -46,9 +28,9 @@ async function fetchStatus(showId: string): Promise<ShowStatus> {
   }
 }
 
-async function subscribe(showId: string, status: NonNullable<ShowStatus>): Promise<boolean> {
+async function subscribe(showId: string): Promise<boolean> {
   try {
-    await api.post('/watch/shows/subscribe', { showId, status });
+    await api.post('/watch/shows/subscribe', { showId, status: 'PLAN_TO_WATCH' });
     return true;
   } catch {
     return false;
@@ -69,63 +51,47 @@ export function AddToSubscriptionButton({
   initialStatus,
 }: AddToSubscriptionButtonProps) {
   const [status, setStatus] = useState<ShowStatus>(initialStatus);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Revalida o status do servidor ao montar
   useEffect(() => {
     fetchStatus(showId).then(setStatus);
   }, [showId]);
 
-  function handleSubscribe(newStatus: NonNullable<ShowStatus>) {
-    setMenuOpen(false);
+  function handleClick() {
     setError(null);
-    startTransition(async () => {
-      const ok = await subscribe(showId, newStatus);
-      if (ok) {
-        setStatus(newStatus);
-      } else {
-        setError('Não foi possível salvar. Tente novamente.');
-      }
-    });
-  }
 
-  function handleRemove() {
-    setMenuOpen(false);
-    setError(null);
-    startTransition(async () => {
-      const ok = await unsubscribe(showId);
-      if (ok) {
-        setStatus(null);
-      } else {
-        setError('Não foi possível remover. Tente novamente.');
-      }
-    });
+    if (status !== null) {
+      startTransition(async () => {
+        const ok = await unsubscribe(showId);
+        if (ok) {
+          setStatus(null);
+        } else {
+          setError('Não foi possível remover. Tente novamente.');
+        }
+      });
+    } else {
+      startTransition(async () => {
+        const ok = await subscribe(showId);
+        if (ok) {
+          setStatus('PLAN_TO_WATCH');
+        } else {
+          setError('Não foi possível salvar. Tente novamente.');
+        }
+      });
+    }
   }
 
   const isSubscribed = status !== null;
-  const buttonLabel = status ? STATUS_LABEL[status] : 'Minha lista';
 
   return (
-    <div className={styles.wrapper} ref={menuRef}>
+    <div className={styles.wrapper}>
       <button
         className={`${styles.mainButton} ${isSubscribed ? styles.mainButtonActive : ''}`}
-        onClick={() => setMenuOpen((prev) => !prev)}
+        onClick={handleClick}
         disabled={isPending}
-        aria-label={isSubscribed ? `${buttonLabel} — clique para gerenciar` : 'Adicionar à minha lista'}
-        aria-expanded={menuOpen}
+        aria-label={isSubscribed ? 'Remover da minha lista' : 'Adicionar à minha lista'}
       >
         {isPending ? (
           <span className={styles.spinner} aria-hidden="true" />
@@ -134,44 +100,11 @@ export function AddToSubscriptionButton({
         ) : (
           <IconPlus width={18} height={18} />
         )}
-        <span className={styles.label}>{buttonLabel}</span>
+        <span className={styles.label}>Minha lista</span>
       </button>
 
       {error && (
         <span className={styles.errorMsg} role="alert">{error}</span>
-      )}
-
-      {menuOpen && (
-        <div className={styles.menu} role="menu" aria-label="Opções de acompanhamento">
-          {MENU_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              className={`${styles.menuItem} ${status === opt.value ? styles.menuItemActive : ''}`}
-              role="menuitem"
-              onClick={() => handleSubscribe(opt.value)}
-              disabled={isPending}
-            >
-              {status === opt.value ? (
-                <IconCheck width={16} height={16} />
-              ) : (
-                <IconEye width={16} height={16} />
-              )}
-              {opt.label}
-            </button>
-          ))}
-
-          {isSubscribed && (
-            <button
-              className={`${styles.menuItem} ${styles.menuItemDanger}`}
-              role="menuitem"
-              onClick={handleRemove}
-              disabled={isPending}
-            >
-              <IconPlus width={16} height={16} style={{ transform: 'rotate(45deg)' }} />
-              Remover da lista
-            </button>
-          )}
-        </div>
       )}
     </div>
   );
