@@ -39,7 +39,7 @@ export class MoviesService {
   }
 
   async getTrending() {
-    return this.tmdb.getTrendingMovies();
+    return this.tmdb.getTrendingMoviesWithTrailers();
   }
 
   async search(query: string, page = 1) {

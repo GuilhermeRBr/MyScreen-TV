@@ -404,6 +404,33 @@ export class TmdbService {
     return this.tmdb.getTrendingMovies();
   }
 
+  async getTrendingMoviesWithTrailers() {
+    const trending = await this.tmdb.getTrendingMovies();
+    const items = trending.results.slice(0, 10);
+
+    const withTrailers = [];
+    for (const movie of items) {
+      try {
+        const videos = await this.tmdb.getMovieVideos(movie.id);
+        const trailer =
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer' && v.official,
+          ) ??
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer',
+          ) ??
+          videos.results.find((v) => v.site === 'YouTube') ??
+          null;
+
+        withTrailers.push({ ...movie, trailerKey: trailer?.key ?? null });
+      } catch {
+        withTrailers.push({ ...movie, trailerKey: null });
+      }
+    }
+
+    return { results: withTrailers };
+  }
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------

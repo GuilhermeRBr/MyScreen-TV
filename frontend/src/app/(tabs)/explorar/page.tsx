@@ -1,8 +1,6 @@
-import Image from 'next/image';
 import { Suspense } from 'react';
 import styles from './page.module.css';
-import { tmdbImage } from '@/lib/tmdb-image';
-import { IconPlay, IconClapperboard, IconPlus } from '@/components/icons';
+import { FeedCard } from '@/components/FeedCard/FeedCard';
 import { ExplorarClient } from './ExplorarClient';
 import { SearchResults } from './SearchResults';
 
@@ -14,6 +12,7 @@ interface TmdbMovieItem {
   backdrop_path: string | null;
   runtime?: number;
   genres?: Array<{ name: string }>;
+  trailerKey?: string | null;
 }
 
 interface ExplorarPageProps {
@@ -25,7 +24,9 @@ async function getTrending() {
 
   try {
     const res = await fetch(`${apiUrl}/movies/trending`, {
-      next: { revalidate: 3600 },
+      // Cache curto: trailers raramente mudam, mas não queremos servir
+      // dados sem trailerKey por horas caso o backend seja atualizado.
+      next: { revalidate: 300 },
     });
 
     if (!res.ok) return [];
@@ -46,57 +47,19 @@ export default async function ExplorarPage({ searchParams }: ExplorarPageProps) 
 
   const trendingFeed = (
     <section className={styles.feed} aria-label="Filmes em destaque">
-      {trending.map((movie) => {
-        const backdropUrl = tmdbImage(movie.backdrop_path ?? movie.poster_path, 'w780');
-
-        return (
-          <article key={movie.id} className={styles.feedCard}>
-            <div className={styles.feedBackdrop}>
-              {backdropUrl && (
-                <Image
-                  src={backdropUrl}
-                  alt={movie.title}
-                  fill
-                  className={styles.feedBackdropImage}
-                  sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, 33vw"
-                />
-              )}
-              <div className={styles.playButton} aria-hidden="true">
-                <IconPlay width={48} height={48} />
-              </div>
-              <button
-                className={styles.addButton}
-                type="button"
-                aria-label={`Adicionar ${movie.title} à minha lista`}
-              >
-                <IconPlus width={16} height={16} />
-              </button>
-            </div>
-
-            <div className={styles.feedInfo}>
-              <div className={styles.feedMeta}>
-                <IconClapperboard
-                  className={styles.feedTypeIcon}
-                  width={14}
-                  height={14}
-                />
-                <h2 className={styles.feedTitle}>{movie.title}</h2>
-              </div>
-              {movie.runtime && (
-                <p className={styles.feedSubtitle}>
-                  {Math.floor(movie.runtime / 60)}h {movie.runtime % 60}min
-                  {movie.genres && movie.genres.length > 0 && (
-                    <> &bull; {movie.genres.map((g) => g.name).join(', ')}</>
-                  )}
-                </p>
-              )}
-              {movie.overview && (
-                <p className={styles.feedOverview}>{movie.overview}</p>
-              )}
-            </div>
-          </article>
-        );
-      })}
+      {trending.map((movie) => (
+        <FeedCard
+          key={movie.id}
+          id={movie.id}
+          title={movie.title}
+          overview={movie.overview ?? null}
+          backdropPath={movie.backdrop_path ?? null}
+          posterPath={movie.poster_path ?? null}
+          runtime={movie.runtime ?? null}
+          genres={movie.genres ?? null}
+          trailerKey={movie.trailerKey ?? null}
+        />
+      ))}
     </section>
   );
 
