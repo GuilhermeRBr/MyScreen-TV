@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#eb5757" />
+    <title>Sem conexão — MyScreen TV</title>
+    <style>
+      :root {
+        --color-bg: #0f0f0f;
+        --color-text: #ffffff;
+        --color-text-secondary: #a0a0a0;
+        --color-accent: #eb5757;
+        --color-border: #2a2a2a;
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100dvh;
+        padding: 2rem;
+        text-align: center;
+        gap: 1.5rem;
+      }
+
+      .icon {
+        width: 72px;
+        height: 72px;
+        color: var(--color-text-secondary);
+      }
+
+      .title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-text);
+      }
+
+      .description {
+        font-size: 1rem;
+        color: var(--color-text-secondary);
+        max-width: 320px;
+        line-height: 1.6;
+      }
+
+      .divider {
+        width: 40px;
+        height: 1px;
+        background-color: var(--color-border);
+      }
+
+      .hint {
+        font-size: 0.875rem;
+        color: var(--color-text-secondary);
+        max-width: 280px;
+        line-height: 1.5;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--color-accent);
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        font-family: var(--font-sans);
+        cursor: pointer;
+        text-decoration: none;
+        transition: opacity 0.15s ease;
+        margin-top: 0.5rem;
+      }
+
+      .button:hover {
+        opacity: 0.85;
+      }
+
+      .logo {
+        width: 48px;
+        height: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <!-- Logo MyScreen TV -->
+      <svg
+        class="logo"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 85 88"
+        fill="none"
+        role="img"
+        aria-label="MyScreen TV"
+      >
+        <path
+          d="M9.70996 2.85057C15.7341 -0.763892 23.2134 -0.953477 29.4121 2.35253L74.4121 26.3525C80.9293 29.8284 85 36.6138 85 44C85 51.3862 80.9293 58.1716 74.4121 61.6474L29.4121 85.6474C23.2134 88.9535 15.7341 88.7639 9.70996 85.1494C3.68602 81.5349 0 75.0251 0 68V20C0 12.9748 3.68602 6.46507 9.70996 2.85057Z"
+          fill="url(#offline-logo-grad)"
+        />
+        <path
+          d="M24 25V62L59 43.5L24 25Z"
+          fill="#0f0f0f"
+          stroke="#0f0f0f"
+          stroke-width="8"
+          stroke-linejoin="round"
+        />
+        <defs>
+          <linearGradient
+            id="offline-logo-grad"
+            x1="0"
+            y1="0"
+            x2="87.9471"
+            y2="84.9489"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stop-color="#EB5757" />
+            <stop offset="1" stop-color="#C0392B" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <!-- Ícone sem sinal -->
+      <svg
+        class="icon"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <line x1="1" y1="1" x2="23" y2="23" />
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+        <path d="M10.71 5.05A16 16 0 0 1 22.56 9" />
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+        <circle cx="12" cy="20" r="1" fill="currentColor" stroke="none" />
+      </svg>
+
+      <h1 class="title">Sem conexão</h1>
+
+      <p class="description">
+        Parece que você está offline. Verifique sua conexão com a internet e
+        tente novamente.
+      </p>
+
+      <div class="divider"></div>
+
+      <p class="hint">
+        Quando estiver conectado, o MyScreen TV carregará normalmente com todas
+        as suas séries e filmes.
+      </p>
+
+      <button class="button" onclick="window.location.reload()">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="23 4 23 10 17 10" />
+          <polyline points="1 20 1 14 7 14" />
+          <path
+            d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+          />
+        </svg>
+        Tentar novamente
+      </button>
+    </main>
+  </body>
+</html>

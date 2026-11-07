@@ -1,0 +1,63 @@
+{
+  "name": "MyScreen TV",
+  "short_name": "MyScreen",
+  "description": "Organize e acompanhe seus filmes e séries favoritos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#eb5757",
+  "background_color": "#0f0f0f",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Séries",
+      "short_name": "Séries",
+      "description": "Acesse suas séries em acompanhamento",
+      "url": "/series",
+      "icons": [
+        {
+          "src": "/icons/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Filmes",
+      "short_name": "Filmes",
+      "description": "Acesse sua lista de filmes",
+      "url": "/filmes",
+      "icons": [
+        {
+          "src": "/icons/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
