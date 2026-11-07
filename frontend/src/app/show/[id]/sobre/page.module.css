@@ -3,12 +3,6 @@
   padding-bottom: calc(var(--nav-height) + var(--space-6));
 }
 
-.actions {
-  display: flex;
-  justify-content: center;
-  padding: var(--space-4) 0 var(--space-2);
-}
-
 .infoBlock {
   background-color: var(--color-bg-card);
   border-radius: var(--radius-md);
@@ -67,7 +61,8 @@
 
 .metaRow {
   display: flex;
-  gap: var(--space-6);
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
   margin-top: var(--space-3);
 }
 
@@ -77,15 +72,6 @@
   gap: var(--space-2);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-}
-
-.usersCount {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  margin-top: var(--space-3);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .sectionTitle {
@@ -146,20 +132,4 @@
 .castCharacter {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-}
-
-.tmdbAttribution {
-  margin-top: var(--space-6);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-xs);
-}
-
-.tmdbLogo {
-  font-weight: 700;
-  color: var(--color-accent);
 }

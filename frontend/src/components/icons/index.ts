@@ -23,3 +23,5 @@ export { IconArrowRight } from './IconArrowRight';
 export { IconGoogle } from './IconGoogle';
 export { IconMicrosoft } from './IconMicrosoft';
 export { IconLock } from './IconLock';
+export { IconLayers } from './IconLayers';
+export { IconFilmStrip } from './IconFilmStrip';

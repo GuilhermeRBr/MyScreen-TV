@@ -85,7 +85,15 @@ export function MySeriesList() {
     );
   }
 
-  const started = items.filter((item) => item.progress.totalWatched > 0);
+  const isComplete = (item: ShowSubscriptionWithProgress) =>
+    item.progress.totalEpisodes > 0 &&
+    item.progress.totalWatched >= item.progress.totalEpisodes;
+
+  const watching = items.filter(
+    (item) =>
+      (item.status === 'WATCHING' || item.status === 'REWATCHING') &&
+      !isComplete(item),
+  );
   const notStarted = items.filter((item) => item.progress.totalWatched === 0);
 
   return (
@@ -99,12 +107,12 @@ export function MySeriesList() {
         </p>
       )}
 
-      {/* Séries iniciadas */}
-      {started.length > 0 && (
+      {/* Séries em andamento */}
+      {watching.length > 0 && (
         <>
           <p className={styles.sectionTitle}>Assistindo</p>
           <div className={styles.grid}>
-            {started.map(({ show, progress }) => {
+            {watching.map(({ show, progress }) => {
               const progressPercent =
                 progress.totalEpisodes > 0
                   ? (progress.totalWatched / progress.totalEpisodes) * 100
@@ -124,8 +132,8 @@ export function MySeriesList() {
         </>
       )}
 
-      {/* Divisor entre séries iniciadas e não iniciadas */}
-      {started.length > 0 && notStarted.length > 0 && (
+      {/* Divisor */}
+      {watching.length > 0 && notStarted.length > 0 && (
         <div className={styles.divider} aria-hidden="true" />
       )}
 
