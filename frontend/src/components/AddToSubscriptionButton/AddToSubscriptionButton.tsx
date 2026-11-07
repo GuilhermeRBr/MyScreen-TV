@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { IconPlus, IconCheck } from '@/components/icons';
+import { ConfirmModal } from '@/components/ConfirmModal/ConfirmModal';
 import { api } from '@/lib/api';
 import styles from './AddToSubscriptionButton.module.css';
 
@@ -52,43 +53,42 @@ export function AddToSubscriptionButton({
 }: AddToSubscriptionButtonProps) {
   const [status, setStatus] = useState<ShowStatus>(initialStatus);
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // Revalida o status do servidor ao montar
   useEffect(() => {
     fetchStatus(showId).then(setStatus);
   }, [showId]);
 
   function handleClick() {
-    setError(null);
-
     if (status !== null) {
-      startTransition(async () => {
-        const ok = await unsubscribe(showId);
-        if (ok) {
-          setStatus(null);
-        } else {
-          setError('Não foi possível remover. Tente novamente.');
-        }
-      });
+      // Série já adicionada — pede confirmação antes de remover
+      setShowConfirm(true);
     } else {
       startTransition(async () => {
         const ok = await subscribe(showId);
-        if (ok) {
-          setStatus('PLAN_TO_WATCH');
-        } else {
-          setError('Não foi possível salvar. Tente novamente.');
-        }
+        if (ok) setStatus('PLAN_TO_WATCH');
       });
     }
+  }
+
+  function handleConfirmRemove() {
+    setShowConfirm(false);
+    startTransition(async () => {
+      const ok = await unsubscribe(showId);
+      if (ok) setStatus(null);
+    });
+  }
+
+  function handleCancelRemove() {
+    setShowConfirm(false);
   }
 
   const isSubscribed = status !== null;
 
   return (
-    <div className={styles.wrapper}>
+    <>
       <button
-        className={`${styles.mainButton} ${isSubscribed ? styles.mainButtonActive : ''}`}
+        className={`${styles.roundButton} ${isSubscribed ? styles.roundButtonActive : ''}`}
         onClick={handleClick}
         disabled={isPending}
         aria-label={isSubscribed ? 'Remover da minha lista' : 'Adicionar à minha lista'}
@@ -96,16 +96,23 @@ export function AddToSubscriptionButton({
         {isPending ? (
           <span className={styles.spinner} aria-hidden="true" />
         ) : isSubscribed ? (
-          <IconCheck width={18} height={18} />
+          <IconCheck width={20} height={20} />
         ) : (
-          <IconPlus width={18} height={18} />
+          <IconPlus width={20} height={20} />
         )}
-        <span className={styles.label}>Minha lista</span>
       </button>
 
-      {error && (
-        <span className={styles.errorMsg} role="alert">{error}</span>
+      {showConfirm && (
+        <ConfirmModal
+          title="Remover da lista"
+          description="Tem certeza que deseja remover esta série da sua lista? O progresso de episódios assistidos será mantido."
+          confirmLabel="Remover"
+          cancelLabel="Cancelar"
+          onConfirm={handleConfirmRemove}
+          onCancel={handleCancelRemove}
+          isDanger
+        />
       )}
-    </div>
+    </>
   );
 }

@@ -3,7 +3,6 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   background-color: var(--color-bg-elevated);
-  overflow: hidden;
 }
 
 @media (min-width: 1024px) {
@@ -15,6 +14,7 @@
 
 .backdropImage {
   object-fit: cover;
+  overflow: hidden;
 }
 
 .backdropOverlay {
@@ -66,13 +66,27 @@
   z-index: 2;
 }
 
+/* Botão de lista sobreposto à linha vermelha, canto inferior direito */
+.subscribeButtonWrapper {
+  position: absolute;
+  bottom: calc(-20px);
+  right: var(--space-4);
+  z-index: 3;
+}
+
 .meta {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  justify-content: space-between;
   padding: var(--space-2) var(--space-4) 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+}
+
+.metaInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .metaSeparator {

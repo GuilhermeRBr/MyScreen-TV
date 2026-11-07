@@ -80,47 +80,46 @@ export class TmdbService {
       },
     });
 
-    // Upsert elenco (top 20) em paralelo
+    // Upsert elenco (top 20) sequencialmente para evitar race condition
+    // em cast.tmdbId e showCast.(showId, castId)
     const topCast = tmdbCredits.cast.slice(0, 20);
-    await Promise.all(
-      topCast.map(async (member) => {
-        const cast = await this.prisma.cast.upsert({
-          where: { tmdbId: member.id },
-          create: {
-            tmdbId: member.id,
-            name: member.name,
-            profilePath: member.profile_path,
-            lastSyncedAt: new Date(),
-          },
-          update: {
-            name: member.name,
-            profilePath: member.profile_path,
-            lastSyncedAt: new Date(),
-          },
-        });
+    for (const member of topCast) {
+      const cast = await this.prisma.cast.upsert({
+        where: { tmdbId: member.id },
+        create: {
+          tmdbId: member.id,
+          name: member.name,
+          profilePath: member.profile_path,
+          lastSyncedAt: new Date(),
+        },
+        update: {
+          name: member.name,
+          profilePath: member.profile_path,
+          lastSyncedAt: new Date(),
+        },
+      });
 
-        await this.prisma.showCast.upsert({
-          where: { showId_castId: { showId: show.id, castId: cast.id } },
-          create: {
-            showId: show.id,
-            castId: cast.id,
-            character: member.character,
-            order: member.order,
-          },
-          update: {
-            character: member.character,
-            order: member.order,
-          },
-        });
-      }),
-    );
+      await this.prisma.showCast.upsert({
+        where: { showId_castId: { showId: show.id, castId: cast.id } },
+        create: {
+          showId: show.id,
+          castId: cast.id,
+          character: member.character,
+          order: member.order,
+        },
+        update: {
+          character: member.character,
+          order: member.order,
+        },
+      });
+    }
 
-    // Upsert temporadas e episódios em paralelo
-    await Promise.all(
-      tmdbShow.seasons
-        .filter((s) => s.season_number > 0)
-        .map((s) => this.upsertSeason(show.id, tmdbId, s.season_number)),
-    );
+    // Upsert temporadas e episódios sequencialmente para evitar race condition
+    // no unique constraint (seasonId, episodeNumber)
+    const seasonsToSync = tmdbShow.seasons.filter((s) => s.season_number > 0);
+    for (const s of seasonsToSync) {
+      await this.upsertSeason(show.id, tmdbId, s.season_number);
+    }
 
     return show;
   }
@@ -163,30 +162,56 @@ export class TmdbService {
       },
     });
 
-    // Upsert episódios
+    // Upsert episódios — sequencial para evitar conflito em (seasonId, episodeNumber)
     for (const ep of tmdbSeason.episodes) {
-      await this.prisma.episode.upsert({
-        where: { tmdbId: ep.id },
-        create: {
-          seasonId: season.id,
-          tmdbId: ep.id,
-          episodeNumber: ep.episode_number,
-          name: ep.name,
-          overview: ep.overview,
-          stillPath: ep.still_path,
-          airDate: ep.air_date ? new Date(ep.air_date) : null,
-          runtime: ep.runtime,
-          lastSyncedAt: new Date(),
-        },
-        update: {
-          name: ep.name,
-          overview: ep.overview,
-          stillPath: ep.still_path,
-          airDate: ep.air_date ? new Date(ep.air_date) : null,
-          runtime: ep.runtime,
-          lastSyncedAt: new Date(),
-        },
-      });
+      try {
+        await this.prisma.episode.upsert({
+          where: { tmdbId: ep.id },
+          create: {
+            seasonId: season.id,
+            tmdbId: ep.id,
+            episodeNumber: ep.episode_number,
+            name: ep.name,
+            overview: ep.overview,
+            stillPath: ep.still_path,
+            airDate: ep.air_date ? new Date(ep.air_date) : null,
+            runtime: ep.runtime,
+            lastSyncedAt: new Date(),
+          },
+          update: {
+            name: ep.name,
+            overview: ep.overview,
+            stillPath: ep.still_path,
+            airDate: ep.air_date ? new Date(ep.air_date) : null,
+            runtime: ep.runtime,
+            lastSyncedAt: new Date(),
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 = unique constraint — episódio já existe com outro tmdbId,
+        // atualiza pelo par (seasonId, episodeNumber) diretamente
+        if (
+          typeof err === 'object' &&
+          err !== null &&
+          'code' in err &&
+          (err as { code: string }).code === 'P2002'
+        ) {
+          await this.prisma.episode.updateMany({
+            where: { seasonId: season.id, episodeNumber: ep.episode_number },
+            data: {
+              tmdbId: ep.id,
+              name: ep.name,
+              overview: ep.overview,
+              stillPath: ep.still_path,
+              airDate: ep.air_date ? new Date(ep.air_date) : null,
+              runtime: ep.runtime,
+              lastSyncedAt: new Date(),
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
     }
 
     return season;
