@@ -17,15 +17,26 @@ export class ShowsService {
   async getShowDetail(tmdbId: number) {
     const show = await this.tmdb.upsertShow(tmdbId);
 
-    const cast = await this.prisma.showCast.findMany({
-      where: { showId: show.id },
-      include: { cast: true },
-      orderBy: { order: 'asc' },
-      take: 20,
-    });
+    const [cast, seasons] = await Promise.all([
+      this.prisma.showCast.findMany({
+        where: { showId: show.id },
+        include: { cast: true },
+        orderBy: { order: 'asc' },
+        take: 20,
+      }),
+      this.prisma.season.findMany({
+        where: { showId: show.id },
+        select: { episodeCount: true },
+      }),
+    ]);
+
+    const numberOfSeasons = seasons.length;
+    const numberOfEpisodes = seasons.reduce((acc, s) => acc + s.episodeCount, 0);
 
     return {
       ...show,
+      numberOfSeasons,
+      numberOfEpisodes,
       cast: cast.map((sc) => ({
         id: sc.cast.id,
         name: sc.cast.name,

@@ -84,34 +84,62 @@ export class TmdbService {
     // em cast.tmdbId e showCast.(showId, castId)
     const topCast = tmdbCredits.cast.slice(0, 20);
     for (const member of topCast) {
-      const cast = await this.prisma.cast.upsert({
-        where: { tmdbId: member.id },
-        create: {
-          tmdbId: member.id,
-          name: member.name,
-          profilePath: member.profile_path,
-          lastSyncedAt: new Date(),
-        },
-        update: {
-          name: member.name,
-          profilePath: member.profile_path,
-          lastSyncedAt: new Date(),
-        },
-      });
+      let cast: Awaited<ReturnType<typeof this.prisma.cast.upsert>>;
 
-      await this.prisma.showCast.upsert({
-        where: { showId_castId: { showId: show.id, castId: cast.id } },
-        create: {
-          showId: show.id,
-          castId: cast.id,
-          character: member.character,
-          order: member.order,
-        },
-        update: {
-          character: member.character,
-          order: member.order,
-        },
-      });
+      try {
+        cast = await this.prisma.cast.upsert({
+          where: { tmdbId: member.id },
+          create: {
+            tmdbId: member.id,
+            name: member.name,
+            profilePath: member.profile_path,
+            lastSyncedAt: new Date(),
+          },
+          update: {
+            name: member.name,
+            profilePath: member.profile_path,
+            lastSyncedAt: new Date(),
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 em cast.tmdbId: defensivo — busca o registro existente
+        if (isP2002(err)) {
+          cast = await this.prisma.cast.findFirstOrThrow({
+            where: { tmdbId: member.id },
+          });
+        } else {
+          throw err;
+        }
+      }
+
+      try {
+        await this.prisma.showCast.upsert({
+          where: { showId_castId: { showId: show.id, castId: cast.id } },
+          create: {
+            showId: show.id,
+            castId: cast.id,
+            character: member.character,
+            order: member.order,
+          },
+          update: {
+            character: member.character,
+            order: member.order,
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 em (showId, castId): relação já existe, atualiza diretamente
+        if (isP2002(err)) {
+          await this.prisma.showCast.updateMany({
+            where: { showId: show.id, castId: cast.id },
+            data: {
+              character: member.character,
+              order: member.order,
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
     }
 
     // Upsert temporadas e episódios sequencialmente para evitar race condition
@@ -139,28 +167,43 @@ export class TmdbService {
 
     const tmdbSeason = await this.tmdb.getSeason(showTmdbId, seasonNumber);
 
-    const season = await this.prisma.season.upsert({
-      where: { tmdbId: tmdbSeason.id },
-      create: {
-        showId,
-        tmdbId: tmdbSeason.id,
-        seasonNumber: tmdbSeason.season_number,
-        name: tmdbSeason.name,
-        overview: tmdbSeason.overview,
-        posterPath: tmdbSeason.poster_path,
-        airDate: tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null,
-        episodeCount: tmdbSeason.episodes.length,
-        lastSyncedAt: new Date(),
-      },
-      update: {
-        name: tmdbSeason.name,
-        overview: tmdbSeason.overview,
-        posterPath: tmdbSeason.poster_path,
-        airDate: tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null,
-        episodeCount: tmdbSeason.episodes.length,
-        lastSyncedAt: new Date(),
-      },
-    });
+    const seasonData = {
+      name: tmdbSeason.name,
+      overview: tmdbSeason.overview,
+      posterPath: tmdbSeason.poster_path,
+      airDate: tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null,
+      episodeCount: tmdbSeason.episodes.length,
+      lastSyncedAt: new Date(),
+    };
+
+    let season: Season;
+
+    try {
+      season = await this.prisma.season.upsert({
+        where: { tmdbId: tmdbSeason.id },
+        create: {
+          showId,
+          tmdbId: tmdbSeason.id,
+          seasonNumber: tmdbSeason.season_number,
+          ...seasonData,
+        },
+        update: seasonData,
+      });
+    } catch (err: unknown) {
+      // P2002 em (showId, seasonNumber): o registro já existe com tmdbId diferente.
+      // Atualiza pelo par composto e relê o registro atualizado.
+      if (isP2002(err)) {
+        await this.prisma.season.updateMany({
+          where: { showId, seasonNumber: tmdbSeason.season_number },
+          data: { tmdbId: tmdbSeason.id, ...seasonData },
+        });
+        season = await this.prisma.season.findFirstOrThrow({
+          where: { showId, seasonNumber: tmdbSeason.season_number },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     // Upsert episódios — sequencial para evitar conflito em (seasonId, episodeNumber)
     for (const ep of tmdbSeason.episodes) {
@@ -190,12 +233,7 @@ export class TmdbService {
       } catch (err: unknown) {
         // P2002 = unique constraint — episódio já existe com outro tmdbId,
         // atualiza pelo par (seasonId, episodeNumber) diretamente
-        if (
-          typeof err === 'object' &&
-          err !== null &&
-          'code' in err &&
-          (err as { code: string }).code === 'P2002'
-        ) {
+        if (isP2002(err)) {
           await this.prisma.episode.updateMany({
             where: { seasonId: season.id, episodeNumber: ep.episode_number },
             data: {
@@ -276,34 +314,63 @@ export class TmdbService {
     const topCast = tmdbCredits.cast.slice(0, 20);
 
     for (const member of topCast) {
-      const cast = await this.prisma.cast.upsert({
-        where: { tmdbId: member.id },
-        create: {
-          tmdbId: member.id,
-          name: member.name,
-          profilePath: member.profile_path,
-          lastSyncedAt: new Date(),
-        },
-        update: {
-          name: member.name,
-          profilePath: member.profile_path,
-          lastSyncedAt: new Date(),
-        },
-      });
+      let cast: Awaited<ReturnType<typeof this.prisma.cast.upsert>>;
 
-      await this.prisma.movieCast.upsert({
-        where: { movieId_castId: { movieId: movie.id, castId: cast.id } },
-        create: {
-          movieId: movie.id,
-          castId: cast.id,
-          character: member.character,
-          order: member.order,
-        },
-        update: {
-          character: member.character,
-          order: member.order,
-        },
-      });
+      try {
+        cast = await this.prisma.cast.upsert({
+          where: { tmdbId: member.id },
+          create: {
+            tmdbId: member.id,
+            name: member.name,
+            profilePath: member.profile_path,
+            lastSyncedAt: new Date(),
+          },
+          update: {
+            name: member.name,
+            profilePath: member.profile_path,
+            lastSyncedAt: new Date(),
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 em cast.tmdbId: ator já existe com tmdbId diferente — não esperado,
+        // mas tratado defensivamente buscando pelo id retornado pelo TMDB
+        if (isP2002(err)) {
+          cast = await this.prisma.cast.findFirstOrThrow({
+            where: { tmdbId: member.id },
+          });
+        } else {
+          throw err;
+        }
+      }
+
+      try {
+        await this.prisma.movieCast.upsert({
+          where: { movieId_castId: { movieId: movie.id, castId: cast.id } },
+          create: {
+            movieId: movie.id,
+            castId: cast.id,
+            character: member.character,
+            order: member.order,
+          },
+          update: {
+            character: member.character,
+            order: member.order,
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 em (movieId, castId): relação já existe, atualiza diretamente
+        if (isP2002(err)) {
+          await this.prisma.movieCast.updateMany({
+            where: { movieId: movie.id, castId: cast.id },
+            data: {
+              character: member.character,
+              order: member.order,
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
     }
 
     return movie;
@@ -345,4 +412,13 @@ export class TmdbService {
     if (!lastSyncedAt) return false;
     return Date.now() - lastSyncedAt.getTime() < SYNC_CACHE_MS;
   }
+}
+
+function isP2002(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: string }).code === 'P2002'
+  );
 }

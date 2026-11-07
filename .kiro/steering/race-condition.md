@@ -66,7 +66,9 @@ function isP2002(err: unknown): boolean {
 | Arquivo | Operação | Motivo da correção |
 |---|---|---|
 | `tmdb.service.ts` | `upsertSeason` por série | Unique constraint `(seasonId, episodeNumber)` |
-| `tmdb.service.ts` | `upsert` de elenco/showCast | Unique constraint em `cast.tmdbId` e `showCast.(showId, castId)` |
+| `tmdb.service.ts` | `upsert` de elenco/showCast (séries) | Unique constraint em `cast.tmdbId` e `showCast.(showId, castId)` |
+| `tmdb.service.ts` | `upsertSeason` — season.upsert | P2002 em `(showId, seasonNumber)` quando `tmdbId` da temporada muda entre syncs — fallback com `updateMany` |
+| `tmdb.service.ts` | `upsert` de elenco/movieCast (filmes) | Mesmo padrão de séries: P2002 em `cast.tmdbId` e `movieCast.(movieId, castId)` — fallback com `findFirstOrThrow` / `updateMany` |
 
 ## Checklist antes de usar `Promise.all` com escrita
 

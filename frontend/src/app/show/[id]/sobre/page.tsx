@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import styles from './page.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
-import { IconStar, IconClock, IconUser } from '@/components/icons';
+import { IconStar, IconClock, IconUser, IconLayers, IconFilmStrip } from '@/components/icons';
 
 interface ShowDetail {
   id: string;
@@ -15,6 +15,8 @@ interface ShowDetail {
   voteAverage: number;
   voteCount: number;
   episodeRuntime: number | null;
+  numberOfSeasons: number;
+  numberOfEpisodes: number;
   cast: Array<{
     id: string;
     name: string;
@@ -109,7 +111,25 @@ export default async function SobrePage({
           {show.episodeRuntime && (
             <div className={styles.metaItem}>
               <IconClock width={16} height={16} />
-              <span>{show.episodeRuntime} min</span>
+              <span>{show.episodeRuntime} min / ep.</span>
+            </div>
+          )}
+          {show.numberOfSeasons > 0 && (
+            <div className={styles.metaItem}>
+              <IconLayers width={16} height={16} />
+              <span>
+                {show.numberOfSeasons}{' '}
+                {show.numberOfSeasons === 1 ? 'temporada' : 'temporadas'}
+              </span>
+            </div>
+          )}
+          {show.numberOfEpisodes > 0 && (
+            <div className={styles.metaItem}>
+              <IconFilmStrip width={16} height={16} />
+              <span>
+                {show.numberOfEpisodes}{' '}
+                {show.numberOfEpisodes === 1 ? 'episódio' : 'episódios'}
+              </span>
             </div>
           )}
         </div>
