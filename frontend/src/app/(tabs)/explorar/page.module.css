@@ -243,3 +243,28 @@
   color: var(--color-accent);
   font-weight: 600;
 }
+
+/* ---- Indicador de carregamento do feed infinito ---- */
+
+.feedLoadingRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-6) 0;
+  /* ocupa a largura inteira mesmo dentro do grid */
+  grid-column: 1 / -1;
+}
+
+@keyframes feedSpin {
+  to { transform: rotate(360deg); }
+}
+
+.feedLoadingSpinner {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-bg-elevated);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: feedSpin 0.8s linear infinite;
+}

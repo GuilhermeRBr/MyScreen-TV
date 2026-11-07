@@ -31,6 +31,16 @@ export class ShowsController {
     return this.showsService.getPopular(page);
   }
 
+  @Get('feed')
+  @ApiOperation(SHOWS_SWAGGER.getFeed.operation)
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getFeed.responses[200] })
+  getFeed(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  ) {
+    return this.showsService.getPopularFeed(page);
+  }
+
   @Get('trending')
   @ApiOperation(SHOWS_SWAGGER.getTrending.operation)
   @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getTrending.responses[200] })

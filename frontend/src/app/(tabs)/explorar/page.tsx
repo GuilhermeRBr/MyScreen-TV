@@ -15,8 +15,17 @@ interface FeedMovie {
   trailerKey: string | null;
 }
 
-interface FeedResponse {
-  results: FeedMovie[];
+interface FeedShow {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  trailerKey: string | null;
+}
+
+interface FeedResponse<T> {
+  results: T[];
   page: number;
   total_pages: number;
 }
@@ -25,19 +34,31 @@ interface ExplorarPageProps {
   searchParams: { q?: string };
 }
 
-async function getInitialFeed(): Promise<FeedResponse> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const EMPTY_FEED = { results: [], page: 1, total_pages: 1 };
 
+async function getInitialMovieFeed(): Promise<FeedResponse<FeedMovie>> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
   try {
     const res = await fetch(`${apiUrl}/movies/feed?page=1`, {
       next: { revalidate: 300 },
     });
-
-    if (!res.ok) return { results: [], page: 1, total_pages: 1 };
-
-    return (await res.json()) as FeedResponse;
+    if (!res.ok) return EMPTY_FEED as FeedResponse<FeedMovie>;
+    return (await res.json()) as FeedResponse<FeedMovie>;
   } catch {
-    return { results: [], page: 1, total_pages: 1 };
+    return EMPTY_FEED as FeedResponse<FeedMovie>;
+  }
+}
+
+async function getInitialShowFeed(): Promise<FeedResponse<FeedShow>> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  try {
+    const res = await fetch(`${apiUrl}/shows/feed?page=1`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return EMPTY_FEED as FeedResponse<FeedShow>;
+    return (await res.json()) as FeedResponse<FeedShow>;
+  } catch {
+    return EMPTY_FEED as FeedResponse<FeedShow>;
   }
 }
 
@@ -45,12 +66,16 @@ export default async function ExplorarPage({ searchParams }: ExplorarPageProps) 
   const initialQuery = searchParams.q ?? '';
   const isSearching = initialQuery.trim().length >= 2;
 
-  const feed = isSearching ? { results: [], page: 1, total_pages: 1 } : await getInitialFeed();
+  const [movieFeed, showFeed] = isSearching
+    ? [EMPTY_FEED as FeedResponse<FeedMovie>, EMPTY_FEED as FeedResponse<FeedShow>]
+    : await Promise.all([getInitialMovieFeed(), getInitialShowFeed()]);
 
   const trendingFeed = (
     <TrendingFeed
-      initialMovies={feed.results}
-      initialTotalPages={feed.total_pages}
+      initialMovies={movieFeed.results}
+      initialShows={showFeed.results}
+      initialMovieTotalPages={movieFeed.total_pages}
+      initialShowTotalPages={showFeed.total_pages}
     />
   );
 

@@ -23,6 +23,7 @@ import { ToggleEpisodeDto } from './dto/toggle-episode.dto';
 import { ToggleMovieDto } from './dto/toggle-movie.dto';
 import { UpsertShowSubscriptionDto } from './dto/upsert-show-subscription.dto';
 import { AddByTmdbDto } from './dto/add-by-tmdb.dto';
+import { BatchStatusDto } from './dto/batch-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -268,5 +269,16 @@ export class WatchController {
   @ApiResponse({ status: 401, description: WATCH_SWAGGER.getSubscriptionsWithProgress.responses[401] })
   getSubscriptionsWithProgress(@CurrentUser() user: JwtPayload) {
     return this.watchService.getSubscriptionsWithProgress(user.sub);
+  }
+
+  @Post('by-tmdb/status-batch')
+  @ApiOperation(WATCH_SWAGGER.batchStatus.operation)
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.batchStatus.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.batchStatus.responses[401] })
+  getBatchStatus(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: BatchStatusDto,
+  ) {
+    return this.watchService.getBatchStatus(user.sub, dto.items);
   }
 }

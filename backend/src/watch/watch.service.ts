@@ -342,6 +342,70 @@ export class WatchService {
     }
   }
 
+  async getBatchStatus(
+    userId: string,
+    items: Array<{ tmdbId: number; type: 'movie' | 'show' }>,
+  ): Promise<Record<string, boolean>> {
+    const movieTmdbIds = items.filter((i) => i.type === 'movie').map((i) => i.tmdbId);
+    const showTmdbIds = items.filter((i) => i.type === 'show').map((i) => i.tmdbId);
+
+    // Uma query por tipo — busca todos os registros relevantes de uma vez
+    const [movies, shows, movieWatches, showSubs] = await Promise.all([
+      movieTmdbIds.length > 0
+        ? this.prisma.movie.findMany({
+            where: { tmdbId: { in: movieTmdbIds } },
+            select: { id: true, tmdbId: true },
+          })
+        : [],
+      showTmdbIds.length > 0
+        ? this.prisma.show.findMany({
+            where: { tmdbId: { in: showTmdbIds } },
+            select: { id: true, tmdbId: true },
+          })
+        : [],
+      [] as { movieId: string }[],
+      [] as { showId: string }[],
+    ]);
+
+    const movieIdMap = new Map(movies.map((m) => [m.tmdbId, m.id]));
+    const showIdMap = new Map(shows.map((s) => [s.tmdbId, s.id]));
+
+    const internalMovieIds = movies.map((m) => m.id);
+    const internalShowIds = shows.map((s) => s.id);
+
+    const [watchRows, subRows] = await Promise.all([
+      internalMovieIds.length > 0
+        ? this.prisma.movieWatch.findMany({
+            where: { userId, movieId: { in: internalMovieIds } },
+            select: { movieId: true },
+          })
+        : movieWatches,
+      internalShowIds.length > 0
+        ? this.prisma.userShowSubscription.findMany({
+            where: { userId, showId: { in: internalShowIds } },
+            select: { showId: true },
+          })
+        : showSubs,
+    ]);
+
+    const watchedMovieIds = new Set(watchRows.map((w) => w.movieId));
+    const subscribedShowIds = new Set(subRows.map((s) => s.showId));
+
+    const result: Record<string, boolean> = {};
+    for (const item of items) {
+      const key = `${item.type}-${item.tmdbId}`;
+      if (item.type === 'movie') {
+        const internalId = movieIdMap.get(item.tmdbId);
+        result[key] = internalId ? watchedMovieIds.has(internalId) : false;
+      } else {
+        const internalId = showIdMap.get(item.tmdbId);
+        result[key] = internalId ? subscribedShowIds.has(internalId) : false;
+      }
+    }
+
+    return result;
+  }
+
   async getMovieWatchStatus(
     userId: string,
     movieId: string,

@@ -56,4 +56,12 @@ export const SHOWS_SWAGGER = {
       404: 'Série ou temporada não encontrada.',
     },
   },
+  getFeed: {
+    operation: {
+      summary: 'Feed de séries populares com trailers',
+      description:
+        'Retorna séries populares paginadas, cada uma com trailerKey do YouTube (ou null). Usado no feed infinito da tela Explorar. Não requer autenticação.',
+    },
+    responses: { 200: 'Lista de séries com trailerKey, page e total_pages.' },
+  },
 } as const;

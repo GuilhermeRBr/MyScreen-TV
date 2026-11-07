@@ -461,6 +461,36 @@ export class TmdbService {
     };
   }
 
+  async getPopularShowsWithTrailers(page = 1) {
+    const popular = await this.tmdb.getPopularShows(page);
+
+    const withTrailers = [];
+    for (const show of popular.results) {
+      try {
+        const videos = await this.tmdb.getShowVideos(show.id);
+        const trailer =
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer' && v.official,
+          ) ??
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer',
+          ) ??
+          videos.results.find((v) => v.site === 'YouTube') ??
+          null;
+
+        withTrailers.push({ ...show, trailerKey: trailer?.key ?? null });
+      } catch {
+        withTrailers.push({ ...show, trailerKey: null });
+      }
+    }
+
+    return {
+      results: withTrailers,
+      page: popular.page,
+      total_pages: popular.total_pages,
+    };
+  }
+
   // ---------------------------------------------------------------------------
 
   private isFreshCache(lastSyncedAt: Date | null): boolean {

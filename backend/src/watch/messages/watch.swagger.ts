@@ -219,4 +219,15 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  batchStatus: {
+    operation: {
+      summary: 'Verificar status de vários itens de uma vez',
+      description:
+        'Recebe um array de { tmdbId, type } e retorna um objeto com chave "type-tmdbId" e valor boolean indicando se cada item está na lista do usuário. Usa duas queries ao banco independente da quantidade de itens.',
+    },
+    responses: {
+      200: 'Record<string, boolean> com chaves no formato "movie-123" ou "show-456".',
+      401: 'Não autenticado.',
+    },
+  },
 } as const;

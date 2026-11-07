@@ -50,6 +50,10 @@ export class TmdbClient {
     return this.getWithoutLanguage<TmdbVideos>(`/movie/${tmdbId}/videos`);
   }
 
+  async getShowVideos(tmdbId: number): Promise<TmdbVideos> {
+    return this.getWithoutLanguage<TmdbVideos>(`/tv/${tmdbId}/videos`);
+  }
+
   async searchShows(
     query: string,
     page = 1,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useTransition, useEffect } from 'react';
+import { useState, useCallback, useTransition } from 'react';
 import Image from 'next/image';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconPlay, IconClapperboard, IconPlus, IconCheck } from '@/components/icons';
@@ -16,6 +16,7 @@ interface FeedCardProps {
   genres: Array<{ name: string }> | null;
   trailerKey: string | null;
   mediaType: 'movie' | 'show';
+  initialOnList?: boolean;
 }
 
 async function addToList(tmdbId: number, mediaType: 'movie' | 'show'): Promise<boolean> {
@@ -54,24 +55,14 @@ export function FeedCard({
   genres,
   trailerKey,
   mediaType,
+  initialOnList = false,
 }: Readonly<FeedCardProps>) {
   const [playing, setPlaying] = useState(false);
-  const [onList, setOnList] = useState(false);
+  const [onList, setOnList] = useState(initialOnList);
   const [isPending, startTransition] = useTransition();
 
   const backdropUrl = tmdbImage(backdropPath ?? posterPath, 'w780');
   const hasTrailer = Boolean(trailerKey);
-
-  useEffect(() => {
-    fetch(`/api/watch/by-tmdb/status?type=${mediaType}&tmdbId=${id}`, {
-      credentials: 'include',
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { onList: boolean } | null) => {
-        if (data) setOnList(data.onList);
-      })
-      .catch(() => {});
-  }, [id, mediaType]);
 
   const handlePlay = useCallback(() => {
     if (trailerKey) setPlaying(true);

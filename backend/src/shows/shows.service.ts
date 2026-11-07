@@ -85,6 +85,10 @@ export class ShowsService {
     return this.tmdb.getPopularShows(page);
   }
 
+  async getPopularFeed(page = 1) {
+    return this.tmdb.getPopularShowsWithTrailers(page);
+  }
+
   async getTrending() {
     return this.tmdb.getTrendingShows();
   }
