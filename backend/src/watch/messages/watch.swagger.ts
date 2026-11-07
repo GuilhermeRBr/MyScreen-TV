@@ -186,4 +186,48 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  addByTmdb: {
+    operation: {
+      summary: 'Adicionar filme ou série à lista pelo ID do TMDB',
+      description:
+        'Faz o upsert do item no banco (se necessário) e o adiciona à lista do usuário. Para filmes usa status WATCHLIST; para séries usa PLAN_TO_WATCH.',
+    },
+    responses: {
+      201: 'Item adicionado à lista.',
+      401: 'Não autenticado.',
+    },
+  },
+  removeByTmdb: {
+    operation: {
+      summary: 'Remover filme ou série da lista pelo ID do TMDB',
+      description:
+        'Remove o item da lista do usuário identificado pelo tmdbId e tipo (movie ou show).',
+    },
+    responses: {
+      200: 'Item removido.',
+      401: 'Não autenticado.',
+    },
+  },
+  statusByTmdb: {
+    operation: {
+      summary: 'Verificar se filme ou série está na lista pelo ID do TMDB',
+      description:
+        'Retorna { onList: boolean } indicando se o item já está na lista do usuário.',
+    },
+    responses: {
+      200: '{ onList: boolean }',
+      401: 'Não autenticado.',
+    },
+  },
+  batchStatus: {
+    operation: {
+      summary: 'Verificar status de vários itens de uma vez',
+      description:
+        'Recebe um array de { tmdbId, type } e retorna um objeto com chave "type-tmdbId" e valor boolean indicando se cada item está na lista do usuário. Usa duas queries ao banco independente da quantidade de itens.',
+    },
+    responses: {
+      200: 'Record<string, boolean> com chaves no formato "movie-123" ou "show-456".',
+      401: 'Não autenticado.',
+    },
+  },
 } as const;

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
-import { IconPlus, IconCheck, IconEye } from '@/components/icons';
+import { useEffect, useState, useTransition } from 'react';
+import { IconPlus, IconCheck } from '@/components/icons';
+import { ConfirmModal } from '@/components/ConfirmModal/ConfirmModal';
 import { api } from '@/lib/api';
 import styles from './AddToWatchlistButton.module.css';
 
@@ -21,16 +22,22 @@ async function fetchStatus(movieId: string): Promise<WatchStatus> {
   }
 }
 
-async function addToWatchlist(movieId: string): Promise<void> {
-  await api.post('/watch/movies/watchlist', { movieId });
+async function addToWatchlist(movieId: string): Promise<boolean> {
+  try {
+    await api.post('/watch/movies/watchlist', { movieId });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-async function markWatched(movieId: string): Promise<void> {
-  await api.post('/watch/movies/toggle', { movieId });
-}
-
-async function removeFromList(movieId: string): Promise<void> {
-  await api.delete(`/watch/movies/${movieId}`);
+async function removeFromList(movieId: string): Promise<boolean> {
+  try {
+    await api.delete(`/watch/movies/${movieId}`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function AddToWatchlistButton({
@@ -38,122 +45,66 @@ export function AddToWatchlistButton({
   initialStatus,
 }: AddToWatchlistButtonProps) {
   const [status, setStatus] = useState<WatchStatus>(initialStatus);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // Fecha o menu ao clicar fora
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Revalida o status do servidor ao montar
   useEffect(() => {
     fetchStatus(movieId).then(setStatus);
   }, [movieId]);
 
-  function handleAddToWatchlist() {
-    setMenuOpen(false);
+  function handleClick() {
+    if (status !== null) {
+      setShowConfirm(true);
+    } else {
+      startTransition(async () => {
+        const ok = await addToWatchlist(movieId);
+        if (ok) setStatus('WATCHLIST');
+      });
+    }
+  }
+
+  function handleConfirmRemove() {
+    setShowConfirm(false);
     startTransition(async () => {
-      await addToWatchlist(movieId);
-      setStatus('WATCHLIST');
+      const ok = await removeFromList(movieId);
+      if (ok) setStatus(null);
     });
   }
 
-  function handleMarkWatched() {
-    setMenuOpen(false);
-    startTransition(async () => {
-      await markWatched(movieId);
-      setStatus('WATCHED');
-    });
-  }
-
-  function handleRemove() {
-    setMenuOpen(false);
-    startTransition(async () => {
-      await removeFromList(movieId);
-      setStatus(null);
-    });
+  function handleCancelRemove() {
+    setShowConfirm(false);
   }
 
   const isOnList = status !== null;
 
   return (
-    <div className={styles.wrapper} ref={menuRef}>
+    <>
       <button
-        className={`${styles.mainButton} ${isOnList ? styles.mainButtonActive : ''}`}
-        onClick={() => setMenuOpen((prev) => !prev)}
+        className={`${styles.roundButton} ${isOnList ? styles.roundButtonActive : ''}`}
+        onClick={handleClick}
         disabled={isPending}
-        aria-label={
-          status === null
-            ? 'Adicionar à minha lista'
-            : status === 'WATCHLIST'
-              ? 'Na watchlist — clique para gerenciar'
-              : 'Assistido — clique para gerenciar'
-        }
-        aria-expanded={menuOpen}
+        aria-label={isOnList ? 'Remover da minha lista' : 'Adicionar à minha lista'}
       >
         {isPending ? (
           <span className={styles.spinner} aria-hidden="true" />
-        ) : status === 'WATCHED' ? (
-          <IconCheck width={18} height={18} />
-        ) : status === 'WATCHLIST' ? (
-          <IconEye width={18} height={18} />
+        ) : isOnList ? (
+          <IconCheck width={20} height={20} />
         ) : (
-          <IconPlus width={18} height={18} />
+          <IconPlus width={20} height={20} />
         )}
-        <span className={styles.label}>
-          {status === 'WATCHED'
-            ? 'Assistido'
-            : status === 'WATCHLIST'
-              ? 'Quero assistir'
-              : 'Minha lista'}
-        </span>
       </button>
 
-      {menuOpen && (
-        <div className={styles.menu} role="menu" aria-label="Opções da lista">
-          <button
-            className={styles.menuItem}
-            role="menuitem"
-            onClick={handleAddToWatchlist}
-            disabled={isPending}
-          >
-            <IconEye width={16} height={16} />
-            Quero assistir
-          </button>
-          <button
-            className={styles.menuItem}
-            role="menuitem"
-            onClick={handleMarkWatched}
-            disabled={isPending}
-          >
-            <IconCheck width={16} height={16} />
-            Marcar como assistido
-          </button>
-          {isOnList && (
-            <button
-              className={`${styles.menuItem} ${styles.menuItemDanger}`}
-              role="menuitem"
-              onClick={handleRemove}
-              disabled={isPending}
-            >
-              <IconPlus
-                width={16}
-                height={16}
-                style={{ transform: 'rotate(45deg)' }}
-              />
-              Remover da lista
-            </button>
-          )}
-        </div>
+      {showConfirm && (
+        <ConfirmModal
+          title="Remover da lista"
+          description="Tem certeza que deseja remover este filme da sua lista?"
+          confirmLabel="Remover"
+          cancelLabel="Cancelar"
+          onConfirm={handleConfirmRemove}
+          onCancel={handleCancelRemove}
+          isDanger
+        />
       )}
-    </div>
+    </>
   );
 }

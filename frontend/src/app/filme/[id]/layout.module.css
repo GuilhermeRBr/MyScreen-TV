@@ -3,7 +3,6 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   background-color: var(--color-bg-elevated);
-  overflow: hidden;
 }
 
 @media (min-width: 1024px) {
@@ -15,6 +14,7 @@
 
 .backdropImage {
   object-fit: cover;
+  overflow: hidden;
 }
 
 .backdropOverlay {
@@ -69,6 +69,14 @@
   height: 3px;
   background-color: var(--color-accent);
   z-index: 2;
+}
+
+/* Botão de lista sobreposto à linha vermelha, canto inferior direito */
+.watchlistButtonWrapper {
+  position: absolute;
+  bottom: calc(-20px);
+  right: var(--space-4);
+  z-index: 3;
 }
 
 .meta {

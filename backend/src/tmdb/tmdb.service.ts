@@ -80,11 +80,14 @@ export class TmdbService {
       },
     });
 
-    // Upsert elenco (top 20) em paralelo
+    // Upsert elenco (top 20) sequencialmente para evitar race condition
+    // em cast.tmdbId e showCast.(showId, castId)
     const topCast = tmdbCredits.cast.slice(0, 20);
-    await Promise.all(
-      topCast.map(async (member) => {
-        const cast = await this.prisma.cast.upsert({
+    for (const member of topCast) {
+      let cast: Awaited<ReturnType<typeof this.prisma.cast.upsert>>;
+
+      try {
+        cast = await this.prisma.cast.upsert({
           where: { tmdbId: member.id },
           create: {
             tmdbId: member.id,
@@ -98,7 +101,18 @@ export class TmdbService {
             lastSyncedAt: new Date(),
           },
         });
+      } catch (err: unknown) {
+        // P2002 em cast.tmdbId: defensivo — busca o registro existente
+        if (isP2002(err)) {
+          cast = await this.prisma.cast.findFirstOrThrow({
+            where: { tmdbId: member.id },
+          });
+        } else {
+          throw err;
+        }
+      }
 
+      try {
         await this.prisma.showCast.upsert({
           where: { showId_castId: { showId: show.id, castId: cast.id } },
           create: {
@@ -112,15 +126,28 @@ export class TmdbService {
             order: member.order,
           },
         });
-      }),
-    );
+      } catch (err: unknown) {
+        // P2002 em (showId, castId): relação já existe, atualiza diretamente
+        if (isP2002(err)) {
+          await this.prisma.showCast.updateMany({
+            where: { showId: show.id, castId: cast.id },
+            data: {
+              character: member.character,
+              order: member.order,
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
+    }
 
-    // Upsert temporadas e episódios em paralelo
-    await Promise.all(
-      tmdbShow.seasons
-        .filter((s) => s.season_number > 0)
-        .map((s) => this.upsertSeason(show.id, tmdbId, s.season_number)),
-    );
+    // Upsert temporadas e episódios sequencialmente para evitar race condition
+    // no unique constraint (seasonId, episodeNumber)
+    const seasonsToSync = tmdbShow.seasons.filter((s) => s.season_number > 0);
+    for (const s of seasonsToSync) {
+      await this.upsertSeason(show.id, tmdbId, s.season_number);
+    }
 
     return show;
   }
@@ -140,53 +167,89 @@ export class TmdbService {
 
     const tmdbSeason = await this.tmdb.getSeason(showTmdbId, seasonNumber);
 
-    const season = await this.prisma.season.upsert({
-      where: { tmdbId: tmdbSeason.id },
-      create: {
-        showId,
-        tmdbId: tmdbSeason.id,
-        seasonNumber: tmdbSeason.season_number,
-        name: tmdbSeason.name,
-        overview: tmdbSeason.overview,
-        posterPath: tmdbSeason.poster_path,
-        airDate: tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null,
-        episodeCount: tmdbSeason.episodes.length,
-        lastSyncedAt: new Date(),
-      },
-      update: {
-        name: tmdbSeason.name,
-        overview: tmdbSeason.overview,
-        posterPath: tmdbSeason.poster_path,
-        airDate: tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null,
-        episodeCount: tmdbSeason.episodes.length,
-        lastSyncedAt: new Date(),
-      },
-    });
+    const seasonData = {
+      name: tmdbSeason.name,
+      overview: tmdbSeason.overview,
+      posterPath: tmdbSeason.poster_path,
+      airDate: tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null,
+      episodeCount: tmdbSeason.episodes.length,
+      lastSyncedAt: new Date(),
+    };
 
-    // Upsert episódios
-    for (const ep of tmdbSeason.episodes) {
-      await this.prisma.episode.upsert({
-        where: { tmdbId: ep.id },
+    let season: Season;
+
+    try {
+      season = await this.prisma.season.upsert({
+        where: { tmdbId: tmdbSeason.id },
         create: {
-          seasonId: season.id,
-          tmdbId: ep.id,
-          episodeNumber: ep.episode_number,
-          name: ep.name,
-          overview: ep.overview,
-          stillPath: ep.still_path,
-          airDate: ep.air_date ? new Date(ep.air_date) : null,
-          runtime: ep.runtime,
-          lastSyncedAt: new Date(),
+          showId,
+          tmdbId: tmdbSeason.id,
+          seasonNumber: tmdbSeason.season_number,
+          ...seasonData,
         },
-        update: {
-          name: ep.name,
-          overview: ep.overview,
-          stillPath: ep.still_path,
-          airDate: ep.air_date ? new Date(ep.air_date) : null,
-          runtime: ep.runtime,
-          lastSyncedAt: new Date(),
-        },
+        update: seasonData,
       });
+    } catch (err: unknown) {
+      // P2002 em (showId, seasonNumber): o registro já existe com tmdbId diferente.
+      // Atualiza pelo par composto e relê o registro atualizado.
+      if (isP2002(err)) {
+        await this.prisma.season.updateMany({
+          where: { showId, seasonNumber: tmdbSeason.season_number },
+          data: { tmdbId: tmdbSeason.id, ...seasonData },
+        });
+        season = await this.prisma.season.findFirstOrThrow({
+          where: { showId, seasonNumber: tmdbSeason.season_number },
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    // Upsert episódios — sequencial para evitar conflito em (seasonId, episodeNumber)
+    for (const ep of tmdbSeason.episodes) {
+      try {
+        await this.prisma.episode.upsert({
+          where: { tmdbId: ep.id },
+          create: {
+            seasonId: season.id,
+            tmdbId: ep.id,
+            episodeNumber: ep.episode_number,
+            name: ep.name,
+            overview: ep.overview,
+            stillPath: ep.still_path,
+            airDate: ep.air_date ? new Date(ep.air_date) : null,
+            runtime: ep.runtime,
+            lastSyncedAt: new Date(),
+          },
+          update: {
+            name: ep.name,
+            overview: ep.overview,
+            stillPath: ep.still_path,
+            airDate: ep.air_date ? new Date(ep.air_date) : null,
+            runtime: ep.runtime,
+            lastSyncedAt: new Date(),
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 = unique constraint — episódio já existe com outro tmdbId,
+        // atualiza pelo par (seasonId, episodeNumber) diretamente
+        if (isP2002(err)) {
+          await this.prisma.episode.updateMany({
+            where: { seasonId: season.id, episodeNumber: ep.episode_number },
+            data: {
+              tmdbId: ep.id,
+              name: ep.name,
+              overview: ep.overview,
+              stillPath: ep.still_path,
+              airDate: ep.air_date ? new Date(ep.air_date) : null,
+              runtime: ep.runtime,
+              lastSyncedAt: new Date(),
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
     }
 
     return season;
@@ -207,9 +270,12 @@ export class TmdbService {
 
     this.logger.log(`Sincronizando filme tmdbId=${tmdbId}`);
 
-    const tmdbMovie = await this.tmdb.getMovie(tmdbId);
+    const [tmdbMovie, tmdbCredits] = await Promise.all([
+      this.tmdb.getMovie(tmdbId),
+      this.tmdb.getMovieCredits(tmdbId),
+    ]);
 
-    return this.prisma.movie.upsert({
+    const movie = await this.prisma.movie.upsert({
       where: { tmdbId },
       create: {
         tmdbId: tmdbMovie.id,
@@ -243,6 +309,71 @@ export class TmdbService {
         lastSyncedAt: new Date(),
       },
     });
+
+    // Upsert elenco do filme (top 20) sequencialmente
+    const topCast = tmdbCredits.cast.slice(0, 20);
+
+    for (const member of topCast) {
+      let cast: Awaited<ReturnType<typeof this.prisma.cast.upsert>>;
+
+      try {
+        cast = await this.prisma.cast.upsert({
+          where: { tmdbId: member.id },
+          create: {
+            tmdbId: member.id,
+            name: member.name,
+            profilePath: member.profile_path,
+            lastSyncedAt: new Date(),
+          },
+          update: {
+            name: member.name,
+            profilePath: member.profile_path,
+            lastSyncedAt: new Date(),
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 em cast.tmdbId: ator já existe com tmdbId diferente — não esperado,
+        // mas tratado defensivamente buscando pelo id retornado pelo TMDB
+        if (isP2002(err)) {
+          cast = await this.prisma.cast.findFirstOrThrow({
+            where: { tmdbId: member.id },
+          });
+        } else {
+          throw err;
+        }
+      }
+
+      try {
+        await this.prisma.movieCast.upsert({
+          where: { movieId_castId: { movieId: movie.id, castId: cast.id } },
+          create: {
+            movieId: movie.id,
+            castId: cast.id,
+            character: member.character,
+            order: member.order,
+          },
+          update: {
+            character: member.character,
+            order: member.order,
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 em (movieId, castId): relação já existe, atualiza diretamente
+        if (isP2002(err)) {
+          await this.prisma.movieCast.updateMany({
+            where: { movieId: movie.id, castId: cast.id },
+            data: {
+              character: member.character,
+              order: member.order,
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    return movie;
   }
 
   // ---------------------------------------------------------------------------
@@ -273,12 +404,106 @@ export class TmdbService {
     return this.tmdb.getTrendingMovies();
   }
 
-  // ---------------------------------------------------------------------------
-  // Helpers
+  async getTrendingMoviesWithTrailers() {
+    const trending = await this.tmdb.getTrendingMovies();
+    const items = trending.results.slice(0, 10);
+
+    const withTrailers = [];
+    for (const movie of items) {
+      try {
+        const videos = await this.tmdb.getMovieVideos(movie.id);
+        const trailer =
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer' && v.official,
+          ) ??
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer',
+          ) ??
+          videos.results.find((v) => v.site === 'YouTube') ??
+          null;
+
+        withTrailers.push({ ...movie, trailerKey: trailer?.key ?? null });
+      } catch {
+        withTrailers.push({ ...movie, trailerKey: null });
+      }
+    }
+
+    return { results: withTrailers };
+  }
+
+  async getPopularWithTrailers(page = 1) {
+    const popular = await this.tmdb.getPopularMovies(page);
+
+    const withTrailers = [];
+    for (const movie of popular.results) {
+      try {
+        const videos = await this.tmdb.getMovieVideos(movie.id);
+        const trailer =
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer' && v.official,
+          ) ??
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer',
+          ) ??
+          videos.results.find((v) => v.site === 'YouTube') ??
+          null;
+
+        withTrailers.push({ ...movie, trailerKey: trailer?.key ?? null });
+      } catch {
+        withTrailers.push({ ...movie, trailerKey: null });
+      }
+    }
+
+    return {
+      results: withTrailers,
+      page: popular.page,
+      total_pages: popular.total_pages,
+    };
+  }
+
+  async getPopularShowsWithTrailers(page = 1) {
+    const popular = await this.tmdb.getPopularShows(page);
+
+    const withTrailers = [];
+    for (const show of popular.results) {
+      try {
+        const videos = await this.tmdb.getShowVideos(show.id);
+        const trailer =
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer' && v.official,
+          ) ??
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer',
+          ) ??
+          videos.results.find((v) => v.site === 'YouTube') ??
+          null;
+
+        withTrailers.push({ ...show, trailerKey: trailer?.key ?? null });
+      } catch {
+        withTrailers.push({ ...show, trailerKey: null });
+      }
+    }
+
+    return {
+      results: withTrailers,
+      page: popular.page,
+      total_pages: popular.total_pages,
+    };
+  }
+
   // ---------------------------------------------------------------------------
 
   private isFreshCache(lastSyncedAt: Date | null): boolean {
     if (!lastSyncedAt) return false;
     return Date.now() - lastSyncedAt.getTime() < SYNC_CACHE_MS;
   }
+}
+
+function isP2002(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: string }).code === 'P2002'
+  );
 }

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ShowSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { TmdbService } from '../tmdb/tmdb.service';
 import { WATCH_MESSAGES } from './messages/watch.messages';
 
 export interface SeasonProgress {
@@ -28,7 +29,10 @@ export interface UserStats {
 
 @Injectable()
 export class WatchService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tmdb: TmdbService,
+  ) {}
 
   // ---------------------------------------------------------------------------
   // Episódios
@@ -40,12 +44,14 @@ export class WatchService {
   ): Promise<{ watched: boolean }> {
     const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
-      select: { id: true },
+      select: { id: true, season: { select: { showId: true } } },
     });
 
     if (!episode) {
       throw new NotFoundException(WATCH_MESSAGES.EPISODE_NOT_FOUND);
     }
+
+    const showId = episode.season.showId;
 
     const existing = await this.prisma.watchProgress.findUnique({
       where: { userId_episodeId: { userId, episodeId } },
@@ -55,12 +61,22 @@ export class WatchService {
       await this.prisma.watchProgress.delete({
         where: { id: existing.id },
       });
+
+      // Se não sobrou nenhum episódio assistido, volta para PLAN_TO_WATCH
+      await this.checkAndRevertWatching(userId, showId);
+
       return { watched: false };
     }
 
     await this.prisma.watchProgress.create({
       data: { userId, episodeId },
     });
+
+    // Se não tem assinatura ou está como PLAN_TO_WATCH, muda para WATCHING
+    await this.checkAndStartWatching(userId, showId);
+
+    // Verifica se todos os episódios foram assistidos e encerra
+    await this.checkAndCompleteShow(userId, showId);
 
     return { watched: true };
   }
@@ -94,6 +110,12 @@ export class WatchService {
 
     await this.prisma.watchProgress.createMany({ data: toCreate });
 
+    // Se não tem assinatura ou está como PLAN_TO_WATCH, muda para WATCHING
+    await this.checkAndStartWatching(userId, season.showId);
+
+    // Verifica se a série foi completamente assistida e atualiza o status
+    await this.checkAndCompleteShow(userId, season.showId);
+
     return { markedCount: toCreate.length };
   }
 
@@ -116,6 +138,9 @@ export class WatchService {
         episodeId: { in: season.episodes.map((e) => e.id) },
       },
     });
+
+    // Se não sobrou nenhum episódio assistido na série, volta para PLAN_TO_WATCH
+    await this.checkAndRevertWatching(userId, season.showId);
 
     return { removedCount: count };
   }
@@ -241,6 +266,144 @@ export class WatchService {
       create: { userId, movieId, status: 'WATCHLIST' },
       update: {},
     });
+  }
+
+  async addMovieToWatchlistByTmdbId(userId: string, tmdbId: number): Promise<void> {
+    const movie = await this.tmdb.upsertMovie(tmdbId);
+    await this.prisma.movieWatch.upsert({
+      where: { userId_movieId: { userId, movieId: movie.id } },
+      create: { userId, movieId: movie.id, status: 'WATCHLIST' },
+      update: {},
+    });
+  }
+
+  async addShowToListByTmdbId(userId: string, tmdbId: number): Promise<void> {
+    const show = await this.tmdb.upsertShow(tmdbId);
+    await this.prisma.userShowSubscription.upsert({
+      where: { userId_showId: { userId, showId: show.id } },
+      create: { userId, showId: show.id, status: ShowSubscriptionStatus.PLAN_TO_WATCH },
+      update: {},
+    });
+  }
+
+  async getStatusByTmdbId(
+    userId: string,
+    tmdbId: number,
+    mediaType: 'movie' | 'show',
+  ): Promise<{ onList: boolean }> {
+    if (mediaType === 'movie') {
+      const movie = await this.prisma.movie.findUnique({
+        where: { tmdbId },
+        select: { id: true },
+      });
+      if (!movie) return { onList: false };
+      const watch = await this.prisma.movieWatch.findUnique({
+        where: { userId_movieId: { userId, movieId: movie.id } },
+        select: { id: true },
+      });
+      return { onList: !!watch };
+    } else {
+      const show = await this.prisma.show.findUnique({
+        where: { tmdbId },
+        select: { id: true },
+      });
+      if (!show) return { onList: false };
+      const sub = await this.prisma.userShowSubscription.findUnique({
+        where: { userId_showId: { userId, showId: show.id } },
+        select: { id: true },
+      });
+      return { onList: !!sub };
+    }
+  }
+
+  async removeByTmdbId(
+    userId: string,
+    tmdbId: number,
+    mediaType: 'movie' | 'show',
+  ): Promise<void> {
+    if (mediaType === 'movie') {
+      const movie = await this.prisma.movie.findUnique({
+        where: { tmdbId },
+        select: { id: true },
+      });
+      if (!movie) return;
+      await this.prisma.movieWatch.deleteMany({
+        where: { userId, movieId: movie.id },
+      });
+    } else {
+      const show = await this.prisma.show.findUnique({
+        where: { tmdbId },
+        select: { id: true },
+      });
+      if (!show) return;
+      await this.prisma.userShowSubscription.deleteMany({
+        where: { userId, showId: show.id },
+      });
+    }
+  }
+
+  async getBatchStatus(
+    userId: string,
+    items: Array<{ tmdbId: number; type: 'movie' | 'show' }>,
+  ): Promise<Record<string, boolean>> {
+    const movieTmdbIds = items.filter((i) => i.type === 'movie').map((i) => i.tmdbId);
+    const showTmdbIds = items.filter((i) => i.type === 'show').map((i) => i.tmdbId);
+
+    // Uma query por tipo — busca todos os registros relevantes de uma vez
+    const [movies, shows, movieWatches, showSubs] = await Promise.all([
+      movieTmdbIds.length > 0
+        ? this.prisma.movie.findMany({
+            where: { tmdbId: { in: movieTmdbIds } },
+            select: { id: true, tmdbId: true },
+          })
+        : [],
+      showTmdbIds.length > 0
+        ? this.prisma.show.findMany({
+            where: { tmdbId: { in: showTmdbIds } },
+            select: { id: true, tmdbId: true },
+          })
+        : [],
+      [] as { movieId: string }[],
+      [] as { showId: string }[],
+    ]);
+
+    const movieIdMap = new Map(movies.map((m) => [m.tmdbId, m.id]));
+    const showIdMap = new Map(shows.map((s) => [s.tmdbId, s.id]));
+
+    const internalMovieIds = movies.map((m) => m.id);
+    const internalShowIds = shows.map((s) => s.id);
+
+    const [watchRows, subRows] = await Promise.all([
+      internalMovieIds.length > 0
+        ? this.prisma.movieWatch.findMany({
+            where: { userId, movieId: { in: internalMovieIds } },
+            select: { movieId: true },
+          })
+        : movieWatches,
+      internalShowIds.length > 0
+        ? this.prisma.userShowSubscription.findMany({
+            where: { userId, showId: { in: internalShowIds } },
+            select: { showId: true },
+          })
+        : showSubs,
+    ]);
+
+    const watchedMovieIds = new Set(watchRows.map((w) => w.movieId));
+    const subscribedShowIds = new Set(subRows.map((s) => s.showId));
+
+    const result: Record<string, boolean> = {};
+    for (const item of items) {
+      const key = `${item.type}-${item.tmdbId}`;
+      if (item.type === 'movie') {
+        const internalId = movieIdMap.get(item.tmdbId);
+        result[key] = internalId ? watchedMovieIds.has(internalId) : false;
+      } else {
+        const internalId = showIdMap.get(item.tmdbId);
+        result[key] = internalId ? subscribedShowIds.has(internalId) : false;
+      }
+    }
+
+    return result;
   }
 
   async getMovieWatchStatus(
@@ -436,10 +599,17 @@ export class WatchService {
       throw new NotFoundException(WATCH_MESSAGES.SHOW_NOT_FOUND);
     }
 
+    // Se o usuário tem episódios assistidos e está tentando adicionar como PLAN_TO_WATCH,
+    // promove automaticamente para WATCHING
+    const adjustedStatus =
+      status === 'PLAN_TO_WATCH'
+        ? await this.getAdjustedStatusForExistingProgress(userId, showId)
+        : status;
+
     return this.prisma.userShowSubscription.upsert({
       where: { userId_showId: { userId, showId } },
-      create: { userId, showId, status },
-      update: { status },
+      create: { userId, showId, status: adjustedStatus },
+      update: { status: adjustedStatus },
     });
   }
 
@@ -456,6 +626,142 @@ export class WatchService {
     await this.prisma.userShowSubscription.delete({
       where: { id: existing.id },
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers privados
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Quando o usuário marca o primeiro episódio como assistido e ainda não tem
+   * assinatura ativa (ou está como PLAN_TO_WATCH), cria/atualiza a assinatura
+   * para WATCHING automaticamente.
+   */
+  private async checkAndStartWatching(userId: string, showId: string): Promise<void> {
+    const subscription = await this.prisma.userShowSubscription.findUnique({
+      where: { userId_showId: { userId, showId } },
+      select: { status: true },
+    });
+
+    // Já está em um status ativo de acompanhamento — não interfere
+    if (
+      subscription &&
+      subscription.status !== 'PLAN_TO_WATCH'
+    ) {
+      return;
+    }
+
+    await this.prisma.userShowSubscription.upsert({
+      where: { userId_showId: { userId, showId } },
+      create: { userId, showId, status: 'WATCHING' },
+      update: { status: 'WATCHING' },
+    });
+  }
+
+  /**
+   * Ao re-adicionar uma série como PLAN_TO_WATCH, verifica se o usuário já tem
+   * episódios assistidos e promove o status para WATCHING automaticamente,
+   * evitando que a série apareça em "Assistir a seguir" em vez de "Assistindo".
+   */
+  private async getAdjustedStatusForExistingProgress(
+    userId: string,
+    showId: string,
+  ): Promise<ShowSubscriptionStatus> {
+    const watchedCount = await this.prisma.watchProgress.count({
+      where: {
+        userId,
+        episode: { season: { showId } },
+      },
+    });
+
+    if (watchedCount === 0) {
+      return 'PLAN_TO_WATCH';
+    }
+
+    const totalEpisodes = await this.prisma.episode.count({
+      where: { season: { showId } },
+    });
+
+    if (totalEpisodes > 0 && watchedCount >= totalEpisodes) {
+      return 'STOPPED';
+    }
+
+    return 'WATCHING';
+  }
+
+  /**
+   * Quando o usuário remove episódios assistidos e não sobra nenhum,
+   * reverte a assinatura de WATCHING/REWATCHING/STOPPED para PLAN_TO_WATCH,
+   * para que a série saia da seção "Assistindo" e volte a "Assistir a seguir".
+   */
+  private async checkAndRevertWatching(userId: string, showId: string): Promise<void> {
+    const subscription = await this.prisma.userShowSubscription.findUnique({
+      where: { userId_showId: { userId, showId } },
+      select: { status: true },
+    });
+
+    if (
+      !subscription ||
+      (subscription.status !== 'WATCHING' &&
+        subscription.status !== 'REWATCHING' &&
+        subscription.status !== 'STOPPED')
+    ) {
+      return;
+    }
+
+    const watchedCount = await this.prisma.watchProgress.count({
+      where: {
+        userId,
+        episode: { season: { showId } },
+      },
+    });
+
+    if (watchedCount === 0) {
+      await this.prisma.userShowSubscription.update({
+        where: { userId_showId: { userId, showId } },
+        data: { status: 'PLAN_TO_WATCH' },
+      });
+    }
+  }
+
+  /**
+   * Verifica se todos os episódios da série foram assistidos pelo usuário.
+   * Se sim e o status atual for WATCHING ou REWATCHING, transiciona para STOPPED
+   * para que a série saia da seção "assistindo".
+   */
+  private async checkAndCompleteShow(userId: string, showId: string): Promise<void> {
+    const subscription = await this.prisma.userShowSubscription.findUnique({
+      where: { userId_showId: { userId, showId } },
+      select: { status: true },
+    });
+
+    // Só age se o usuário tiver a série como WATCHING ou REWATCHING
+    if (
+      !subscription ||
+      (subscription.status !== 'WATCHING' && subscription.status !== 'REWATCHING')
+    ) {
+      return;
+    }
+
+    // Conta total de episódios da série vs. episódios assistidos
+    const [totalEpisodes, watchedCount] = await Promise.all([
+      this.prisma.episode.count({
+        where: { season: { showId } },
+      }),
+      this.prisma.watchProgress.count({
+        where: {
+          userId,
+          episode: { season: { showId } },
+        },
+      }),
+    ]);
+
+    if (totalEpisodes > 0 && watchedCount >= totalEpisodes) {
+      await this.prisma.userShowSubscription.update({
+        where: { userId_showId: { userId, showId } },
+        data: { status: 'STOPPED' },
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------

@@ -34,4 +34,12 @@ export const MOVIES_SWAGGER = {
       404: 'Filme não encontrado.',
     },
   },
+  getFeed: {
+    operation: {
+      summary: 'Feed de filmes populares com trailers',
+      description:
+        'Retorna filmes populares paginados, cada um com trailerKey do YouTube (ou null). Usado no feed infinito da tela Explorar. Não requer autenticação.',
+    },
+    responses: { 200: 'Lista de filmes com trailerKey, page e total_pages.' },
+  },
 } as const;

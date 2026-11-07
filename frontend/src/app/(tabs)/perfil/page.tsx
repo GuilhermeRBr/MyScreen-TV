@@ -93,15 +93,6 @@ export default function PerfilPage() {
         </div>
         <ProfileMoviesPreview />
       </section>
-
-      {/* Atribuição TMDB */}
-      <div className={styles.tmdbAttribution} role="contentinfo">
-        <span className={styles.tmdbLogo}>TMDB</span>
-        <span>
-          Este produto usa a API do TMDB, mas não é endossado ou certificado pelo
-          TMDB.
-        </span>
-      </div>
     </div>
   );
 }

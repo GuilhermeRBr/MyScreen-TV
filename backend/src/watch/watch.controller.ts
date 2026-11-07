@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  ParseEnumPipe,
   ParseUUIDPipe,
   Post,
+  Query,
   UseGuards,
-  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,11 +16,14 @@ import {
   ApiResponse,
   ApiCookieAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { WatchService } from './watch.service';
 import { ToggleEpisodeDto } from './dto/toggle-episode.dto';
 import { ToggleMovieDto } from './dto/toggle-movie.dto';
 import { UpsertShowSubscriptionDto } from './dto/upsert-show-subscription.dto';
+import { AddByTmdbDto } from './dto/add-by-tmdb.dto';
+import { BatchStatusDto } from './dto/batch-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -145,6 +150,50 @@ export class WatchController {
     return this.watchService.addToWatchlist(user.sub, dto.movieId);
   }
 
+  @Post('by-tmdb/add')
+  @ApiOperation(WATCH_SWAGGER.addByTmdb.operation)
+  @ApiQuery({ name: 'type', enum: ['movie', 'show'], description: 'Tipo do item' })
+  @ApiResponse({ status: 201, description: WATCH_SWAGGER.addByTmdb.responses[201] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.addByTmdb.responses[401] })
+  addByTmdb(
+    @CurrentUser() user: JwtPayload,
+    @Query('type', new ParseEnumPipe(['movie', 'show'])) type: 'movie' | 'show',
+    @Body() dto: AddByTmdbDto,
+  ) {
+    if (type === 'movie') {
+      return this.watchService.addMovieToWatchlistByTmdbId(user.sub, dto.tmdbId);
+    }
+    return this.watchService.addShowToListByTmdbId(user.sub, dto.tmdbId);
+  }
+
+  @Delete('by-tmdb/remove')
+  @ApiOperation(WATCH_SWAGGER.removeByTmdb.operation)
+  @ApiQuery({ name: 'type', enum: ['movie', 'show'], description: 'Tipo do item' })
+  @ApiQuery({ name: 'tmdbId', type: Number, description: 'ID do item no TMDB' })
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.removeByTmdb.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.removeByTmdb.responses[401] })
+  removeByTmdb(
+    @CurrentUser() user: JwtPayload,
+    @Query('type', new ParseEnumPipe(['movie', 'show'])) type: 'movie' | 'show',
+    @Query('tmdbId') tmdbIdStr: string,
+  ) {
+    return this.watchService.removeByTmdbId(user.sub, Number(tmdbIdStr), type);
+  }
+
+  @Get('by-tmdb/status')
+  @ApiOperation(WATCH_SWAGGER.statusByTmdb.operation)
+  @ApiQuery({ name: 'type', enum: ['movie', 'show'], description: 'Tipo do item' })
+  @ApiQuery({ name: 'tmdbId', type: Number, description: 'ID do item no TMDB' })
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.statusByTmdb.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.statusByTmdb.responses[401] })
+  statusByTmdb(
+    @CurrentUser() user: JwtPayload,
+    @Query('type', new ParseEnumPipe(['movie', 'show'])) type: 'movie' | 'show',
+    @Query('tmdbId') tmdbIdStr: string,
+  ) {
+    return this.watchService.getStatusByTmdbId(user.sub, Number(tmdbIdStr), type);
+  }
+
   @Get('stats')
   @ApiOperation(WATCH_SWAGGER.getStats.operation)
   @ApiResponse({ status: 200, description: WATCH_SWAGGER.getStats.responses[200] })
@@ -220,5 +269,16 @@ export class WatchController {
   @ApiResponse({ status: 401, description: WATCH_SWAGGER.getSubscriptionsWithProgress.responses[401] })
   getSubscriptionsWithProgress(@CurrentUser() user: JwtPayload) {
     return this.watchService.getSubscriptionsWithProgress(user.sub);
+  }
+
+  @Post('by-tmdb/status-batch')
+  @ApiOperation(WATCH_SWAGGER.batchStatus.operation)
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.batchStatus.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.batchStatus.responses[401] })
+  getBatchStatus(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: BatchStatusDto,
+  ) {
+    return this.watchService.getBatchStatus(user.sub, dto.items);
   }
 }

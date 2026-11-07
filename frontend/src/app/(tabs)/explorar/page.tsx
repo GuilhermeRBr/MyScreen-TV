@@ -1,12 +1,9 @@
-import Image from 'next/image';
 import { Suspense } from 'react';
 import styles from './page.module.css';
-import { tmdbImage } from '@/lib/tmdb-image';
-import { IconPlay, IconClapperboard, IconPlus } from '@/components/icons';
 import { ExplorarClient } from './ExplorarClient';
 import { SearchResults } from './SearchResults';
 
-interface TmdbMovieItem {
+interface FeedMovie {
   id: number;
   title: string;
   overview: string;
@@ -14,26 +11,53 @@ interface TmdbMovieItem {
   backdrop_path: string | null;
   runtime?: number;
   genres?: Array<{ name: string }>;
+  trailerKey: string | null;
+}
+
+interface FeedShow {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  trailerKey: string | null;
+}
+
+interface FeedResponse<T> {
+  results: T[];
+  page: number;
+  total_pages: number;
 }
 
 interface ExplorarPageProps {
   searchParams: { q?: string };
 }
 
-async function getTrending() {
+const EMPTY_FEED = { results: [], page: 1, total_pages: 1 };
+
+async function getInitialMovieFeed(): Promise<FeedResponse<FeedMovie>> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   try {
-    const res = await fetch(`${apiUrl}/movies/trending`, {
-      next: { revalidate: 3600 },
+    const res = await fetch(`${apiUrl}/movies/feed?page=1`, {
+      next: { revalidate: 300 },
     });
-
-    if (!res.ok) return [];
-
-    const data = (await res.json()) as { results: TmdbMovieItem[] };
-    return data.results?.slice(0, 10) ?? [];
+    if (!res.ok) return EMPTY_FEED as FeedResponse<FeedMovie>;
+    return (await res.json()) as FeedResponse<FeedMovie>;
   } catch {
-    return [];
+    return EMPTY_FEED as FeedResponse<FeedMovie>;
+  }
+}
+
+async function getInitialShowFeed(): Promise<FeedResponse<FeedShow>> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  try {
+    const res = await fetch(`${apiUrl}/shows/feed?page=1`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return EMPTY_FEED as FeedResponse<FeedShow>;
+    return (await res.json()) as FeedResponse<FeedShow>;
+  } catch {
+    return EMPTY_FEED as FeedResponse<FeedShow>;
   }
 }
 
@@ -41,73 +65,19 @@ export default async function ExplorarPage({ searchParams }: ExplorarPageProps) 
   const initialQuery = searchParams.q ?? '';
   const isSearching = initialQuery.trim().length >= 2;
 
-  // Só busca o trending se não há busca ativa — evita fetch desnecessário
-  const trending = isSearching ? [] : await getTrending();
-
-  const trendingFeed = (
-    <section className={styles.feed} aria-label="Filmes em destaque">
-      {trending.map((movie) => {
-        const backdropUrl = tmdbImage(movie.backdrop_path ?? movie.poster_path, 'w780');
-
-        return (
-          <article key={movie.id} className={styles.feedCard}>
-            <div className={styles.feedBackdrop}>
-              {backdropUrl && (
-                <Image
-                  src={backdropUrl}
-                  alt={movie.title}
-                  fill
-                  className={styles.feedBackdropImage}
-                  sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, 33vw"
-                />
-              )}
-              <div className={styles.playButton} aria-hidden="true">
-                <IconPlay width={48} height={48} />
-              </div>
-              <button
-                className={styles.addButton}
-                type="button"
-                aria-label={`Adicionar ${movie.title} à minha lista`}
-              >
-                <IconPlus width={16} height={16} />
-              </button>
-            </div>
-
-            <div className={styles.feedInfo}>
-              <div className={styles.feedMeta}>
-                <IconClapperboard
-                  className={styles.feedTypeIcon}
-                  width={14}
-                  height={14}
-                />
-                <h2 className={styles.feedTitle}>{movie.title}</h2>
-              </div>
-              {movie.runtime && (
-                <p className={styles.feedSubtitle}>
-                  {Math.floor(movie.runtime / 60)}h {movie.runtime % 60}min
-                  {movie.genres && movie.genres.length > 0 && (
-                    <> &bull; {movie.genres.map((g) => g.name).join(', ')}</>
-                  )}
-                </p>
-              )}
-              {movie.overview && (
-                <p className={styles.feedOverview}>{movie.overview}</p>
-              )}
-            </div>
-          </article>
-        );
-      })}
-    </section>
-  );
+  const [movieFeed, showFeed] = isSearching
+    ? [EMPTY_FEED as FeedResponse<FeedMovie>, EMPTY_FEED as FeedResponse<FeedShow>]
+    : await Promise.all([getInitialMovieFeed(), getInitialShowFeed()]);
 
   return (
     <div className={styles.container}>
       <Suspense>
         <ExplorarClient
           initialQuery={initialQuery}
-          trendingFeed={trendingFeed}
-          // Quando há busca ativa, passa o slot de resultados pré-renderizado
-          // para que o HTML inicial já contenha o estado correto — sem flash
+          initialMovies={movieFeed.results}
+          initialShows={showFeed.results}
+          initialMovieTotalPages={movieFeed.total_pages}
+          initialShowTotalPages={showFeed.total_pages}
           searchResultsSlot={
             isSearching ? (
               <SearchResults query={initialQuery} />

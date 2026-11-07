@@ -4,6 +4,8 @@ import styles from './layout.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconDots } from '@/components/icons';
 import { BackButton } from '@/components/BackButton/BackButton';
+import { AddToWatchlistButton } from '@/components/AddToWatchlistButton/AddToWatchlistButton';
+import { serverFetch } from '@/lib/server-fetch';
 
 interface Movie {
   id: string;
@@ -15,6 +17,8 @@ interface Movie {
   voteAverage: number;
 }
 
+type WatchStatus = 'WATCHLIST' | 'WATCHED' | null;
+
 async function getMovie(id: string): Promise<Movie | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -25,6 +29,23 @@ async function getMovie(id: string): Promise<Movie | null> {
 
     if (!res.ok) return null;
     return res.json() as Promise<Movie>;
+  } catch {
+    return null;
+  }
+}
+
+async function getWatchStatus(movieId: string): Promise<WatchStatus> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+  try {
+    const res = await serverFetch(
+      `${apiUrl}/watch/movies/${movieId}/status`,
+      { cache: 'no-store' },
+    );
+
+    if (!res.ok) return null;
+    const data = (await res.json()) as { status: WatchStatus };
+    return data.status;
   } catch {
     return null;
   }
@@ -42,6 +63,8 @@ export default async function FilmeLayout({
   if (!movie) {
     notFound();
   }
+
+  const watchStatus = await getWatchStatus(movie.id);
 
   const backdropUrl = tmdbImage(movie.backdropPath, 'w780');
   const rating = movie.voteAverage
@@ -78,6 +101,14 @@ export default async function FilmeLayout({
         </div>
 
         <div className={styles.progressLine} aria-hidden="true" />
+
+        {/* Botão de lista — sobreposto à linha, canto direito */}
+        <div className={styles.watchlistButtonWrapper}>
+          <AddToWatchlistButton
+            movieId={movie.id}
+            initialStatus={watchStatus}
+          />
+        </div>
       </div>
 
       {/* Meta */}
