@@ -25,7 +25,7 @@ interface UseInfiniteRecommendationsResult {
   sentinelRef: React.RefCallback<HTMLDivElement>;
 }
 
-const MAX_PAGES = 10;
+const MAX_PAGES = 50;
 
 export function useInfiniteRecommendations({
   endpoint,
