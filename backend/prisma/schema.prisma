@@ -161,6 +161,7 @@ model Cast {
   updatedAt    DateTime @updatedAt
 
   showCasts ShowCast[]
+  movieCasts MovieCast[]
 
   @@map("casts")
 }
@@ -177,6 +178,20 @@ model ShowCast {
 
   @@unique([showId, castId])
   @@map("show_casts")
+}
+
+model MovieCast {
+  id          String  @id @default(uuid())
+  movieId     String
+  castId      String
+  character   String?
+  order       Int     @default(0)
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  cast  Cast  @relation(fields: [castId], references: [id], onDelete: Cascade)
+
+  @@unique([movieId, castId])
+  @@map("movie_casts")
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +216,7 @@ model Movie {
   updatedAt     DateTime @updatedAt
 
   movieWatches MovieWatch[]
+  movieCasts   MovieCast[]
 
   @@map("movies")
 }

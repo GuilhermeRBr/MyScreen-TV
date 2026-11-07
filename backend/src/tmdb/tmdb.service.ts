@@ -232,9 +232,12 @@ export class TmdbService {
 
     this.logger.log(`Sincronizando filme tmdbId=${tmdbId}`);
 
-    const tmdbMovie = await this.tmdb.getMovie(tmdbId);
+    const [tmdbMovie, tmdbCredits] = await Promise.all([
+      this.tmdb.getMovie(tmdbId),
+      this.tmdb.getMovieCredits(tmdbId),
+    ]);
 
-    return this.prisma.movie.upsert({
+    const movie = await this.prisma.movie.upsert({
       where: { tmdbId },
       create: {
         tmdbId: tmdbMovie.id,
@@ -268,6 +271,42 @@ export class TmdbService {
         lastSyncedAt: new Date(),
       },
     });
+
+    // Upsert elenco do filme (top 20) sequencialmente
+    const topCast = tmdbCredits.cast.slice(0, 20);
+
+    for (const member of topCast) {
+      const cast = await this.prisma.cast.upsert({
+        where: { tmdbId: member.id },
+        create: {
+          tmdbId: member.id,
+          name: member.name,
+          profilePath: member.profile_path,
+          lastSyncedAt: new Date(),
+        },
+        update: {
+          name: member.name,
+          profilePath: member.profile_path,
+          lastSyncedAt: new Date(),
+        },
+      });
+
+      await this.prisma.movieCast.upsert({
+        where: { movieId_castId: { movieId: movie.id, castId: cast.id } },
+        create: {
+          movieId: movie.id,
+          castId: cast.id,
+          character: member.character,
+          order: member.order,
+        },
+        update: {
+          character: member.character,
+          order: member.order,
+        },
+      });
+    }
+
+    return movie;
   }
 
   // ---------------------------------------------------------------------------

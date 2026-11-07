@@ -1,8 +1,15 @@
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import styles from './page.module.css';
-import { IconStar, IconClock } from '@/components/icons';
-import { AddToWatchlistButton } from '@/components/AddToWatchlistButton/AddToWatchlistButton';
-import { serverFetch } from '@/lib/server-fetch';
+import { IconStar, IconClock, IconUser } from '@/components/icons';
+import { tmdbImage } from '@/lib/tmdb-image';
+
+interface CastMember {
+  id: string;
+  name: string;
+  profilePath: string | null;
+  character: string | null;
+}
 
 interface MovieDetail {
   id: string;
@@ -14,11 +21,7 @@ interface MovieDetail {
   genres: string[];
   voteAverage: number;
   voteCount: number;
-}
-
-interface MovieWatchStatus {
-  status: 'WATCHLIST' | 'WATCHED' | null;
-  watchedAt: string | null;
+  cast: CastMember[];
 }
 
 async function getMovieDetail(id: string): Promise<MovieDetail | null> {
@@ -26,9 +29,6 @@ async function getMovieDetail(id: string): Promise<MovieDetail | null> {
 
   try {
     const res = await fetch(`${apiUrl}/movies/${id}`, {
-      // Sem cache: garante que o id interno do banco está sempre atualizado.
-      // Evita o 404 no watch quando o banco foi recriado ou o upsert ainda
-      // não foi cacheado pelo Next.js.
       cache: 'no-store',
     });
 
@@ -36,22 +36,6 @@ async function getMovieDetail(id: string): Promise<MovieDetail | null> {
     return res.json() as Promise<MovieDetail>;
   } catch {
     return null;
-  }
-}
-
-async function getMovieWatchStatus(movieInternalId: string): Promise<MovieWatchStatus> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
-  try {
-    const res = await serverFetch(
-      `${apiUrl}/watch/movies/${movieInternalId}/status`,
-      { cache: 'no-store' },
-    );
-
-    if (!res.ok) return { status: null, watchedAt: null };
-    return res.json() as Promise<MovieWatchStatus>;
-  } catch {
-    return { status: null, watchedAt: null };
   }
 }
 
@@ -84,8 +68,6 @@ export default async function FilmePage({
     notFound();
   }
 
-  const watchStatus = await getMovieWatchStatus(movie.id);
-
   const releaseYear = movie.releaseDate
     ? new Date(movie.releaseDate).getFullYear()
     : null;
@@ -94,13 +76,6 @@ export default async function FilmePage({
 
   return (
     <div className={styles.container}>
-      <div className={styles.actions}>
-        <AddToWatchlistButton
-          movieId={movie.id}
-          initialStatus={watchStatus.status}
-        />
-      </div>
-
       <section className={styles.infoBlock} aria-labelledby="info-title">
         <h2 className={styles.infoTitle} id="info-title">
           Informações do filme
@@ -141,13 +116,52 @@ export default async function FilmePage({
         )}
       </section>
 
-      <div className={styles.tmdbAttribution} role="contentinfo">
-        <span className={styles.tmdbLogo}>TMDB</span>
-        <span>
-          Este produto usa a API do TMDB mas não é endossado ou certificado pelo
-          TMDB.
-        </span>
-      </div>
+      {/* Elenco */}
+      {movie.cast.length > 0 && (
+        <section aria-labelledby="cast-title">
+          <h2 className={styles.sectionTitle} id="cast-title">
+            Elenco
+          </h2>
+          <ul className={styles.castList} role="list">
+            {movie.cast.map((member) => {
+              const profileUrl = tmdbImage(member.profilePath, 'w92');
+
+              return (
+                <li key={member.id} className={styles.castItem}>
+                  <div className={styles.castAvatar}>
+                    {profileUrl ? (
+                      <Image
+                        src={profileUrl}
+                        alt={member.name}
+                        width={44}
+                        height={44}
+                        className={styles.castAvatarImage}
+                      />
+                    ) : (
+                      <IconUser
+                        width={24}
+                        height={24}
+                        style={{
+                          margin: '10px',
+                          color: 'var(--color-text-muted)',
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className={styles.castInfo}>
+                    <span className={styles.castName}>{member.name}</span>
+                    {member.character && (
+                      <span className={styles.castCharacter}>
+                        {member.character}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

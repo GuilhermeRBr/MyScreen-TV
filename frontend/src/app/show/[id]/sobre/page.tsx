@@ -114,10 +114,6 @@ export default async function SobrePage({
           )}
         </div>
 
-        <div className={styles.usersCount}>
-          <IconUser width={14} height={14} />
-          <span>Dados fornecidos pelo TMDB</span>
-        </div>
       </section>
 
       {/* Elenco */}
@@ -167,14 +163,6 @@ export default async function SobrePage({
         </section>
       )}
 
-      {/* Atribuição TMDB obrigatória */}
-      <div className={styles.tmdbAttribution} role="contentinfo">
-        <span className={styles.tmdbLogo}>TMDB</span>
-        <span>
-          Este produto usa a API do TMDB mas não é endossado ou certificado pelo
-          TMDB.
-        </span>
-      </div>
     </div>
   );
 }

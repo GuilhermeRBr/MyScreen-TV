@@ -73,15 +73,6 @@
   font-size: var(--font-size-sm);
 }
 
-.usersCount {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  margin-top: var(--space-3);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 .sectionTitle {
   font-size: var(--font-size-md);
   font-weight: 700;
@@ -140,20 +131,4 @@
 .castCharacter {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-}
-
-.tmdbAttribution {
-  margin-top: var(--space-6);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-xs);
-}
-
-.tmdbLogo {
-  font-weight: 700;
-  color: var(--color-accent);
 }
