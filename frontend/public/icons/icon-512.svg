@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0f0f0f"/>
+  <!-- Logotipo MyScreen TV centralizado em 512x512 -->
+  <!-- Escala: 512/85 ≈ 6.02x; dimensão resultante: 85*6.02=512x88*6.02=530 — ajustado para 85*5.5=467.5 x 88*5.5=484 -->
+  <!-- offset x=(512-467.5)/2=22.25, y=(512-484)/2=14 -->
+  <g transform="translate(22.25, 14) scale(5.5)">
+    <path d="M9.70996 2.85057C15.7341 -0.763892 23.2134 -0.953477 29.4121 2.35253L74.4121 26.3525C80.9293 29.8284 85 36.6138 85 44C85 51.3862 80.9293 58.1716 74.4121 61.6474L29.4121 85.6474C23.2134 88.9535 15.7341 88.7639 9.70996 85.1494C3.68602 81.5349 0 75.0251 0 68V20C0 12.9748 3.68602 6.46507 9.70996 2.85057Z" fill="url(#g512-outer)"/>
+    <path d="M24 25V62L59 43.5L24 25Z" fill="#0f0f0f" stroke="#0f0f0f" stroke-width="8" stroke-linejoin="round"/>
+  </g>
+  <defs>
+    <linearGradient id="g512-outer" x1="0" y1="0" x2="87.9471" y2="84.9489" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EB5757"/>
+      <stop offset="1" stop-color="#C0392B"/>
+    </linearGradient>
+  </defs>
+</svg>

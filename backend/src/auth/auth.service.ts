@@ -94,6 +94,10 @@ export class AuthService {
       throw new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS);
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException(AUTH_MESSAGES.ACCOUNT_INACTIVE);
+    }
+
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
@@ -111,7 +115,7 @@ export class AuthService {
 
     const storedToken = await this.prisma.refreshToken.findUnique({
       where: { tokenHash },
-      include: { user: { select: { id: true, email: true, role: true } } },
+      include: { user: { select: { id: true, email: true, role: true, isActive: true } } },
     });
 
     if (
@@ -121,6 +125,10 @@ export class AuthService {
       storedToken.expiresAt < new Date()
     ) {
       throw new UnauthorizedException(AUTH_MESSAGES.INVALID_REFRESH_TOKEN);
+    }
+
+    if (!storedToken.user.isActive) {
+      throw new UnauthorizedException(AUTH_MESSAGES.ACCOUNT_INACTIVE);
     }
 
     // Revogar token usado (rotação de refresh token)
