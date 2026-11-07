@@ -58,6 +58,7 @@ export default async function ExplorarPage({ searchParams }: ExplorarPageProps) 
           runtime={movie.runtime ?? null}
           genres={movie.genres ?? null}
           trailerKey={movie.trailerKey ?? null}
+          mediaType="movie"
         />
       ))}
     </section>

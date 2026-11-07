@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useTransition, useEffect } from 'react';
 import Image from 'next/image';
 import { tmdbImage } from '@/lib/tmdb-image';
-import { IconPlay, IconClapperboard, IconPlus } from '@/components/icons';
+import { IconPlay, IconClapperboard, IconPlus, IconCheck } from '@/components/icons';
 import styles from './FeedCard.module.css';
 
 interface FeedCardProps {
@@ -15,6 +15,33 @@ interface FeedCardProps {
   runtime: number | null;
   genres: Array<{ name: string }> | null;
   trailerKey: string | null;
+  mediaType: 'movie' | 'show';
+}
+
+async function addToList(tmdbId: number, mediaType: 'movie' | 'show'): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/watch/by-tmdb/add?type=${mediaType}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tmdbId }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function removeFromList(tmdbId: number, mediaType: 'movie' | 'show'): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/watch/by-tmdb/remove?type=${mediaType}&tmdbId=${tmdbId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 export function FeedCard({
@@ -26,22 +53,45 @@ export function FeedCard({
   runtime,
   genres,
   trailerKey,
+  mediaType,
 }: Readonly<FeedCardProps>) {
   const [playing, setPlaying] = useState(false);
+  const [onList, setOnList] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const backdropUrl = tmdbImage(backdropPath ?? posterPath, 'w780');
+  const hasTrailer = Boolean(trailerKey);
+
+  useEffect(() => {
+    fetch(`/api/watch/by-tmdb/status?type=${mediaType}&tmdbId=${id}`, {
+      credentials: 'include',
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { onList: boolean } | null) => {
+        if (data) setOnList(data.onList);
+      })
+      .catch(() => {});
+  }, [id, mediaType]);
 
   const handlePlay = useCallback(() => {
-    if (trailerKey) {
-      setPlaying(true);
-    }
+    if (trailerKey) setPlaying(true);
   }, [trailerKey]);
 
   const handleStop = useCallback(() => {
     setPlaying(false);
   }, []);
 
-  const hasTrailer = Boolean(trailerKey);
+  const handleListToggle = useCallback(() => {
+    startTransition(async () => {
+      if (onList) {
+        const ok = await removeFromList(id, mediaType);
+        if (ok) setOnList(false);
+      } else {
+        const ok = await addToList(id, mediaType);
+        if (ok) setOnList(true);
+      }
+    });
+  }, [id, mediaType, onList]);
 
   return (
     <article className={styles.feedCard}>
@@ -72,13 +122,11 @@ export function FeedCard({
                 onClick={handlePlay}
                 aria-label={`Reproduzir trailer de ${title}`}
               >
-                <span className={styles.playButtonInner} aria-hidden="true">
-                  <IconPlay width={40} height={40} />
-                </span>
+                <IconPlay width={64} height={64} />
               </button>
             ) : (
               <div className={styles.playButton} aria-hidden="true">
-                <IconPlay width={48} height={48} />
+                <IconPlay width={64} height={64} />
               </div>
             )}
           </>
@@ -108,11 +156,23 @@ export function FeedCard({
           </button>
         ) : (
           <button
-            className={styles.addButton}
+            className={`${styles.addButton} ${onList ? styles.addButtonActive : ''}`}
             type="button"
-            aria-label={`Adicionar ${title} à minha lista`}
+            disabled={isPending}
+            onClick={handleListToggle}
+            aria-label={
+              onList
+                ? `Remover ${title} da minha lista`
+                : `Adicionar ${title} à minha lista`
+            }
           >
-            <IconPlus width={16} height={16} />
+            {isPending ? (
+              <span className={styles.spinner} aria-hidden="true" />
+            ) : onList ? (
+              <IconCheck width={16} height={16} />
+            ) : (
+              <IconPlus width={16} height={16} />
+            )}
           </button>
         )}
       </div>
