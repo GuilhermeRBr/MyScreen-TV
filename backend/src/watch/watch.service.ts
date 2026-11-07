@@ -62,6 +62,16 @@ export class WatchService {
       data: { userId, episodeId },
     });
 
+    // Verifica se a série foi completamente assistida e atualiza o status
+    const ep = await this.prisma.episode.findUnique({
+      where: { id: episodeId },
+      select: { season: { select: { showId: true } } },
+    });
+
+    if (ep) {
+      await this.checkAndCompleteShow(userId, ep.season.showId);
+    }
+
     return { watched: true };
   }
 
@@ -93,6 +103,9 @@ export class WatchService {
       .map((e) => ({ userId, episodeId: e.id }));
 
     await this.prisma.watchProgress.createMany({ data: toCreate });
+
+    // Verifica se a série foi completamente assistida e atualiza o status
+    await this.checkAndCompleteShow(userId, season.showId);
 
     return { markedCount: toCreate.length };
   }
@@ -456,6 +469,50 @@ export class WatchService {
     await this.prisma.userShowSubscription.delete({
       where: { id: existing.id },
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers privados
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Verifica se todos os episódios da série foram assistidos pelo usuário.
+   * Se sim e o status atual for WATCHING ou REWATCHING, transiciona para STOPPED
+   * para que a série saia da seção "assistindo".
+   */
+  private async checkAndCompleteShow(userId: string, showId: string): Promise<void> {
+    const subscription = await this.prisma.userShowSubscription.findUnique({
+      where: { userId_showId: { userId, showId } },
+      select: { status: true },
+    });
+
+    // Só age se o usuário tiver a série como WATCHING ou REWATCHING
+    if (
+      !subscription ||
+      (subscription.status !== 'WATCHING' && subscription.status !== 'REWATCHING')
+    ) {
+      return;
+    }
+
+    // Conta total de episódios da série vs. episódios assistidos
+    const [totalEpisodes, watchedCount] = await Promise.all([
+      this.prisma.episode.count({
+        where: { season: { showId } },
+      }),
+      this.prisma.watchProgress.count({
+        where: {
+          userId,
+          episode: { season: { showId } },
+        },
+      }),
+    ]);
+
+    if (totalEpisodes > 0 && watchedCount >= totalEpisodes) {
+      await this.prisma.userShowSubscription.update({
+        where: { userId_showId: { userId, showId } },
+        data: { status: 'STOPPED' },
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------
