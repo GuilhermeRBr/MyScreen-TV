@@ -9,6 +9,7 @@ import {
   TmdbSeason,
   TmdbShow,
   TmdbShowSearchItem,
+  TmdbVideos,
 } from './tmdb.types';
 
 @Injectable()
@@ -40,6 +41,17 @@ export class TmdbClient {
 
   async getMovieCredits(tmdbId: number): Promise<TmdbCredits> {
     return this.get<TmdbCredits>(`/movie/${tmdbId}/credits`);
+  }
+
+  async getMovieVideos(tmdbId: number): Promise<TmdbVideos> {
+    // Não passa language aqui: o TMDB filtraria por pt-BR e retornaria
+    // lista vazia para a maioria dos filmes (trailers em português são raros).
+    // Buscamos sem idioma para obter todos os vídeos disponíveis.
+    return this.getWithoutLanguage<TmdbVideos>(`/movie/${tmdbId}/videos`);
+  }
+
+  async getShowVideos(tmdbId: number): Promise<TmdbVideos> {
+    return this.getWithoutLanguage<TmdbVideos>(`/tv/${tmdbId}/videos`);
   }
 
   async searchShows(
@@ -95,6 +107,31 @@ export class TmdbClient {
     }
 
     this.logger.debug(`TMDB GET ${path}`);
+
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      this.logger.error(`TMDB erro ${response.status} para ${path}`);
+      throw new Error(`TMDB API retornou ${response.status}`);
+    }
+
+    return response.json() as Promise<T>;
+  }
+
+  // Igual ao get(), mas sem o parâmetro language — usado para endpoints
+  // cujos resultados são independentes de idioma (ex: vídeos/trailers).
+  private async getWithoutLanguage<T>(
+    path: string,
+    params: Record<string, string> = {},
+  ): Promise<T> {
+    const url = new URL(`${this.baseUrl}${path}`);
+    url.searchParams.set('api_key', this.apiKey);
+
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, value);
+    }
+
+    this.logger.debug(`TMDB GET (sem idioma) ${path}`);
 
     const response = await fetch(url.toString());
 

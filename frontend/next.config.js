@@ -84,6 +84,8 @@ const nextConfig = {
               "font-src 'self'",
               connectSrc,
               workerSrc,
+              // Permite incorporar iframes do YouTube Privacy-Enhanced Mode
+              "frame-src https://www.youtube-nocookie.com",
               "frame-ancestors 'none'",
             ].join('; '),
           },

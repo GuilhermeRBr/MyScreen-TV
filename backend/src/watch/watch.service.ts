@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ShowSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { TmdbService } from '../tmdb/tmdb.service';
 import { WATCH_MESSAGES } from './messages/watch.messages';
 
 export interface SeasonProgress {
@@ -28,7 +29,10 @@ export interface UserStats {
 
 @Injectable()
 export class WatchService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tmdb: TmdbService,
+  ) {}
 
   // ---------------------------------------------------------------------------
   // Episódios
@@ -262,6 +266,144 @@ export class WatchService {
       create: { userId, movieId, status: 'WATCHLIST' },
       update: {},
     });
+  }
+
+  async addMovieToWatchlistByTmdbId(userId: string, tmdbId: number): Promise<void> {
+    const movie = await this.tmdb.upsertMovie(tmdbId);
+    await this.prisma.movieWatch.upsert({
+      where: { userId_movieId: { userId, movieId: movie.id } },
+      create: { userId, movieId: movie.id, status: 'WATCHLIST' },
+      update: {},
+    });
+  }
+
+  async addShowToListByTmdbId(userId: string, tmdbId: number): Promise<void> {
+    const show = await this.tmdb.upsertShow(tmdbId);
+    await this.prisma.userShowSubscription.upsert({
+      where: { userId_showId: { userId, showId: show.id } },
+      create: { userId, showId: show.id, status: ShowSubscriptionStatus.PLAN_TO_WATCH },
+      update: {},
+    });
+  }
+
+  async getStatusByTmdbId(
+    userId: string,
+    tmdbId: number,
+    mediaType: 'movie' | 'show',
+  ): Promise<{ onList: boolean }> {
+    if (mediaType === 'movie') {
+      const movie = await this.prisma.movie.findUnique({
+        where: { tmdbId },
+        select: { id: true },
+      });
+      if (!movie) return { onList: false };
+      const watch = await this.prisma.movieWatch.findUnique({
+        where: { userId_movieId: { userId, movieId: movie.id } },
+        select: { id: true },
+      });
+      return { onList: !!watch };
+    } else {
+      const show = await this.prisma.show.findUnique({
+        where: { tmdbId },
+        select: { id: true },
+      });
+      if (!show) return { onList: false };
+      const sub = await this.prisma.userShowSubscription.findUnique({
+        where: { userId_showId: { userId, showId: show.id } },
+        select: { id: true },
+      });
+      return { onList: !!sub };
+    }
+  }
+
+  async removeByTmdbId(
+    userId: string,
+    tmdbId: number,
+    mediaType: 'movie' | 'show',
+  ): Promise<void> {
+    if (mediaType === 'movie') {
+      const movie = await this.prisma.movie.findUnique({
+        where: { tmdbId },
+        select: { id: true },
+      });
+      if (!movie) return;
+      await this.prisma.movieWatch.deleteMany({
+        where: { userId, movieId: movie.id },
+      });
+    } else {
+      const show = await this.prisma.show.findUnique({
+        where: { tmdbId },
+        select: { id: true },
+      });
+      if (!show) return;
+      await this.prisma.userShowSubscription.deleteMany({
+        where: { userId, showId: show.id },
+      });
+    }
+  }
+
+  async getBatchStatus(
+    userId: string,
+    items: Array<{ tmdbId: number; type: 'movie' | 'show' }>,
+  ): Promise<Record<string, boolean>> {
+    const movieTmdbIds = items.filter((i) => i.type === 'movie').map((i) => i.tmdbId);
+    const showTmdbIds = items.filter((i) => i.type === 'show').map((i) => i.tmdbId);
+
+    // Uma query por tipo — busca todos os registros relevantes de uma vez
+    const [movies, shows, movieWatches, showSubs] = await Promise.all([
+      movieTmdbIds.length > 0
+        ? this.prisma.movie.findMany({
+            where: { tmdbId: { in: movieTmdbIds } },
+            select: { id: true, tmdbId: true },
+          })
+        : [],
+      showTmdbIds.length > 0
+        ? this.prisma.show.findMany({
+            where: { tmdbId: { in: showTmdbIds } },
+            select: { id: true, tmdbId: true },
+          })
+        : [],
+      [] as { movieId: string }[],
+      [] as { showId: string }[],
+    ]);
+
+    const movieIdMap = new Map(movies.map((m) => [m.tmdbId, m.id]));
+    const showIdMap = new Map(shows.map((s) => [s.tmdbId, s.id]));
+
+    const internalMovieIds = movies.map((m) => m.id);
+    const internalShowIds = shows.map((s) => s.id);
+
+    const [watchRows, subRows] = await Promise.all([
+      internalMovieIds.length > 0
+        ? this.prisma.movieWatch.findMany({
+            where: { userId, movieId: { in: internalMovieIds } },
+            select: { movieId: true },
+          })
+        : movieWatches,
+      internalShowIds.length > 0
+        ? this.prisma.userShowSubscription.findMany({
+            where: { userId, showId: { in: internalShowIds } },
+            select: { showId: true },
+          })
+        : showSubs,
+    ]);
+
+    const watchedMovieIds = new Set(watchRows.map((w) => w.movieId));
+    const subscribedShowIds = new Set(subRows.map((s) => s.showId));
+
+    const result: Record<string, boolean> = {};
+    for (const item of items) {
+      const key = `${item.type}-${item.tmdbId}`;
+      if (item.type === 'movie') {
+        const internalId = movieIdMap.get(item.tmdbId);
+        result[key] = internalId ? watchedMovieIds.has(internalId) : false;
+      } else {
+        const internalId = showIdMap.get(item.tmdbId);
+        result[key] = internalId ? subscribedShowIds.has(internalId) : false;
+      }
+    }
+
+    return result;
   }
 
   async getMovieWatchStatus(

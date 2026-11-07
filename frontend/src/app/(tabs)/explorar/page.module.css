@@ -39,19 +39,105 @@
   appearance: none;
 }
 
+/* ---- Barra de abas + filtro ---- */
+
+.tabsBar {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .tabsRow {
   display: flex;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--color-border);
+  flex: 1;
+  border-bottom: none;
 }
 
 .tabsRow::-webkit-scrollbar {
   display: none;
 }
 
+/* ---- Filtro ---- */
+
+.filterWrapper {
+  position: relative;
+  flex-shrink: 0;
+  padding-right: var(--space-3);
+}
+
+.filterButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.filterButton:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+.filterButtonActive {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.filterLabel {
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.03em;
+}
+
+.filterDropdown {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: var(--space-3);
+  min-width: 120px;
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1) 0;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.filterOption {
+  display: block;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.filterOption:hover {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.filterOptionActive {
+  color: var(--color-accent);
+  font-weight: 600;
+}
 .tabPill {
   flex-shrink: 0;
   padding: var(--space-2) var(--space-4);
@@ -88,92 +174,6 @@
   .feed {
     grid-template-columns: repeat(3, 1fr);
   }
-}
-
-.feedCard {
-  position: relative;
-  background-color: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.feedBackdrop {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  position: relative;
-  background-color: var(--color-bg-elevated);
-}
-
-.feedBackdropImage {
-  object-fit: cover;
-  transition: transform 0.2s;
-}
-
-.feedCard:hover .feedBackdropImage {
-  transform: scale(1.02);
-}
-
-.playButton {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.addButton {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  width: 36px;
-  height: 36px;
-  background-color: rgba(0, 0, 0, 0.6);
-  border: 2px solid var(--color-accent);
-  color: var(--color-accent);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.feedInfo {
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--color-bg-secondary);
-}
-
-.feedMeta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-1);
-}
-
-.feedTypeIcon {
-  color: var(--color-text-secondary);
-}
-
-.feedTitle {
-  font-size: var(--font-size-md);
-  font-weight: 700;
-}
-
-.feedSubtitle {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-}
-
-.feedOverview {
-  margin-top: var(--space-2);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 /* ---- Botão limpar busca ---- */
@@ -328,4 +328,29 @@
   font-size: var(--font-size-xs);
   color: var(--color-accent);
   font-weight: 600;
+}
+
+/* ---- Indicador de carregamento do feed infinito ---- */
+
+.feedLoadingRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-6) 0;
+  /* ocupa a largura inteira mesmo dentro do grid */
+  grid-column: 1 / -1;
+}
+
+@keyframes feedSpin {
+  to { transform: rotate(360deg); }
+}
+
+.feedLoadingSpinner {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-bg-elevated);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: feedSpin 0.8s linear infinite;
 }

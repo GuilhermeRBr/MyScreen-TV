@@ -38,8 +38,12 @@ export class MoviesService {
     return this.tmdb.getPopularMovies(page);
   }
 
+  async getPopularFeed(page = 1) {
+    return this.tmdb.getPopularWithTrailers(page);
+  }
+
   async getTrending() {
-    return this.tmdb.getTrendingMovies();
+    return this.tmdb.getTrendingMoviesWithTrailers();
   }
 
   async search(query: string, page = 1) {

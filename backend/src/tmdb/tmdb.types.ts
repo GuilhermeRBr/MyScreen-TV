@@ -83,6 +83,8 @@ export interface TmdbShowSearchItem {
   id: number;
   name: string;
   poster_path: string | null;
+  backdrop_path: string | null;
+  overview: string;
   first_air_date: string;
   vote_average: number;
 }
@@ -91,6 +93,24 @@ export interface TmdbMovieSearchItem {
   id: number;
   title: string;
   poster_path: string | null;
+  backdrop_path: string | null;
+  overview: string;
   release_date: string;
   vote_average: number;
+}
+
+export interface TmdbVideoResult {
+  id: string;
+  key: string;
+  site: string;
+  type: string;
+  official: boolean;
+}
+
+export interface TmdbVideos {
+  results: TmdbVideoResult[];
+}
+
+export interface TmdbMovieTrendingItem extends TmdbMovieSearchItem {
+  trailerKey: string | null;
 }
