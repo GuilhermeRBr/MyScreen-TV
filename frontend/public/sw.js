@@ -24,7 +24,7 @@
  *   - Cache Storage nunca recebe respostas de /api/*.
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `myscreen-static-${CACHE_VERSION}`;
 const IMAGE_CACHE = `myscreen-images-${CACHE_VERSION}`;
 

@@ -1,15 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="38" fill="#0f0f0f"/>
-  <!-- Forma do logotipo MyScreen TV centralizada em 192x192 -->
-  <!-- Viewbox original: 85x88, centralizado: offset x=(192-85)/2=53.5, y=(192-88)/2=52 -->
-  <g transform="translate(53.5, 52)">
-    <path d="M9.70996 2.85057C15.7341 -0.763892 23.2134 -0.953477 29.4121 2.35253L74.4121 26.3525C80.9293 29.8284 85 36.6138 85 44C85 51.3862 80.9293 58.1716 74.4121 61.6474L29.4121 85.6474C23.2134 88.9535 15.7341 88.7639 9.70996 85.1494C3.68602 81.5349 0 75.0251 0 68V20C0 12.9748 3.68602 6.46507 9.70996 2.85057Z" fill="url(#g-outer)"/>
-    <path d="M24 25V62L59 43.5L24 25Z" fill="#0f0f0f" stroke="#0f0f0f" stroke-width="8" stroke-linejoin="round"/>
+  <!-- Fundo preto com bordas arredondadas, idêntico à imagem de referência -->
+  <rect width="192" height="192" rx="38" fill="#111114"/>
+
+  <!--
+    Logo centralizado em 192x192.
+    Viewbox original: 85x88.
+    Escala: 0.94 → logo fica com 79.9x82.7 px.
+    Offset para centralizar: x=(192-79.9)/2=56.05, y=(192-82.7)/2=54.65
+    Arredondado: translate(56, 55)
+  -->
+  <g transform="translate(56, 55) scale(0.94)">
+    <defs>
+      <linearGradient id="ic192-outer" x1="0" y1="0" x2="87.9471" y2="84.9489" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#EB5757"/>
+        <stop offset="1" stop-color="#C0392B"/>
+      </linearGradient>
+      <clipPath id="ic192-clip">
+        <rect width="85" height="88"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#ic192-clip)">
+      <!-- Forma externa: escudo arredondado com degradê vermelho -->
+      <path d="M9.70996 2.85057C15.7341 -0.763892 23.2134 -0.953477 29.4121 2.35253L74.4121 26.3525C80.9293 29.8284 85 36.6138 85 44C85 51.3862 80.9293 58.1716 74.4121 61.6474L29.4121 85.6474C23.2134 88.9535 15.7341 88.7639 9.70996 85.1494C3.68602 81.5349 0 75.0251 0 68V20C0 12.9748 3.68602 6.46507 9.70996 2.85057Z" fill="url(#ic192-outer)"/>
+      <!-- Triângulo interno: preto escuro, idêntico ao original -->
+      <path d="M24 25V62L59 43.5L24 25Z" fill="#111426" stroke="#111426" stroke-width="8" stroke-linejoin="round"/>
+    </g>
   </g>
-  <defs>
-    <linearGradient id="g-outer" x1="0" y1="0" x2="87.9471" y2="84.9489" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#EB5757"/>
-      <stop offset="1" stop-color="#C0392B"/>
-    </linearGradient>
-  </defs>
 </svg>
