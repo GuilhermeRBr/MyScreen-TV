@@ -1,10 +1,10 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { IconDots } from '@/components/icons';
 import { api } from '@/lib/api';
+import { InstallPwaButton } from '@/components/InstallPwaButton/InstallPwaButton';
 import styles from './ProfileMenu.module.css';
 
 interface UserProfile {
@@ -16,7 +16,6 @@ export function ProfileMenu() {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   useEffect(() => {
     api
@@ -103,6 +102,10 @@ export function ProfileMenu() {
               Painel administrativo
             </Link>
           )}
+
+          {/* Botão de instalação do PWA — só renderiza quando disponível */}
+          <InstallPwaButton />
+
           <button
             className={`${styles.menuItem} ${styles.menuItemDanger}`}
             role="menuitem"

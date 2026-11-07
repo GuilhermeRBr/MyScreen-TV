@@ -132,6 +132,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icons|images).*)',
+    // Exclui arquivos estáticos do Next.js, assets públicos e arquivos PWA
+    // para que o middleware não intercepte requisições que não precisam de auth.
+    '/((?!_next/static|_next/image|favicon.ico|icons|images|manifest\\.webmanifest|sw\\.js|offline\\.html).*)',
   ],
 };
