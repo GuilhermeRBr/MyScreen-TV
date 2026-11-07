@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import styles from './page.module.css';
-import { TrendingFeed } from './TrendingFeed';
 import { ExplorarClient } from './ExplorarClient';
 import { SearchResults } from './SearchResults';
 
@@ -70,21 +69,15 @@ export default async function ExplorarPage({ searchParams }: ExplorarPageProps) 
     ? [EMPTY_FEED as FeedResponse<FeedMovie>, EMPTY_FEED as FeedResponse<FeedShow>]
     : await Promise.all([getInitialMovieFeed(), getInitialShowFeed()]);
 
-  const trendingFeed = (
-    <TrendingFeed
-      initialMovies={movieFeed.results}
-      initialShows={showFeed.results}
-      initialMovieTotalPages={movieFeed.total_pages}
-      initialShowTotalPages={showFeed.total_pages}
-    />
-  );
-
   return (
     <div className={styles.container}>
       <Suspense>
         <ExplorarClient
           initialQuery={initialQuery}
-          trendingFeed={trendingFeed}
+          initialMovies={movieFeed.results}
+          initialShows={showFeed.results}
+          initialMovieTotalPages={movieFeed.total_pages}
+          initialShowTotalPages={showFeed.total_pages}
           searchResultsSlot={
             isSearching ? (
               <SearchResults query={initialQuery} />

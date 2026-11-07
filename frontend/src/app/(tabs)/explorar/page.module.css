@@ -39,19 +39,105 @@
   appearance: none;
 }
 
+/* ---- Barra de abas + filtro ---- */
+
+.tabsBar {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .tabsRow {
   display: flex;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--color-border);
+  flex: 1;
+  border-bottom: none;
 }
 
 .tabsRow::-webkit-scrollbar {
   display: none;
 }
 
+/* ---- Filtro ---- */
+
+.filterWrapper {
+  position: relative;
+  flex-shrink: 0;
+  padding-right: var(--space-3);
+}
+
+.filterButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.filterButton:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+.filterButtonActive {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.filterLabel {
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.03em;
+}
+
+.filterDropdown {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: var(--space-3);
+  min-width: 120px;
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1) 0;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.filterOption {
+  display: block;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.filterOption:hover {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.filterOptionActive {
+  color: var(--color-accent);
+  font-weight: 600;
+}
 .tabPill {
   flex-shrink: 0;
   padding: var(--space-2) var(--space-4);

@@ -39,6 +39,7 @@ interface TrendingFeedProps {
   initialShows: FeedShow[];
   initialMovieTotalPages: number;
   initialShowTotalPages: number;
+  filter: 'all' | 'movie' | 'show';
 }
 
 function interleave(movies: FeedMovie[], shows: FeedShow[]): FeedItem[] {
@@ -79,6 +80,7 @@ export function TrendingFeed({
   initialShows,
   initialMovieTotalPages,
   initialShowTotalPages,
+  filter,
 }: Readonly<TrendingFeedProps>) {
   const [items, setItems] = useState<FeedItem[]>(() =>
     interleave(initialMovies, initialShows),
@@ -93,6 +95,10 @@ export function TrendingFeed({
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const hasMore = moviePage < movieTotalPages || showPage < showTotalPages;
+
+  const visibleItems = filter === 'all'
+    ? items
+    : items.filter((item) => item.mediaType === filter);
 
   // Busca o status em lote para os items recém-adicionados
   const loadStatus = useCallback(async (newItems: FeedItem[]) => {
@@ -117,8 +123,8 @@ export function TrendingFeed({
     setLoading(true);
 
     try {
-      const nextMoviePage = moviePage < movieTotalPages ? moviePage + 1 : null;
-      const nextShowPage = showPage < showTotalPages ? showPage + 1 : null;
+      const nextMoviePage = (filter !== 'show') && moviePage < movieTotalPages ? moviePage + 1 : null;
+      const nextShowPage = (filter !== 'movie') && showPage < showTotalPages ? showPage + 1 : null;
 
       const [moviesRes, showsRes] = await Promise.all([
         nextMoviePage
@@ -177,7 +183,7 @@ export function TrendingFeed({
 
   return (
     <section className={styles.feed} aria-label="Filmes e séries em destaque">
-      {items.map((item) => {
+      {visibleItems.map((item) => {
         const key = statusKey(item.mediaType, item.id);
         const onList = statusMap[key] ?? false;
 
