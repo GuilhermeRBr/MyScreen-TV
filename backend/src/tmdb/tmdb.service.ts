@@ -431,8 +431,36 @@ export class TmdbService {
     return { results: withTrailers };
   }
 
-  // ---------------------------------------------------------------------------
-  // Helpers
+  async getPopularWithTrailers(page = 1) {
+    const popular = await this.tmdb.getPopularMovies(page);
+
+    const withTrailers = [];
+    for (const movie of popular.results) {
+      try {
+        const videos = await this.tmdb.getMovieVideos(movie.id);
+        const trailer =
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer' && v.official,
+          ) ??
+          videos.results.find(
+            (v) => v.site === 'YouTube' && v.type === 'Trailer',
+          ) ??
+          videos.results.find((v) => v.site === 'YouTube') ??
+          null;
+
+        withTrailers.push({ ...movie, trailerKey: trailer?.key ?? null });
+      } catch {
+        withTrailers.push({ ...movie, trailerKey: null });
+      }
+    }
+
+    return {
+      results: withTrailers,
+      page: popular.page,
+      total_pages: popular.total_pages,
+    };
+  }
+
   // ---------------------------------------------------------------------------
 
   private isFreshCache(lastSyncedAt: Date | null): boolean {

@@ -31,6 +31,16 @@ export class MoviesController {
     return this.moviesService.getPopular(page);
   }
 
+  @Get('feed')
+  @ApiOperation(MOVIES_SWAGGER.getFeed.operation)
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiResponse({ status: 200, description: MOVIES_SWAGGER.getFeed.responses[200] })
+  getFeed(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  ) {
+    return this.moviesService.getPopularFeed(page);
+  }
+
   @Get('trending')
   @ApiOperation(MOVIES_SWAGGER.getTrending.operation)
   @ApiResponse({ status: 200, description: MOVIES_SWAGGER.getTrending.responses[200] })
