@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useTransition } from 'react';
+import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconPlay, IconClapperboard, IconPlus, IconCheck } from '@/components/icons';
@@ -16,37 +16,12 @@ interface FeedCardProps {
   genres: Array<{ name: string }> | null;
   trailerKey: string | null;
   mediaType: 'movie' | 'show';
-  initialOnList?: boolean;
-}
-
-async function addToList(tmdbId: number, mediaType: 'movie' | 'show'): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/watch/by-tmdb/add?type=${mediaType}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tmdbId }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-async function removeFromList(tmdbId: number, mediaType: 'movie' | 'show'): Promise<boolean> {
-  try {
-    const res = await fetch(`/api/watch/by-tmdb/remove?type=${mediaType}&tmdbId=${tmdbId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+  onList: boolean;
+  listPending: boolean;
+  onListToggle: () => void;
 }
 
 export function FeedCard({
-  id,
   title,
   overview,
   backdropPath,
@@ -54,12 +29,11 @@ export function FeedCard({
   runtime,
   genres,
   trailerKey,
-  mediaType,
-  initialOnList = false,
+  onList,
+  listPending,
+  onListToggle,
 }: Readonly<FeedCardProps>) {
   const [playing, setPlaying] = useState(false);
-  const [onList, setOnList] = useState(initialOnList);
-  const [isPending, startTransition] = useTransition();
 
   const backdropUrl = tmdbImage(backdropPath ?? posterPath, 'w780');
   const hasTrailer = Boolean(trailerKey);
@@ -71,18 +45,6 @@ export function FeedCard({
   const handleStop = useCallback(() => {
     setPlaying(false);
   }, []);
-
-  const handleListToggle = useCallback(() => {
-    startTransition(async () => {
-      if (onList) {
-        const ok = await removeFromList(id, mediaType);
-        if (ok) setOnList(false);
-      } else {
-        const ok = await addToList(id, mediaType);
-        if (ok) setOnList(true);
-      }
-    });
-  }, [id, mediaType, onList]);
 
   return (
     <article className={styles.feedCard}>
@@ -149,15 +111,15 @@ export function FeedCard({
           <button
             className={`${styles.addButton} ${onList ? styles.addButtonActive : ''}`}
             type="button"
-            disabled={isPending}
-            onClick={handleListToggle}
+            disabled={listPending}
+            onClick={onListToggle}
             aria-label={
               onList
                 ? `Remover ${title} da minha lista`
                 : `Adicionar ${title} à minha lista`
             }
           >
-            {isPending ? (
+            {listPending ? (
               <span className={styles.spinner} aria-hidden="true" />
             ) : onList ? (
               <IconCheck width={16} height={16} />

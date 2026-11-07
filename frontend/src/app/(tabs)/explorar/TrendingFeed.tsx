@@ -52,8 +52,7 @@ function interleave(movies: FeedMovie[], shows: FeedShow[]): FeedItem[] {
   return items;
 }
 
-// Chave usada no mapa de status: "movie-123" ou "show-456"
-function statusKey(mediaType: 'movie' | 'show', id: number): string {
+function itemKey(mediaType: 'movie' | 'show', id: number): string {
   return `${mediaType}-${id}`;
 }
 
@@ -75,6 +74,32 @@ async function fetchBatchStatus(
   }
 }
 
+async function addToList(tmdbId: number, mediaType: 'movie' | 'show'): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/watch/by-tmdb/add?type=${mediaType}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tmdbId }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function removeFromList(tmdbId: number, mediaType: 'movie' | 'show'): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/watch/by-tmdb/remove?type=${mediaType}&tmdbId=${tmdbId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export function TrendingFeed({
   initialMovies,
   initialShows,
@@ -85,8 +110,11 @@ export function TrendingFeed({
   const [items, setItems] = useState<FeedItem[]>(() =>
     interleave(initialMovies, initialShows),
   );
-  // mapa "movie-123" -> true/false
+  // "movie-123" -> true/false — única fonte de verdade para o estado da lista
   const [statusMap, setStatusMap] = useState<Record<string, boolean>>({});
+  // "movie-123" -> true se há request em andamento
+  const [pendingMap, setPendingMap] = useState<Record<string, boolean>>({});
+
   const [moviePage, setMoviePage] = useState(1);
   const [showPage, setShowPage] = useState(1);
   const [movieTotalPages, setMovieTotalPages] = useState(initialMovieTotalPages);
@@ -100,7 +128,7 @@ export function TrendingFeed({
     ? items
     : items.filter((item) => item.mediaType === filter);
 
-  // Busca o status em lote para os items recém-adicionados
+  // Busca status em lote e atualiza o mapa
   const loadStatus = useCallback(async (newItems: FeedItem[]) => {
     const batch = newItems.map((item) => ({
       tmdbId: item.id,
@@ -110,12 +138,35 @@ export function TrendingFeed({
     setStatusMap((prev) => ({ ...prev, ...result }));
   }, []);
 
-  // Carrega o status inicial da primeira página
+  // Carrega o status da primeira página ao montar
   useEffect(() => {
     const initial = interleave(initialMovies, initialShows);
     if (initial.length > 0) void loadStatus(initial);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Intencionalmente sem dependências — só roda na montagem
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleToggle = useCallback(
+    (id: number, mediaType: 'movie' | 'show') => {
+      const key = itemKey(mediaType, id);
+      const currently = statusMap[key] ?? false;
+
+      // Optimistic update imediato
+      setStatusMap((prev) => ({ ...prev, [key]: !currently }));
+      setPendingMap((prev) => ({ ...prev, [key]: true }));
+
+      const action = currently ? removeFromList : addToList;
+
+      action(id, mediaType).then((ok) => {
+        if (!ok) {
+          // Reverte se falhou
+          setStatusMap((prev) => ({ ...prev, [key]: currently }));
+        }
+        setPendingMap((prev) => ({ ...prev, [key]: false }));
+      });
+    },
+    [statusMap],
+  );
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -123,8 +174,8 @@ export function TrendingFeed({
     setLoading(true);
 
     try {
-      const nextMoviePage = (filter !== 'show') && moviePage < movieTotalPages ? moviePage + 1 : null;
-      const nextShowPage = (filter !== 'movie') && showPage < showTotalPages ? showPage + 1 : null;
+      const nextMoviePage = filter !== 'show' && moviePage < movieTotalPages ? moviePage + 1 : null;
+      const nextShowPage = filter !== 'movie' && showPage < showTotalPages ? showPage + 1 : null;
 
       const [moviesRes, showsRes] = await Promise.all([
         nextMoviePage
@@ -158,11 +209,11 @@ export function TrendingFeed({
         void loadStatus(newItems);
       }
     } catch {
-      // silencioso — o usuário pode tentar novamente ao rolar
+      // silencioso
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, moviePage, showPage, movieTotalPages, showTotalPages, loadStatus]);
+  }, [loading, hasMore, filter, moviePage, showPage, movieTotalPages, showTotalPages, loadStatus]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -170,9 +221,7 @@ export function TrendingFeed({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          void loadMore();
-        }
+        if (entries[0].isIntersecting) void loadMore();
       },
       { rootMargin: '200px' },
     );
@@ -184,8 +233,9 @@ export function TrendingFeed({
   return (
     <section className={styles.feed} aria-label="Filmes e séries em destaque">
       {visibleItems.map((item) => {
-        const key = statusKey(item.mediaType, item.id);
+        const key = itemKey(item.mediaType, item.id);
         const onList = statusMap[key] ?? false;
+        const listPending = pendingMap[key] ?? false;
 
         if (item.mediaType === 'movie') {
           return (
@@ -200,7 +250,9 @@ export function TrendingFeed({
               genres={item.genres ?? null}
               trailerKey={item.trailerKey}
               mediaType="movie"
-              initialOnList={onList}
+              onList={onList}
+              listPending={listPending}
+              onListToggle={() => handleToggle(item.id, 'movie')}
             />
           );
         }
@@ -217,7 +269,9 @@ export function TrendingFeed({
             genres={null}
             trailerKey={item.trailerKey}
             mediaType="show"
-            initialOnList={onList}
+            onList={onList}
+            listPending={listPending}
+            onListToggle={() => handleToggle(item.id, 'show')}
           />
         );
       })}
