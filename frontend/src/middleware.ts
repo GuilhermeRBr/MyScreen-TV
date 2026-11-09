@@ -54,17 +54,30 @@ async function tryRefreshServerSide(
 
 /**
  * Decodifica o payload do JWT sem verificar a assinatura.
- * Usado apenas para leitura de claims públicos (role) no middleware.
+ * Usado apenas para leitura de claims públicos (role, exp) no middleware.
  */
-function decodeJwtPayload(token: string): { role?: string } | null {
+function decodeJwtPayload(token: string): { role?: string; exp?: number } | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
     const payload = Buffer.from(parts[1], 'base64url').toString('utf-8');
-    return JSON.parse(payload) as { role?: string };
+    return JSON.parse(payload) as { role?: string; exp?: number };
   } catch {
     return null;
   }
+}
+
+/**
+ * Verifica se o JWT ja expirou com base no claim "exp".
+ * Retorna true se o token for invalido ou estiver expirado.
+ */
+function isTokenExpired(token: string): boolean {
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== 'number') {
+    return true;
+  }
+  // Margem de 5 segundos para evitar problemas de sincronia de relógio
+  return Date.now() >= payload.exp * 1000 - 5000;
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
@@ -72,6 +85,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   const accessToken = request.cookies.get('access_token')?.value;
   const refreshToken = request.cookies.get('refresh_token')?.value;
+
+  // Token de acesso valido (existente e nao expirado)
+  const hasValidAccessToken =
+    !!accessToken && !isTokenExpired(accessToken);
 
   const isProtected = PROTECTED_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
@@ -85,15 +102,15 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 
-  // Access token presente
-  if (accessToken) {
+  // Access token presente e valido
+  if (hasValidAccessToken) {
     if (isPublicOnly) {
       return NextResponse.redirect(new URL('/series', request.url));
     }
 
     // Rotas admin: verifica role no payload do token
     if (isAdmin) {
-      const payload = decodeJwtPayload(accessToken);
+      const payload = decodeJwtPayload(accessToken!);
       if (!payload || payload.role !== 'ADMIN') {
         return NextResponse.redirect(new URL('/series', request.url));
       }
@@ -102,7 +119,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // Sem access token mas com refresh token: tenta renovar silenciosamente
+  // Sem access token valido mas com refresh token: tenta renovar silenciosamente
   if (refreshToken) {
     const refreshResponse = await tryRefreshServerSide(request);
 
@@ -111,9 +128,20 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         ? NextResponse.redirect(new URL('/series', request.url))
         : NextResponse.next();
 
-      const setCookieHeader = refreshResponse.headers.get('set-cookie');
-      if (setCookieHeader) {
-        nextResponse.headers.set('set-cookie', setCookieHeader);
+      // O backend seta dois cookies (access_token + refresh_token).
+      // getSetCookie() retorna cada um individualmente, evitando o problema
+      // de headers.get('set-cookie') que concatena com vírgula e quebra
+      // cookies que contêm datas (Expires=Thu, 01 Jan ...).
+      const setCookies = refreshResponse.headers.getSetCookie?.() ?? [];
+      if (setCookies.length > 0) {
+        setCookies.forEach((value) => {
+          nextResponse.headers.append('set-cookie', value);
+        });
+      } else {
+        const raw = refreshResponse.headers.get('set-cookie');
+        if (raw) {
+          nextResponse.headers.set('set-cookie', raw);
+        }
       }
 
       return nextResponse;
