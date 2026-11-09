@@ -19,12 +19,9 @@ export class FeedService {
   }
 
   async getUpcoming(userId: string) {
-    // Busca episódios futuros das séries que o usuário acompanha
+    // Busca episódios futuros das séries que o usuário segue (qualquer status)
     const subscriptions = await this.prisma.userShowSubscription.findMany({
-      where: {
-        userId,
-        status: { in: ['WATCHING', 'REWATCHING'] },
-      },
+      where: { userId },
       select: { showId: true },
     });
 
@@ -44,7 +41,17 @@ export class FeedService {
       },
       include: {
         season: {
-          include: { show: true },
+          include: {
+            show: {
+              select: {
+                id: true,
+                tmdbId: true,
+                name: true,
+                posterPath: true,
+                network: true,
+              },
+            },
+          },
         },
       },
       orderBy: { airDate: 'asc' },
@@ -52,9 +59,11 @@ export class FeedService {
 
     return episodes.map((ep) => ({
       episodeId: ep.id,
-      showId: ep.season.showId,
+      showId: ep.season.show.id,
+      showTmdbId: ep.season.show.tmdbId,
       showName: ep.season.show.name,
       posterPath: ep.season.show.posterPath,
+      network: ep.season.show.network,
       seasonNumber: ep.season.seasonNumber,
       episodeNumber: ep.episodeNumber,
       episodeName: ep.name,

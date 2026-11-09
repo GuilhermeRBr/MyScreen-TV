@@ -17,10 +17,10 @@ export const FEED_SWAGGER = {
     operation: {
       summary: 'Próximos episódios',
       description:
-        'Retorna os episódios que serão exibidos nos próximos 30 dias das séries que o usuário está acompanhando (status WATCHING ou REWATCHING).',
+        'Retorna os episódios que serão exibidos nos próximos 30 dias de todas as séries que o usuário segue, independentemente do status. Inclui tmdbId, network e dados completos do episódio para a timeline "Em breve".',
     },
     responses: {
-      200: 'Array de episódios futuros com dados da série e data de exibição.',
+      200: 'Array de episódios futuros com dados da série, network e data de exibição, ordenados por airDate.',
       401: 'Não autenticado.',
     },
   },
