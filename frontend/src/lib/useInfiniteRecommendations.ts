@@ -26,6 +26,13 @@ interface UseInfiniteRecommendationsResult {
 }
 
 const MAX_PAGES = 50;
+/** Número de páginas carregadas antes de começar o shuffle de ponto de entrada. */
+const RANDOM_START_RANGE = 10;
+
+/** Retorna uma página inicial aleatória dentro do intervalo disponível. */
+function randomStartPage(): number {
+  return Math.floor(Math.random() * RANDOM_START_RANGE) + 1;
+}
 
 export function useInfiniteRecommendations({
   endpoint,
@@ -35,7 +42,8 @@ export function useInfiniteRecommendations({
   const [items, setItems] = useState<RecommendedItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const nextPageRef = useRef(1);
+  const startPage = useRef(randomStartPage());
+  const nextPageRef = useRef(startPage.current);
   const totalPagesRef = useRef(MAX_PAGES);
   const isLoadingRef = useRef(false);
   const excludedIdsRef = useRef(excludedIds);

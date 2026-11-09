@@ -37,6 +37,8 @@ interface FeedResponse<T> {
 interface TrendingFeedProps {
   initialMovies: FeedMovie[];
   initialShows: FeedShow[];
+  initialMoviePage: number;
+  initialShowPage: number;
   initialMovieTotalPages: number;
   initialShowTotalPages: number;
   filter: 'all' | 'movie' | 'show';
@@ -103,6 +105,8 @@ async function removeFromList(tmdbId: number, mediaType: 'movie' | 'show'): Prom
 export function TrendingFeed({
   initialMovies,
   initialShows,
+  initialMoviePage,
+  initialShowPage,
   initialMovieTotalPages,
   initialShowTotalPages,
   filter,
@@ -115,8 +119,8 @@ export function TrendingFeed({
   // "movie-123" -> true se há request em andamento
   const [pendingMap, setPendingMap] = useState<Record<string, boolean>>({});
 
-  const [moviePage, setMoviePage] = useState(1);
-  const [showPage, setShowPage] = useState(1);
+  const [moviePage, setMoviePage] = useState(initialMoviePage);
+  const [showPage, setShowPage] = useState(initialShowPage);
   const [movieTotalPages, setMovieTotalPages] = useState(initialMovieTotalPages);
   const [showTotalPages, setShowTotalPages] = useState(initialShowTotalPages);
   const [loading, setLoading] = useState(false);
