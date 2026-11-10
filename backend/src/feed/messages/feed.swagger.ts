@@ -35,4 +35,15 @@ export const FEED_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  getUpcomingMovies: {
+    operation: {
+      summary: 'Filmes em breve',
+      description:
+        'Retorna todos os filmes da watchlist do usuário com data de lançamento futura, sem limite de janela, ordenados por releaseDate crescente.',
+    },
+    responses: {
+      200: 'Array de filmes com tmdbId, título, poster, releaseDate e gêneros.',
+      401: 'Não autenticado.',
+    },
+  },
 } as const;

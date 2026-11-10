@@ -71,6 +71,54 @@ export class FeedService {
     }));
   }
 
+  async getUpcomingMovies(userId: string) {
+    // Busca todos os filmes na watchlist do usuário com data de lançamento futura
+    // Sem limite de janela — filmes podem estar meses à frente
+    const now = new Date();
+
+    const watches = await this.prisma.movieWatch.findMany({
+      where: {
+        userId,
+        status: 'WATCHLIST',
+        movie: {
+          releaseDate: { gte: now },
+        },
+      },
+      include: {
+        movie: {
+          select: {
+            id: true,
+            tmdbId: true,
+            title: true,
+            posterPath: true,
+            releaseDate: true,
+            genres: true,
+            movieCasts: {
+              take: 4,
+              orderBy: { order: 'asc' },
+              include: {
+                cast: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        movie: { releaseDate: 'asc' },
+      },
+    });
+
+    return watches.map((w) => ({
+      movieId: w.movie.id,
+      movieTmdbId: w.movie.tmdbId,
+      title: w.movie.title,
+      posterPath: w.movie.posterPath,
+      releaseDate: w.movie.releaseDate,
+      genres: w.movie.genres,
+      cast: w.movie.movieCasts.map((mc) => mc.cast.name),
+    }));
+  }
+
   async getContinueWatching(userId: string) {
     const subscriptions = await this.prisma.userShowSubscription.findMany({
       where: {
