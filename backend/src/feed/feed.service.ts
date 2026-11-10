@@ -32,11 +32,12 @@ export class FeedService {
     }
 
     const now = new Date();
-    const inThirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const inThreeMonths = new Date(now);
+    inThreeMonths.setMonth(inThreeMonths.getMonth() + 3);
 
     const episodes = await this.prisma.episode.findMany({
       where: {
-        airDate: { gte: now, lte: inThirtyDays },
+        airDate: { gte: now, lte: inThreeMonths },
         season: { showId: { in: showIds } },
       },
       include: {
