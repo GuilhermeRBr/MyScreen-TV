@@ -86,8 +86,11 @@ async function request<T>(
   const baseUrl = getBaseUrl();
   const response = await fetch(`${baseUrl}${path}`, init);
 
-  if (response.status === 401) {
-    // Tenta refresh automático
+  if (response.status === 401 && !path.startsWith('/auth/')) {
+    // Tenta refresh automático apenas para rotas autenticadas.
+    // Endpoints de /auth/ (login, register, etc.) recebem 401 como
+    // resposta legítima de negócio e não devem disparar refresh nem
+    // redirecionamento forçado para /login.
     const refreshed = await tryRefresh();
 
     if (refreshed) {

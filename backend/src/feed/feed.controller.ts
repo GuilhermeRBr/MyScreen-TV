@@ -34,6 +34,14 @@ export class FeedController {
     return this.feedService.getUpcoming(user.sub);
   }
 
+  @Get('upcoming-movies')
+  @ApiOperation(FEED_SWAGGER.getUpcomingMovies.operation)
+  @ApiResponse({ status: 200, description: FEED_SWAGGER.getUpcomingMovies.responses[200] })
+  @ApiResponse({ status: 401, description: FEED_SWAGGER.getUpcomingMovies.responses[401] })
+  getUpcomingMovies(@CurrentUser() user: JwtPayload) {
+    return this.feedService.getUpcomingMovies(user.sub);
+  }
+
   @Get('continue-watching')
   @ApiOperation(FEED_SWAGGER.getContinueWatching.operation)
   @ApiResponse({ status: 200, description: FEED_SWAGGER.getContinueWatching.responses[200] })

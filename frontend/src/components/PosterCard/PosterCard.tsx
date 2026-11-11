@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import styles from './PosterCard.module.css';
@@ -8,6 +10,7 @@ interface PosterCardProps {
   posterPath: string | null;
   href: string;
   progressPercent?: number;
+  onClick?: () => void;
 }
 
 export function PosterCard({
@@ -15,11 +18,12 @@ export function PosterCard({
   posterPath,
   href,
   progressPercent,
+  onClick,
 }: PosterCardProps) {
   const imageUrl = tmdbImage(posterPath, 'w342');
 
   return (
-    <Link href={href} className={styles.card} aria-label={title}>
+    <Link href={href} className={styles.card} aria-label={title} onClick={onClick}>
       {imageUrl ? (
         <Image
           src={imageUrl}
