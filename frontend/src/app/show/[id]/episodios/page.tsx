@@ -20,6 +20,7 @@ interface Episode {
   name: string;
   stillPath: string | null;
   runtime: number | null;
+  airDate: string | null;
   watched: boolean;
 }
 
@@ -58,6 +59,42 @@ interface RawEpisode {
   name: string;
   stillPath: string | null;
   runtime: number | null;
+  airDate: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers de airDate
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna quantos dias faltam para o lançamento de um episódio.
+ * - null  → sem data cadastrada (considera lançado)
+ * - 0     → lança hoje
+ * - > 0   → dias restantes
+ * - < 0   → já lançado
+ */
+function daysUntilAir(airDate: string | null): number | null {
+  if (!airDate) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const air = new Date(airDate);
+  air.setHours(0, 0, 0, 0);
+
+  const diff = Math.round((air.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
+function isUnreleased(airDate: string | null): boolean {
+  const days = daysUntilAir(airDate);
+  return days !== null && days > 0;
+}
+
+function formatDaysLabel(days: number): string {
+  if (days === 0) return 'Hoje';
+  if (days === 1) return '1 dia';
+  return `${days} dias`;
 }
 
 // ---------------------------------------------------------------------------
@@ -271,6 +308,10 @@ export default function EpisodiosPage() {
   }
 
   async function toggleEpisode(episodeId: string) {
+    // Bloqueia marcar episódios que ainda não foram lançados
+    const ep = seasons.flatMap((s) => s.episodes).find((e) => e.id === episodeId);
+    if (ep && isUnreleased(ep.airDate)) return;
+
     try {
       const result = await api.post<{ watched: boolean }>(
         '/watch/episodes/toggle',
@@ -503,38 +544,50 @@ export default function EpisodiosPage() {
         <section className={styles.continueSection}>
           <h2 className={styles.continueSectionTitle}>Continuar acompanhando</h2>
           <div className={styles.continueScroll} ref={continueScrollRef}>
-            {allFlat.map(({ episode: ep, season: s }, index) => (
-              <button
-                key={ep.id}
-                ref={index === anchorIndex ? firstUnwatchedRef : null}
-                className={`${styles.continueCard} ${ep.watched ? styles.continueCardWatched : ''}`}
-                onClick={() => toggleEpisode(ep.id)}
-                aria-label={`Marcar ${ep.name} como assistido`}
-              >
-                <div className={styles.continueStill}>
-                  {ep.stillPath && (
-                    <Image
-                      src={tmdbImage(ep.stillPath, 'w185') ?? ''}
-                      alt={ep.name}
-                      fill
-                      className={styles.continueStillImage}
-                    />
-                  )}
-                </div>
-                <div className={styles.continueInfo}>
-                  <p className={styles.continueCode}>
-                    T{String(s.seasonNumber).padStart(2, '0')} | E{String(ep.episodeNumber).padStart(2, '0')}
-                  </p>
-                  <p className={styles.continueName}>{ep.name}</p>
-                </div>
-                <div
-                  className={`${styles.checkCircle} ${ep.watched ? styles.checkCircleWatched : ''}`}
-                  aria-hidden="true"
+            {allFlat.map(({ episode: ep, season: s }, index) => {
+              const days = daysUntilAir(ep.airDate);
+              const unreleased = days !== null && days > 0;
+
+              return (
+                <button
+                  key={ep.id}
+                  ref={index === anchorIndex ? firstUnwatchedRef : null}
+                  className={`${styles.continueCard} ${ep.watched ? styles.continueCardWatched : ''} ${unreleased ? styles.continueCardUnreleased : ''}`}
+                  onClick={() => !unreleased && toggleEpisode(ep.id)}
+                  aria-label={unreleased ? `${ep.name} — disponível em ${formatDaysLabel(days)}` : `Marcar ${ep.name} como assistido`}
+                  aria-disabled={unreleased}
                 >
-                  <IconCheck width={14} height={14} />
-                </div>
-              </button>
-            ))}
+                  <div className={styles.continueStill}>
+                    {ep.stillPath && (
+                      <Image
+                        src={tmdbImage(ep.stillPath, 'w185') ?? ''}
+                        alt={ep.name}
+                        fill
+                        className={styles.continueStillImage}
+                      />
+                    )}
+                  </div>
+                  <div className={styles.continueInfo}>
+                    <p className={styles.continueCode}>
+                      T{String(s.seasonNumber).padStart(2, '0')} | E{String(ep.episodeNumber).padStart(2, '0')}
+                    </p>
+                    <p className={styles.continueName}>{ep.name}</p>
+                  </div>
+                  <div className={styles.checkWrapper}>
+                    {unreleased ? (
+                      <span className={styles.daysLabel}>{formatDaysLabel(days)}</span>
+                    ) : (
+                      <div
+                        className={`${styles.checkCircle} ${ep.watched ? styles.checkCircleWatched : ''}`}
+                        aria-hidden="true"
+                      >
+                        <IconCheck width={14} height={14} />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </section>
       )}
@@ -597,40 +650,52 @@ export default function EpisodiosPage() {
                     id={`season-episodes-${season.id}`}
                     className={styles.episodeList}
                   >
-                    {season.episodes.map((ep) => (
-                      <button
-                        key={ep.id}
-                        className={styles.episodeRow}
-                        onClick={() => toggleEpisode(ep.id)}
-                        aria-label={`${ep.watched ? 'Desmarcar' : 'Marcar'} episódio ${ep.episodeNumber} como assistido`}
-                      >
-                        <div className={styles.episodeStill}>
-                          {ep.stillPath ? (
-                            <Image
-                              src={tmdbImage(ep.stillPath, 'w185') ?? ''}
-                              alt={ep.name}
-                              fill
-                              className={styles.episodeStillImage}
-                            />
-                          ) : (
-                            <div className={styles.episodeStillPlaceholder} />
-                          )}
-                        </div>
-                        <div className={styles.episodeInfo}>
-                          <p className={styles.episodeCode}>
-                            E{String(ep.episodeNumber).padStart(2, '0')}
-                            {ep.runtime ? ` · ${ep.runtime}min` : ''}
-                          </p>
-                          <p className={styles.episodeName}>{ep.name}</p>
-                        </div>
-                        <div
-                          className={`${styles.checkCircle} ${ep.watched ? styles.checkCircleWatched : ''}`}
-                          aria-hidden="true"
+                    {season.episodes.map((ep) => {
+                      const days = daysUntilAir(ep.airDate);
+                      const unreleased = days !== null && days > 0;
+
+                      return (
+                        <button
+                          key={ep.id}
+                          className={`${styles.episodeRow} ${unreleased ? styles.episodeRowUnreleased : ''}`}
+                          onClick={() => !unreleased && toggleEpisode(ep.id)}
+                          aria-label={unreleased ? `${ep.name} — disponível em ${formatDaysLabel(days)}` : `${ep.watched ? 'Desmarcar' : 'Marcar'} episódio ${ep.episodeNumber} como assistido`}
+                          aria-disabled={unreleased}
                         >
-                          <IconCheck width={14} height={14} />
-                        </div>
-                      </button>
-                    ))}
+                          <div className={styles.episodeStill}>
+                            {ep.stillPath ? (
+                              <Image
+                                src={tmdbImage(ep.stillPath, 'w185') ?? ''}
+                                alt={ep.name}
+                                fill
+                                className={styles.episodeStillImage}
+                              />
+                            ) : (
+                              <div className={styles.episodeStillPlaceholder} />
+                            )}
+                          </div>
+                          <div className={styles.episodeInfo}>
+                            <p className={styles.episodeCode}>
+                              E{String(ep.episodeNumber).padStart(2, '0')}
+                              {ep.runtime ? ` · ${ep.runtime}min` : ''}
+                            </p>
+                            <p className={styles.episodeName}>{ep.name}</p>
+                          </div>
+                          <div className={styles.checkWrapper}>
+                            {unreleased ? (
+                              <span className={styles.daysLabel}>{formatDaysLabel(days)}</span>
+                            ) : (
+                              <div
+                                className={`${styles.checkCircle} ${ep.watched ? styles.checkCircleWatched : ''}`}
+                                aria-hidden="true"
+                              >
+                                <IconCheck width={14} height={14} />
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -1,0 +1,183 @@
+.timeline {
+  padding-bottom: var(--space-8);
+}
+
+/* Separador de data */
+.dateDivider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.dateLabel {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+/* Lista de episódios do dia */
+.episodeList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 var(--space-4);
+}
+
+/* Card individual de episódio */
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  min-height: 88px;
+}
+
+/* Poster */
+.poster {
+  position: relative;
+  flex-shrink: 0;
+  width: 60px;
+  height: 80px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: var(--color-bg-elevated);
+}
+
+.posterImage {
+  object-fit: cover;
+}
+
+.posterPlaceholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-elevated);
+}
+
+/* Bloco de informações */
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.showLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.showName {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 2px var(--space-2);
+}
+
+.showLinkIcon {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.episodeCode {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-top: var(--space-1);
+}
+
+.episodeName {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Badge NOVO */
+.badgeNew {
+  display: inline-block;
+  width: fit-content;
+  background-color: var(--color-new);
+  color: var(--color-text-on-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-1);
+}
+
+/* Informações de network (lado direito) */
+.networkInfo {
+  flex-shrink: 0;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.networkName {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Estado vazio */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-12) var(--space-4);
+  text-align: center;
+}
+
+.emptyMessage {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.emptyHint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* Skeleton de carregamento */
+.skeletonContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.skeletonCard {
+  height: 88px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}

@@ -19,12 +19,9 @@ export class FeedService {
   }
 
   async getUpcoming(userId: string) {
-    // Busca episódios futuros das séries que o usuário acompanha
+    // Busca episódios futuros das séries que o usuário segue (qualquer status)
     const subscriptions = await this.prisma.userShowSubscription.findMany({
-      where: {
-        userId,
-        status: { in: ['WATCHING', 'REWATCHING'] },
-      },
+      where: { userId },
       select: { showId: true },
     });
 
@@ -35,16 +32,27 @@ export class FeedService {
     }
 
     const now = new Date();
-    const inThirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const inThreeMonths = new Date(now);
+    inThreeMonths.setMonth(inThreeMonths.getMonth() + 3);
 
     const episodes = await this.prisma.episode.findMany({
       where: {
-        airDate: { gte: now, lte: inThirtyDays },
+        airDate: { gte: now, lte: inThreeMonths },
         season: { showId: { in: showIds } },
       },
       include: {
         season: {
-          include: { show: true },
+          include: {
+            show: {
+              select: {
+                id: true,
+                tmdbId: true,
+                name: true,
+                posterPath: true,
+                network: true,
+              },
+            },
+          },
         },
       },
       orderBy: { airDate: 'asc' },
@@ -52,13 +60,63 @@ export class FeedService {
 
     return episodes.map((ep) => ({
       episodeId: ep.id,
-      showId: ep.season.showId,
+      showId: ep.season.show.id,
+      showTmdbId: ep.season.show.tmdbId,
       showName: ep.season.show.name,
       posterPath: ep.season.show.posterPath,
+      network: ep.season.show.network,
       seasonNumber: ep.season.seasonNumber,
       episodeNumber: ep.episodeNumber,
       episodeName: ep.name,
       airDate: ep.airDate,
+    }));
+  }
+
+  async getUpcomingMovies(userId: string) {
+    // Busca todos os filmes na watchlist do usuário com data de lançamento futura
+    // Sem limite de janela — filmes podem estar meses à frente
+    const now = new Date();
+
+    const watches = await this.prisma.movieWatch.findMany({
+      where: {
+        userId,
+        status: 'WATCHLIST',
+        movie: {
+          releaseDate: { gte: now },
+        },
+      },
+      include: {
+        movie: {
+          select: {
+            id: true,
+            tmdbId: true,
+            title: true,
+            posterPath: true,
+            releaseDate: true,
+            genres: true,
+            movieCasts: {
+              take: 4,
+              orderBy: { order: 'asc' },
+              include: {
+                cast: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        movie: { releaseDate: 'asc' },
+      },
+    });
+
+    return watches.map((w) => ({
+      movieId: w.movie.id,
+      movieTmdbId: w.movie.tmdbId,
+      title: w.movie.title,
+      posterPath: w.movie.posterPath,
+      releaseDate: w.movie.releaseDate,
+      genres: w.movie.genres,
+      cast: w.movie.movieCasts.map((mc) => mc.cast.name),
     }));
   }
 

@@ -34,6 +34,8 @@ interface ExplorarClientProps {
   initialQuery: string;
   initialMovies: FeedMovie[];
   initialShows: FeedShow[];
+  initialMoviePage: number;
+  initialShowPage: number;
   initialMovieTotalPages: number;
   initialShowTotalPages: number;
   searchResultsSlot: React.ReactNode;
@@ -51,6 +53,8 @@ export function ExplorarClient({
   initialQuery,
   initialMovies,
   initialShows,
+  initialMoviePage,
+  initialShowPage,
   initialMovieTotalPages,
   initialShowTotalPages,
   searchResultsSlot,
@@ -156,6 +160,8 @@ export function ExplorarClient({
         <TrendingFeed
           initialMovies={initialMovies}
           initialShows={initialShows}
+          initialMoviePage={initialMoviePage}
+          initialShowPage={initialShowPage}
           initialMovieTotalPages={initialMovieTotalPages}
           initialShowTotalPages={initialShowTotalPages}
           filter={filter}
