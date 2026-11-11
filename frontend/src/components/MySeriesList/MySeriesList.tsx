@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { PosterCard } from '@/components/PosterCard/PosterCard';
 import { api, ApiError } from '@/lib/api';
 import { useInfiniteRecommendations } from '@/lib/useInfiniteRecommendations';
+import { useScrollRestoration, saveScrollPosition } from '@/lib/useScrollRestoration';
+import { getCacheEntry } from '@/lib/recommendationsCache';
 import styles from './MySeriesList.module.css';
 
 interface ShowSubscriptionWithProgress {
@@ -26,7 +28,13 @@ export function MySeriesList() {
   const [items, setItems] = useState<ShowSubscriptionWithProgress[]>([]);
   const [subscriptionsLoaded, setSubscriptionsLoaded] = useState(false);
 
-  // Set de tmdbIds já na lista — memorizado para estabilidade referencial
+  // Se já há cache de recomendações, renderiza o conteúdo imediatamente
+  // sem bloquear no skeleton enquanto a API de subscriptions responde.
+  const hasRecsCache = useRef(!!getCacheEntry('/shows/popular')?.items.length).current;
+  const contentReady = subscriptionsLoaded || hasRecsCache;
+
+  useScrollRestoration('scroll:series', contentReady);
+
   const excludedIds = useMemo(
     () => new Set(items.map((s) => s.show.tmdbId)),
     [items],
@@ -73,7 +81,7 @@ export function MySeriesList() {
     };
   }, []);
 
-  if (!subscriptionsLoaded) {
+  if (!contentReady) {
     return (
       <div className={styles.container}>
         <div className={styles.grid} aria-label="Carregando séries...">
@@ -98,7 +106,7 @@ export function MySeriesList() {
 
   return (
     <div className={styles.container}>
-      {items.length === 0 && (
+      {subscriptionsLoaded && items.length === 0 && (
         <p className={styles.empty}>
           Nenhuma série adicionada ainda.{' '}
           <Link href="/explorar" className={styles.emptyLink}>
@@ -125,6 +133,7 @@ export function MySeriesList() {
                   posterPath={show.posterPath}
                   href={`/show/${show.tmdbId}/episodios`}
                   progressPercent={progressPercent}
+                  onClick={() => saveScrollPosition('scroll:series')}
                 />
               );
             })}
@@ -148,6 +157,7 @@ export function MySeriesList() {
                 title={show.name}
                 posterPath={show.posterPath}
                 href={`/show/${show.tmdbId}/episodios`}
+                onClick={() => saveScrollPosition('scroll:series')}
               />
             ))}
           </div>
@@ -166,6 +176,7 @@ export function MySeriesList() {
                 title={show.name ?? show.title ?? ''}
                 posterPath={show.poster_path}
                 href={`/show/${show.id}/sobre`}
+                onClick={() => saveScrollPosition('scroll:series')}
               />
             ))}
           </div>

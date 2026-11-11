@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
+import {
+  getCacheEntry,
+  setCacheEntry,
+  updateCacheEntry,
+} from './recommendationsCache';
 
 export interface RecommendedItem {
   id: number;
@@ -26,10 +31,8 @@ interface UseInfiniteRecommendationsResult {
 }
 
 const MAX_PAGES = 50;
-/** Número de páginas carregadas antes de começar o shuffle de ponto de entrada. */
 const RANDOM_START_RANGE = 10;
 
-/** Retorna uma página inicial aleatória dentro do intervalo disponível. */
 function randomStartPage(): number {
   return Math.floor(Math.random() * RANDOM_START_RANGE) + 1;
 }
@@ -39,12 +42,17 @@ export function useInfiniteRecommendations({
   excludedIds,
   ready,
 }: UseInfiniteRecommendationsOptions): UseInfiniteRecommendationsResult {
-  const [items, setItems] = useState<RecommendedItem[]>([]);
+  // Inicializa com o cache existente para este endpoint (se houver)
+  const cached = getCacheEntry(endpoint);
+
+  const [items, setItems] = useState<RecommendedItem[]>(cached?.items ?? []);
   const [isLoading, setIsLoading] = useState(false);
 
-  const startPage = useRef(randomStartPage());
+  // Se já há cache, retoma da próxima página; senão começa aleatório
+  const startPage = useRef(cached ? cached.nextPage : randomStartPage());
   const nextPageRef = useRef(startPage.current);
-  const totalPagesRef = useRef(MAX_PAGES);
+  const totalPagesRef = useRef(cached?.totalPages ?? MAX_PAGES);
+
   const isLoadingRef = useRef(false);
   const excludedIdsRef = useRef(excludedIds);
   const readyRef = useRef(ready);
@@ -80,12 +88,27 @@ export function useInfiniteRecommendations({
         );
 
         if (filtered.length > 0) {
-          setItems((prev) => [...prev, ...filtered]);
+          setItems((prev) => {
+            const next = [...prev, ...filtered];
+            // Persiste no cache para restaurar na próxima montagem
+            setCacheEntry(endpointRef.current, {
+              items: next,
+              nextPage: nextPageRef.current,
+              totalPages: totalPagesRef.current,
+            });
+            return next;
+          });
           break;
         }
 
         if (nextPageRef.current > totalPagesRef.current) break;
       }
+
+      // Atualiza o ponteiro de página no cache mesmo que não tenha adicionado itens
+      updateCacheEntry(endpointRef.current, {
+        nextPage: nextPageRef.current,
+        totalPages: totalPagesRef.current,
+      });
     } catch {
       // Falha silenciosa — nova tentativa no próximo scroll
     } finally {
@@ -126,6 +149,15 @@ export function useInfiniteRecommendations({
 
   useEffect(() => {
     if (!ready) return;
+
+    // Se já há itens em cache não dispara load automático —
+    // o sentinel vai carregar mais quando o usuário chegar ao fim
+    if (getCacheEntry(endpoint)?.items.length) {
+      if (sentinelNodeRef.current) {
+        connectObserver(sentinelNodeRef.current);
+      }
+      return;
+    }
 
     void loadNextPage();
 

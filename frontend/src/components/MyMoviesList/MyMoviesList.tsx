@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { PosterCard } from '@/components/PosterCard/PosterCard';
 import { api, ApiError } from '@/lib/api';
 import { useInfiniteRecommendations } from '@/lib/useInfiniteRecommendations';
+import { useScrollRestoration, saveScrollPosition } from '@/lib/useScrollRestoration';
+import { getCacheEntry } from '@/lib/recommendationsCache';
 import styles from './MyMoviesList.module.css';
 
 interface MovieWatch {
@@ -23,7 +25,13 @@ export function MyMoviesList() {
   const [items, setItems] = useState<MovieWatch[]>([]);
   const [moviesLoaded, setMoviesLoaded] = useState(false);
 
-  // Set de tmdbIds já na lista — excluídos das recomendações
+  // Se já há cache de recomendações, renderiza o conteúdo imediatamente
+  // sem bloquear no skeleton enquanto a API de filmes responde.
+  const hasRecsCache = useRef(!!getCacheEntry('/movies/popular')?.items.length).current;
+  const contentReady = moviesLoaded || hasRecsCache;
+
+  useScrollRestoration('scroll:filmes', contentReady);
+
   const excludedIds = useMemo(
     () => new Set(items.map((w) => w.movie.tmdbId)),
     [items],
@@ -74,7 +82,7 @@ export function MyMoviesList() {
     };
   }, []);
 
-  if (!moviesLoaded) {
+  if (!contentReady) {
     return (
       <div className={styles.container}>
         <div className={styles.grid} aria-label="Carregando filmes...">
@@ -86,12 +94,11 @@ export function MyMoviesList() {
     );
   }
 
-  // Filmes com status WATCHLIST = "quero assistir"
   const watchlist = items.filter((w) => w.status === 'WATCHLIST');
 
   return (
     <div className={styles.container}>
-      {items.length === 0 && (
+      {moviesLoaded && items.length === 0 && (
         <p className={styles.empty}>
           Nenhum filme adicionado ainda.{' '}
           <Link href="/explorar" className={styles.emptyLink}>
@@ -111,6 +118,7 @@ export function MyMoviesList() {
                 title={movie.title}
                 posterPath={movie.posterPath}
                 href={`/filme/${movie.tmdbId}`}
+                onClick={() => saveScrollPosition('scroll:filmes')}
               />
             ))}
           </div>
@@ -129,6 +137,7 @@ export function MyMoviesList() {
                 title={movie.title ?? movie.name ?? ''}
                 posterPath={movie.poster_path}
                 href={`/filme/${movie.id}`}
+                onClick={() => saveScrollPosition('scroll:filmes')}
               />
             ))}
           </div>
