@@ -26,3 +26,4 @@ export { IconLock } from './IconLock';
 export { IconLayers } from './IconLayers';
 export { IconFilmStrip } from './IconFilmStrip';
 export { IconCalendar } from './IconCalendar';
+export { IconTrash } from './IconTrash';

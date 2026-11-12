@@ -32,6 +32,18 @@
   background-color: var(--color-bg-card);
 }
 
+.roundButtonWatched {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.roundButtonWatched:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-text-on-accent);
+}
+
 .spinner {
   width: 16px;
   height: 16px;
