@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { PosterCard } from '@/components/PosterCard/PosterCard';
 import { api, ApiError } from '@/lib/api';
 import { useInfiniteRecommendations } from '@/lib/useInfiniteRecommendations';
 import { useScrollRestoration, saveScrollPosition } from '@/lib/useScrollRestoration';
-import { getCacheEntry } from '@/lib/recommendationsCache';
 import styles from './MyMoviesList.module.css';
 
 interface MovieWatch {
@@ -25,13 +24,6 @@ export function MyMoviesList() {
   const [items, setItems] = useState<MovieWatch[]>([]);
   const [moviesLoaded, setMoviesLoaded] = useState(false);
 
-  // Se já há cache de recomendações, renderiza o conteúdo imediatamente
-  // sem bloquear no skeleton enquanto a API de filmes responde.
-  const hasRecsCache = useRef(!!getCacheEntry('/movies/popular')?.items.length).current;
-  const contentReady = moviesLoaded || hasRecsCache;
-
-  useScrollRestoration('scroll:filmes', contentReady);
-
   const excludedIds = useMemo(
     () => new Set(items.map((w) => w.movie.tmdbId)),
     [items],
@@ -43,6 +35,8 @@ export function MyMoviesList() {
       excludedIds,
       ready: moviesLoaded,
     });
+
+  useScrollRestoration('scroll:filmes', moviesLoaded);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,7 +76,7 @@ export function MyMoviesList() {
     };
   }, []);
 
-  if (!contentReady) {
+  if (!moviesLoaded) {
     return (
       <div className={styles.container}>
         <div className={styles.grid} aria-label="Carregando filmes...">
