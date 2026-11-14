@@ -12,7 +12,7 @@
 .bgBase {
   position: absolute;
   inset: 0;
-  background: linear-gradient(145deg, #0f0f2e 0%, #11103a 35%, #0c0e24 65%, #080b1e 100%);
+  background: var(--color-bg-primary);
   z-index: 0;
 }
 
@@ -22,7 +22,7 @@
   left: -60px;
   width: 420px;
   height: 480px;
-  background: linear-gradient(135deg, rgba(60, 20, 120, 0.55), rgba(30, 10, 80, 0.3));
+  background: linear-gradient(135deg, rgba(235, 87, 87, 0.08), rgba(192, 57, 43, 0.04));
   clip-path: polygon(0 40%, 100% 0%, 60% 100%, 0% 100%);
   z-index: 0;
 }
@@ -33,7 +33,7 @@
   right: -40px;
   width: 300px;
   height: 340px;
-  background: linear-gradient(225deg, rgba(60, 20, 120, 0.4), rgba(20, 10, 60, 0.2));
+  background: linear-gradient(225deg, rgba(235, 87, 87, 0.06), rgba(192, 57, 43, 0.03));
   clip-path: polygon(40% 0%, 100% 0%, 100% 100%, 0% 60%);
   z-index: 0;
 }
@@ -118,8 +118,8 @@
 .card {
   width: 100%;
   max-width: 438px;
-  background: linear-gradient(135deg, rgba(20, 24, 41, 0.96) 0%, rgba(13, 17, 32, 0.96) 100%);
-  border: 1px solid #20263b;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 2rem 2.25rem;
   display: flex;
@@ -194,10 +194,10 @@
 .input {
   width: 100%;
   padding: 0.8125rem 1rem 0.8125rem 2.75rem;
-  background-color: #101525;
-  border: 1.2px solid #414b6c;
+  background-color: var(--color-bg-elevated);
+  border: 1.2px solid var(--color-border);
   border-radius: 10px;
-  color: #f8fafc;
+  color: var(--color-text-primary);
   font-size: 0.9375rem;
   transition: border-color 0.15s ease;
   -webkit-appearance: none;
@@ -207,9 +207,9 @@
 .input:-webkit-autofill,
 .input:-webkit-autofill:hover,
 .input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #101525 inset;
-  -webkit-text-fill-color: #f8fafc;
-  caret-color: #f8fafc;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-bg-elevated) inset;
+  -webkit-text-fill-color: var(--color-text-primary);
+  caret-color: var(--color-text-primary);
 }
 
 .input:focus {
