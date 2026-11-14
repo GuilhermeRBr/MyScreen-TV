@@ -19,7 +19,7 @@ import { EMAIL_MESSAGES } from './messages/email.messages';
  * - Falhas esgotadas ficam retidas no Redis por 7 dias para diagnóstico.
  *
  * Idempotência:
- * - O envio via Resend não garante "exactly once" — uma retentativa após timeout
+ * - O envio via SMTP não garante "exactly once" — uma retentativa após timeout
  *   pode resultar em e-mail duplicado.
  * - Para recuperação de senha, isso é aceitável: o usuário pode usar o link mais recente.
  */
