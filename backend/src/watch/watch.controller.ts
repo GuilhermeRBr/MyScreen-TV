@@ -19,6 +19,8 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { WatchService } from './watch.service';
+import { BatchMarkSeasonsDto } from './dto/batch-mark-seasons.dto';
+import { BatchMarkEpisodesDto } from './dto/batch-mark-episodes.dto';
 import { ToggleEpisodeDto } from './dto/toggle-episode.dto';
 import { ToggleMovieDto } from './dto/toggle-movie.dto';
 import { UpsertShowSubscriptionDto } from './dto/upsert-show-subscription.dto';
@@ -46,6 +48,28 @@ export class WatchController {
     @Body() dto: ToggleEpisodeDto,
   ) {
     return this.watchService.toggleEpisodeWatched(user.sub, dto.episodeId);
+  }
+
+  @Post('episodes/batch-mark')
+  @ApiOperation(WATCH_SWAGGER.batchMarkEpisodes.operation)
+  @ApiResponse({ status: 201, description: WATCH_SWAGGER.batchMarkEpisodes.responses[201] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.batchMarkEpisodes.responses[401] })
+  batchMarkEpisodes(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: BatchMarkEpisodesDto,
+  ) {
+    return this.watchService.batchMarkEpisodesWatched(user.sub, dto.episodeIds);
+  }
+
+  @Post('seasons/batch-mark')
+  @ApiOperation(WATCH_SWAGGER.batchMarkSeasons.operation)
+  @ApiResponse({ status: 201, description: WATCH_SWAGGER.batchMarkSeasons.responses[201] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.batchMarkSeasons.responses[401] })
+  batchMarkSeasons(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: BatchMarkSeasonsDto,
+  ) {
+    return this.watchService.batchMarkSeasonsWatched(user.sub, dto.seasonIds);
   }
 
   @Post('seasons/:seasonId/mark-all')

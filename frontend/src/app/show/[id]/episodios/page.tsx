@@ -111,8 +111,11 @@ export default function EpisodiosPage() {
   const [openSeasons, setOpenSeasons] = useState<Set<string>>(new Set());
   const [internalShowId, setInternalShowId] = useState<string | null>(null);
 
-  // Modal "marcar anteriores"
+  // Modal "marcar anteriores" — episódio individual
   const [pendingEpisodeId, setPendingEpisodeId] = useState<string | null>(null);
+
+  // Modal "marcar anteriores" — temporada
+  const [pendingSeasonId, setPendingSeasonId] = useState<string | null>(null);
 
   // Ref para o scroll do carrossel "continuar acompanhando"
   const continueScrollRef = useRef<HTMLDivElement>(null);
@@ -273,44 +276,42 @@ export default function EpisodiosPage() {
     lastWatchedIdRef.current = null;
   }, [seasons]);
 
-  /**
-   * Centraliza o card de um episódio no carrossel pelo seu índice em allFlat.
-   */
-  function scrollToEpisodeIndex(episodeId: string, updatedSeasons: SeasonWithEpisodes[]) {
-    const container = continueScrollRef.current;
-    if (!container) return;
-
-    // Reconstrói o flat com o estado atualizado para encontrar o índice correto
-    let flatIndex = 0;
-    let targetIndex = -1;
-    for (const season of updatedSeasons) {
-      for (const ep of season.episodes) {
-        if (ep.id === episodeId) {
-          targetIndex = flatIndex;
-          break;
-        }
-        flatIndex++;
-      }
-      if (targetIndex !== -1) break;
-    }
-
-    if (targetIndex === -1) return;
-
-    const card = container.children[targetIndex] as HTMLElement | undefined;
-    if (!card) return;
-
-    const containerWidth = container.offsetWidth;
-    const cardLeft = card.offsetLeft;
-    const cardWidth = card.offsetWidth;
-    const scrollTarget = cardLeft - containerWidth / 2 + cardWidth / 2;
-
-    container.scrollTo({ left: scrollTarget, behavior: 'smooth' });
-  }
-
   async function toggleEpisode(episodeId: string) {
     // Bloqueia marcar episódios que ainda não foram lançados
     const ep = seasons.flatMap((s) => s.episodes).find((e) => e.id === episodeId);
     if (ep && isUnreleased(ep.airDate)) return;
+
+    // Determina o estado optimista: inverte o estado atual
+    const optimisticWatched = !ep?.watched;
+
+    if (optimisticWatched) {
+      lastWatchedIdRef.current = episodeId;
+    }
+
+    // Optimistic update — atualiza a UI antes da resposta da API
+    setSeasons((prev) =>
+      prev.map((s) => {
+        const hasEp = s.episodes.some((e) => e.id === episodeId);
+        if (!hasEp) return s;
+
+        const updatedEps = s.episodes.map((e) =>
+          e.id === episodeId ? { ...e, watched: optimisticWatched } : e,
+        );
+        return {
+          ...s,
+          episodes: updatedEps,
+          watchedCount: updatedEps.filter((e) => e.watched).length,
+        };
+      }),
+    );
+
+    // Exibe o modal de "marcar anteriores" imediatamente, sem esperar a API
+    if (optimisticWatched) {
+      const hasPrevious = hasPreviousUnwatchedEpisodes(episodeId, seasons);
+      if (hasPrevious) {
+        setPendingEpisodeId(episodeId);
+      }
+    }
 
     try {
       const result = await api.post<{ watched: boolean }>(
@@ -318,37 +319,42 @@ export default function EpisodiosPage() {
         { episodeId },
       );
 
-      if (result.watched) {
-        // Registra qual episódio foi marcado — o useEffect vai rolar após o render
-        lastWatchedIdRef.current = episodeId;
-      }
+      // Corrige se a API retornar estado diferente do optimista (raro, mas possível)
+      if (result.watched !== optimisticWatched) {
+        setSeasons((prev) =>
+          prev.map((s) => {
+            const hasEp = s.episodes.some((e) => e.id === episodeId);
+            if (!hasEp) return s;
 
-      setSeasons((prev) => {
-        const next = prev.map((s) => {
+            const updatedEps = s.episodes.map((e) =>
+              e.id === episodeId ? { ...e, watched: result.watched } : e,
+            );
+            return {
+              ...s,
+              episodes: updatedEps,
+              watchedCount: updatedEps.filter((e) => e.watched).length,
+            };
+          }),
+        );
+      }
+    } catch {
+      // Reverte para o estado original em caso de erro
+      setSeasons((prev) =>
+        prev.map((s) => {
           const hasEp = s.episodes.some((e) => e.id === episodeId);
           if (!hasEp) return s;
 
           const updatedEps = s.episodes.map((e) =>
-            e.id === episodeId ? { ...e, watched: result.watched } : e,
+            e.id === episodeId ? { ...e, watched: !optimisticWatched } : e,
           );
           return {
             ...s,
             episodes: updatedEps,
             watchedCount: updatedEps.filter((e) => e.watched).length,
           };
-        });
-        return next;
-      });
-
-      // Verifica se há episódios anteriores não assistidos somente ao marcar
-      if (result.watched) {
-        const hasPrevious = hasPreviousUnwatchedEpisodes(episodeId, seasons);
-        if (hasPrevious) {
-          setPendingEpisodeId(episodeId);
-        }
-      }
-    } catch {
-      // falha silenciosa
+        }),
+      );
+      setPendingEpisodeId(null);
     }
   }
 
@@ -382,6 +388,7 @@ export default function EpisodiosPage() {
 
   async function markAllPreviousEpisodes(targetEpisodeId: string) {
     // Coleta os episódios a marcar: todos os anteriores ao alvo ainda não assistidos
+    const toMarkIds: string[] = [];
     const toMarkBySeasonId = new Map<string, string[]>();
 
     for (const season of seasons) {
@@ -390,7 +397,10 @@ export default function EpisodiosPage() {
       if (epIndex === -1) {
         // Temporada inteiramente anterior — marca os não assistidos
         const unwatched = season.episodes.filter((e) => !e.watched).map((e) => e.id);
-        if (unwatched.length > 0) toMarkBySeasonId.set(season.id, unwatched);
+        if (unwatched.length > 0) {
+          toMarkBySeasonId.set(season.id, unwatched);
+          toMarkIds.push(...unwatched);
+        }
         continue;
       }
 
@@ -399,31 +409,17 @@ export default function EpisodiosPage() {
         .slice(0, epIndex)
         .filter((e) => !e.watched)
         .map((e) => e.id);
-      if (unwatched.length > 0) toMarkBySeasonId.set(season.id, unwatched);
+      if (unwatched.length > 0) {
+        toMarkBySeasonId.set(season.id, unwatched);
+        toMarkIds.push(...unwatched);
+      }
 
       break;
     }
 
-    // Usa mark-all para temporadas totalmente contidas; toggle individual para parciais
-    for (const [seasonId, episodeIds] of toMarkBySeasonId) {
-      const season = seasons.find((s) => s.id === seasonId);
-      if (!season) continue;
+    if (toMarkIds.length === 0) return;
 
-      const allInSeason = season.episodes.filter((e) => !e.watched).map((e) => e.id);
-      const isFullSeason =
-        allInSeason.length > 0 &&
-        allInSeason.every((id) => episodeIds.includes(id));
-
-      if (isFullSeason) {
-        await api.post(`/watch/seasons/${seasonId}/mark-all`);
-      } else {
-        for (const epId of episodeIds) {
-          await api.post<{ watched: boolean }>('/watch/episodes/toggle', { episodeId: epId });
-        }
-      }
-    }
-
-    // Atualiza o estado local com os episódios marcados
+    // Optimistic update — reflete na UI antes da chamada à API
     setSeasons((prev) =>
       prev.map((season) => {
         const markedIds = toMarkBySeasonId.get(season.id);
@@ -439,6 +435,73 @@ export default function EpisodiosPage() {
         };
       }),
     );
+
+    // Uma única chamada atômica para todos os episódios
+    try {
+      await api.post('/watch/episodes/batch-mark', { episodeIds: toMarkIds });
+    } catch {
+      // Reverte o optimistic update em caso de erro
+      setSeasons((prev) =>
+        prev.map((season) => {
+          const markedIds = toMarkBySeasonId.get(season.id);
+          if (!markedIds || markedIds.length === 0) return season;
+
+          const updatedEps = season.episodes.map((e) =>
+            markedIds.includes(e.id) ? { ...e, watched: false } : e,
+          );
+          return {
+            ...season,
+            episodes: updatedEps,
+            watchedCount: updatedEps.filter((e) => e.watched).length,
+          };
+        }),
+      );
+    }
+  }
+
+  /**
+   * Retorna true se existir ao menos uma temporada anterior à informada
+   * com algum episódio ainda não assistido.
+   */
+  function hasPreviousUnwatchedSeasons(
+    seasonId: string,
+    currentSeasons: SeasonWithEpisodes[],
+  ): boolean {
+    for (const s of currentSeasons) {
+      if (s.id === seasonId) break;
+      if (s.episodes.some((e) => !e.watched)) return true;
+    }
+    return false;
+  }
+
+  async function markAllPreviousSeasons(targetSeasonId: string) {
+    const previousSeasonIds = seasons
+      .slice(0, seasons.findIndex((s) => s.id === targetSeasonId))
+      .filter((s) => s.episodes.some((e) => !e.watched))
+      .map((s) => s.id);
+
+    if (previousSeasonIds.length === 0) return;
+
+    // Optimistic update — marca todas as temporadas anteriores imediatamente
+    setSeasons((prev) => {
+      const targetIndex = prev.findIndex((s) => s.id === targetSeasonId);
+      return prev.map((s, i) => {
+        if (i >= targetIndex) return s;
+        return {
+          ...s,
+          watchedCount: s.episodeCount,
+          episodes: s.episodes.map((ep) => ({ ...ep, watched: true })),
+        };
+      });
+    });
+
+    // Uma única chamada atômica para todas as temporadas anteriores
+    try {
+      await api.post('/watch/seasons/batch-mark', { seasonIds: previousSeasonIds });
+    } catch {
+      // Reverte o optimistic update em caso de erro
+      setSeasons(seasons);
+    }
   }
 
   async function toggleSeasonWatched(season: SeasonWithEpisodes, e: React.MouseEvent) {
@@ -446,70 +509,71 @@ export default function EpisodiosPage() {
 
     const isComplete = season.watchedCount >= season.episodeCount && season.episodeCount > 0;
 
+    // Optimistic update — reflete na UI imediatamente
+    setSeasons((prev) =>
+      prev.map((s) =>
+        s.id === season.id
+          ? {
+              ...s,
+              watchedCount: isComplete ? 0 : s.episodeCount,
+              episodes: s.episodes.map((ep) => ({ ...ep, watched: !isComplete })),
+            }
+          : s,
+      ),
+    );
+
+    if (!isComplete && hasPreviousUnwatchedSeasons(season.id, seasons)) {
+      setPendingSeasonId(season.id);
+    }
+
     try {
       if (isComplete) {
         await api.delete(`/watch/seasons/${season.id}/mark-all`);
-        setSeasons((prev) =>
-          prev.map((s) =>
-            s.id === season.id
-              ? { ...s, watchedCount: 0, episodes: s.episodes.map((ep) => ({ ...ep, watched: false })) }
-              : s,
-          ),
-        );
       } else {
         await api.post(`/watch/seasons/${season.id}/mark-all`);
-        setSeasons((prev) =>
-          prev.map((s) =>
-            s.id === season.id
-              ? {
-                  ...s,
-                  watchedCount: s.episodeCount,
-                  episodes: s.episodes.map((ep) => ({ ...ep, watched: true })),
-                }
-              : s,
-          ),
-        );
       }
     } catch {
-      // falha silenciosa
+      // Reverte para o estado original em caso de erro
+      setSeasons((prev) =>
+        prev.map((s) =>
+          s.id === season.id
+            ? {
+                ...s,
+                watchedCount: season.watchedCount,
+                episodes: season.episodes,
+              }
+            : s,
+        ),
+      );
+      setPendingSeasonId(null);
     }
   }
 
   async function toggleAllWatched() {
     if (!internalShowId) return;
 
+    // Optimistic update — reflete na UI imediatamente
+    setSeasons((prev) =>
+      prev.map((s) => ({
+        ...s,
+        watchedCount: allWatched ? 0 : s.episodeCount,
+        episodes: s.episodes.map((ep) => ({ ...ep, watched: !allWatched })),
+      })),
+    );
+
     try {
       if (allWatched) {
         for (const season of seasons) {
           await api.delete(`/watch/seasons/${season.id}/mark-all`);
         }
-        setSeasons((prev) =>
-          prev.map((s) => ({
-            ...s,
-            watchedCount: 0,
-            episodes: s.episodes.map((ep) => ({ ...ep, watched: false })),
-          })),
-        );
       } else {
         for (const season of seasons) {
           await api.post(`/watch/seasons/${season.id}/mark-all`);
         }
-        const progress = await api.get<WatchProgressResponse>(
-          `/watch/shows/${internalShowId}/progress`,
-        );
-        const progressMap = new Map(
-          progress.seasons.map((s) => [s.seasonNumber, s.watchedCount]),
-        );
-        setSeasons((prev) =>
-          prev.map((s) => ({
-            ...s,
-            watchedCount: progressMap.get(s.seasonNumber) ?? s.watchedCount,
-            episodes: s.episodes.map((ep) => ({ ...ep, watched: true })),
-          })),
-        );
       }
     } catch {
-      // falha silenciosa
+      // Reverte para o estado original em caso de erro
+      setSeasons(seasons);
     }
   }
 
@@ -536,6 +600,17 @@ export default function EpisodiosPage() {
             await markAllPreviousEpisodes(epId);
           }}
           onDecline={() => setPendingEpisodeId(null)}
+        />
+      )}
+
+      {pendingSeasonId && (
+        <ConfirmMarkPreviousModal
+          onConfirm={async () => {
+            const sId = pendingSeasonId;
+            setPendingSeasonId(null);
+            await markAllPreviousSeasons(sId);
+          }}
+          onDecline={() => setPendingSeasonId(null)}
         />
       )}
 

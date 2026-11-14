@@ -2,6 +2,28 @@
  * Documentação Swagger do módulo Watch.
  */
 export const WATCH_SWAGGER = {
+  batchMarkSeasons: {
+    operation: {
+      summary: 'Marcar várias temporadas como assistidas de uma vez',
+      description:
+        'Recebe uma lista de UUIDs internos de temporadas e marca todos os seus episódios como assistidos em uma única operação atômica. Episódios já assistidos são ignorados. Atualiza o status de assinatura da série automaticamente.',
+    },
+    responses: {
+      201: 'Temporadas marcadas. Retorna a quantidade de registros criados.',
+      401: 'Não autenticado.',
+    },
+  },
+  batchMarkEpisodes: {
+    operation: {
+      summary: 'Marcar vários episódios como assistidos de uma vez',
+      description:
+        'Recebe uma lista de UUIDs internos de episódios e os marca como assistidos em uma única operação atômica. Episódios já assistidos são ignorados. Atualiza o status de assinatura da série automaticamente.',
+    },
+    responses: {
+      201: 'Episódios marcados. Retorna a quantidade de registros criados.',
+      401: 'Não autenticado.',
+    },
+  },
   toggleEpisode: {
     operation: {
       summary: 'Marcar/desmarcar episódio como assistido',

@@ -119,8 +119,94 @@ export class WatchService {
     return { markedCount: toCreate.length };
   }
 
-  async unmarkSeasonWatched(
+  async batchMarkSeasonsWatched(
     userId: string,
+    seasonIds: string[],
+  ): Promise<{ markedCount: number }> {
+    // Carrega todas as temporadas e seus episódios em uma única query
+    const seasons = await this.prisma.season.findMany({
+      where: { id: { in: seasonIds } },
+      select: { id: true, showId: true, episodes: { select: { id: true } } },
+    });
+
+    if (seasons.length === 0) {
+      return { markedCount: 0 };
+    }
+
+    const allEpisodeIds = seasons.flatMap((s) => s.episodes.map((e) => e.id));
+
+    // Remove os já assistidos para não duplicar
+    const existing = await this.prisma.watchProgress.findMany({
+      where: { userId, episodeId: { in: allEpisodeIds } },
+      select: { episodeId: true },
+    });
+    const alreadyWatched = new Set(existing.map((r) => r.episodeId));
+
+    const toCreate = allEpisodeIds
+      .filter((id) => !alreadyWatched.has(id))
+      .map((episodeId) => ({ userId, episodeId }));
+
+    if (toCreate.length === 0) {
+      return { markedCount: 0 };
+    }
+
+    await this.prisma.watchProgress.createMany({ data: toCreate });
+
+    // Atualiza assinatura e verifica conclusão para cada série afetada
+    const showIds = [...new Set(seasons.map((s) => s.showId))];
+    for (const showId of showIds) {
+      await this.checkAndStartWatching(userId, showId);
+      await this.checkAndCompleteShow(userId, showId);
+    }
+
+    return { markedCount: toCreate.length };
+  }
+
+  async batchMarkEpisodesWatched(
+    userId: string,
+    episodeIds: string[],
+  ): Promise<{ markedCount: number }> {
+    // Valida que todos os episódios pertencem à mesma série (segurança),
+    // filtrando IDs inexistentes silenciosamente
+    const episodes = await this.prisma.episode.findMany({
+      where: { id: { in: episodeIds } },
+      select: { id: true, season: { select: { showId: true } } },
+    });
+
+    if (episodes.length === 0) {
+      return { markedCount: 0 };
+    }
+
+    const validIds = new Set(episodes.map((e) => e.id));
+
+    // Remove os já assistidos para não duplicar
+    const existing = await this.prisma.watchProgress.findMany({
+      where: { userId, episodeId: { in: [...validIds] } },
+      select: { episodeId: true },
+    });
+    const alreadyWatched = new Set(existing.map((r) => r.episodeId));
+
+    const toCreate = [...validIds]
+      .filter((id) => !alreadyWatched.has(id))
+      .map((episodeId) => ({ userId, episodeId }));
+
+    if (toCreate.length === 0) {
+      return { markedCount: 0 };
+    }
+
+    await this.prisma.watchProgress.createMany({ data: toCreate });
+
+    // Atualiza assinatura e verifica conclusão para cada série afetada
+    const showIds = [...new Set(episodes.map((e) => e.season.showId))];
+    for (const showId of showIds) {
+      await this.checkAndStartWatching(userId, showId);
+      await this.checkAndCompleteShow(userId, showId);
+    }
+
+    return { markedCount: toCreate.length };
+  }
+
+  async unmarkSeasonWatched(    userId: string,
     seasonId: string,
   ): Promise<{ removedCount: number }> {
     const season = await this.prisma.season.findUnique({
