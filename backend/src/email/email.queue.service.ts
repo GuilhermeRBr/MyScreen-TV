@@ -16,7 +16,7 @@ import { EMAIL_MESSAGES } from './messages/email.messages';
  * Separação de responsabilidades:
  * - EmailQueueService: enfileira jobs (producer)
  * - EmailProcessor: consome e executa os jobs (consumer)
- * - EmailService: realiza o envio via Resend (infraestrutura)
+ * - EmailService: realiza o envio via SMTP (infraestrutura)
  *
  * A API retorna imediatamente após o enfileiramento, sem aguardar o envio.
  * Isso não garante entrega — apenas que a solicitação foi aceita para
