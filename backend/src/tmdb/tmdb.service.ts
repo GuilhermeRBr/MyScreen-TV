@@ -118,11 +118,11 @@ export class TmdbService {
           create: {
             showId: show.id,
             castId: cast.id,
-            character: member.character,
+            character: member.roles[0]?.character ?? null,
             order: member.order,
           },
           update: {
-            character: member.character,
+            character: member.roles[0]?.character ?? null,
             order: member.order,
           },
         });
@@ -132,7 +132,7 @@ export class TmdbService {
           await this.prisma.showCast.updateMany({
             where: { showId: show.id, castId: cast.id },
             data: {
-              character: member.character,
+              character: member.roles[0]?.character ?? null,
               order: member.order,
             },
           });

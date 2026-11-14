@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Env } from '../env.validation';
 import {
+  TmdbAggregateCredits,
   TmdbCredits,
   TmdbMovie,
   TmdbMovieSearchItem,
@@ -27,8 +28,8 @@ export class TmdbClient {
     return this.get<TmdbShow>(`/tv/${tmdbId}`);
   }
 
-  async getShowCredits(tmdbId: number): Promise<TmdbCredits> {
-    return this.get<TmdbCredits>(`/tv/${tmdbId}/aggregate_credits`);
+  async getShowCredits(tmdbId: number): Promise<TmdbAggregateCredits> {
+    return this.get<TmdbAggregateCredits>(`/tv/${tmdbId}/aggregate_credits`);
   }
 
   async getSeason(showTmdbId: number, seasonNumber: number): Promise<TmdbSeason> {
