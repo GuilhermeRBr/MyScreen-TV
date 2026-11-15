@@ -252,4 +252,40 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  rewatchEpisode: {
+    operation: {
+      summary: 'Marcar episódio como reassistido',
+      description:
+        'Incrementa o contador de reassistidos (rewatchCount) de um episódio já assistido. O episódio deve ter sido assistido previamente.',
+    },
+    responses: {
+      201: 'Contador incrementado. Retorna o novo valor de rewatchCount.',
+      401: 'Não autenticado.',
+      404: 'Episódio não encontrado ou não assistido.',
+    },
+  },
+  rewatchEpisodeDecrement: {
+    operation: {
+      summary: 'Decrementar contador de reassistidos',
+      description:
+        'Decrementa em 1 o contador de reassistidos (rewatchCount) de um episódio. O contador não vai abaixo de zero.',
+    },
+    responses: {
+      201: 'Contador decrementado. Retorna o novo valor de rewatchCount.',
+      401: 'Não autenticado.',
+      404: 'Episódio não encontrado ou não assistido.',
+    },
+  },
+  unwatchEpisode: {
+    operation: {
+      summary: 'Desmarcar episódio como assistido',
+      description:
+        'Remove o registro de WatchProgress do episódio, zerando completamente o histórico de visualizações (incluindo rewatchCount).',
+    },
+    responses: {
+      200: 'Episódio desmarcado. Retorna watched: false.',
+      401: 'Não autenticado.',
+      404: 'Episódio não encontrado.',
+    },
+  },
 } as const;

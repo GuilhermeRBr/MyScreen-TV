@@ -22,6 +22,7 @@ import { WatchService } from './watch.service';
 import { BatchMarkSeasonsDto } from './dto/batch-mark-seasons.dto';
 import { BatchMarkEpisodesDto } from './dto/batch-mark-episodes.dto';
 import { ToggleEpisodeDto } from './dto/toggle-episode.dto';
+import { RewatchEpisodeDto } from './dto/rewatch-episode.dto';
 import { ToggleMovieDto } from './dto/toggle-movie.dto';
 import { UpsertShowSubscriptionDto } from './dto/upsert-show-subscription.dto';
 import { AddByTmdbDto } from './dto/add-by-tmdb.dto';
@@ -48,6 +49,43 @@ export class WatchController {
     @Body() dto: ToggleEpisodeDto,
   ) {
     return this.watchService.toggleEpisodeWatched(user.sub, dto.episodeId);
+  }
+
+  @Post('episodes/rewatch')
+  @ApiOperation(WATCH_SWAGGER.rewatchEpisode.operation)
+  @ApiResponse({ status: 201, description: WATCH_SWAGGER.rewatchEpisode.responses[201] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.rewatchEpisode.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.rewatchEpisode.responses[404] })
+  rewatchEpisode(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: RewatchEpisodeDto,
+  ) {
+    return this.watchService.rewatchEpisode(user.sub, dto.episodeId);
+  }
+
+  @Post('episodes/rewatch-decrement')
+  @ApiOperation(WATCH_SWAGGER.rewatchEpisodeDecrement.operation)
+  @ApiResponse({ status: 201, description: WATCH_SWAGGER.rewatchEpisodeDecrement.responses[201] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.rewatchEpisodeDecrement.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.rewatchEpisodeDecrement.responses[404] })
+  rewatchEpisodeDecrement(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: RewatchEpisodeDto,
+  ) {
+    return this.watchService.rewatchEpisodeDecrement(user.sub, dto.episodeId);
+  }
+
+  @Delete('episodes/:episodeId')
+  @ApiOperation(WATCH_SWAGGER.unwatchEpisode.operation)
+  @ApiParam({ name: 'episodeId', description: 'UUID do episódio', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiResponse({ status: 200, description: WATCH_SWAGGER.unwatchEpisode.responses[200] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.unwatchEpisode.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.unwatchEpisode.responses[404] })
+  unwatchEpisode(
+    @CurrentUser() user: JwtPayload,
+    @Param('episodeId', ParseUUIDPipe) episodeId: string,
+  ) {
+    return this.watchService.unwatchEpisode(user.sub, episodeId);
   }
 
   @Post('episodes/batch-mark')
@@ -101,17 +139,21 @@ export class WatchController {
   @Get('shows/:showId/watched-episodes')
   @ApiOperation({
     summary: 'IDs dos episódios assistidos de uma série',
-    description: 'Retorna a lista de IDs de episódios que o usuário assistiu para a série informada.',
+    description: 'Retorna a lista de episódios que o usuário assistiu para a série informada, com o respectivo contador de reassistidos.',
   })
   @ApiParam({ name: 'showId', description: 'UUID interno da série' })
-  @ApiResponse({ status: 200, description: 'Array de episodeId (strings).' })
+  @ApiResponse({ status: 200, description: 'Array de { episodeId, rewatchCount }.' })
   @ApiResponse({ status: 401, description: 'Não autenticado.' })
   async getWatchedEpisodeIds(
     @CurrentUser() user: JwtPayload,
     @Param('showId', ParseUUIDPipe) showId: string,
   ) {
-    const ids = await this.watchService.getWatchedEpisodeIds(user.sub, showId);
-    return { watchedEpisodeIds: [...ids] };
+    const map = await this.watchService.getWatchedEpisodeIds(user.sub, showId);
+    const watchedEpisodes = Array.from(map.entries()).map(([episodeId, rewatchCount]) => ({
+      episodeId,
+      rewatchCount,
+    }));
+    return { watchedEpisodes };
   }
 
   @Get('shows/:showId/progress')

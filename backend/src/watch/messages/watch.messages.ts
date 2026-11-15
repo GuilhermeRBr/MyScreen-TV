@@ -7,4 +7,5 @@ export const WATCH_MESSAGES = {
   MOVIE_NOT_FOUND: 'Filme não encontrado',
   SHOW_NOT_FOUND: 'Série não encontrada',
   SHOW_SUBSCRIPTION_NOT_FOUND: 'Assinatura de série não encontrada',
+  EPISODE_NOT_WATCHED: 'Episódio ainda não foi marcado como assistido',
 } as const;

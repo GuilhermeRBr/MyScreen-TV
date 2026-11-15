@@ -136,6 +136,14 @@
   color: white;
 }
 
+.rewatchLabel {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
 /* ---- Todos os episódios ---- */
 
 .allEpisodesSection {

@@ -226,11 +226,12 @@ model Movie {
 // ---------------------------------------------------------------------------
 
 model WatchProgress {
-  id         String   @id @default(uuid())
-  userId     String
-  episodeId  String
-  watchedAt  DateTime @default(now())
-  createdAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  episodeId    String
+  rewatchCount Int      @default(0)
+  watchedAt    DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   episode Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)

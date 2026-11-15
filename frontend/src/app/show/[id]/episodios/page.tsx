@@ -9,6 +9,7 @@ import { tmdbImage } from '@/lib/tmdb-image';
 import { IconCheck, IconChevronDown } from '@/components/icons';
 import { api } from '@/lib/api';
 import { ConfirmMarkPreviousModal } from '@/components/ConfirmMarkPreviousModal/ConfirmMarkPreviousModal';
+import { WatchedEpisodeModal } from '@/components/WatchedEpisodeModal/WatchedEpisodeModal';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -22,6 +23,7 @@ interface Episode {
   runtime: number | null;
   airDate: string | null;
   watched: boolean;
+  rewatchCount: number;
 }
 
 interface SeasonWithEpisodes {
@@ -44,6 +46,15 @@ interface WatchProgressResponse {
     totalCount: number;
     isComplete: boolean;
   }>;
+}
+
+interface WatchedEpisode {
+  episodeId: string;
+  rewatchCount: number;
+}
+
+interface WatchedEpisodesResponse {
+  watchedEpisodes: WatchedEpisode[];
 }
 
 interface RawSeason {
@@ -117,6 +128,9 @@ export default function EpisodiosPage() {
   // Modal "marcar anteriores" — temporada
   const [pendingSeasonId, setPendingSeasonId] = useState<string | null>(null);
 
+  // Modal "já assistido" — abre quando clica num episódio já assistido
+  const [watchedModalEpisodeId, setWatchedModalEpisodeId] = useState<string | null>(null);
+
   // Ref para o scroll do carrossel "continuar acompanhando"
   const continueScrollRef = useRef<HTMLDivElement>(null);
   const firstUnwatchedRef = useRef<HTMLButtonElement>(null);
@@ -144,7 +158,7 @@ export default function EpisodiosPage() {
         // 2. Progresso do usuário + todos os episódios de todas as temporadas + IDs assistidos em paralelo
         const [progress, watchedIdsRes, ...episodeResults] = await Promise.all([
           api.get<WatchProgressResponse>(`/watch/shows/${showData.id}/progress`).catch(() => null),
-          api.get<{ watchedEpisodeIds: string[] }>(`/watch/shows/${showData.id}/watched-episodes`).catch(() => null),
+          api.get<WatchedEpisodesResponse>(`/watch/shows/${showData.id}/watched-episodes`).catch(() => null),
           ...rawSeasons.map((s) =>
             api.get<{ episodes: RawEpisode[] }>(`/shows/${showId}/seasons/${s.seasonNumber}/episodes`)
               .catch(() => ({ episodes: [] as RawEpisode[] })),
@@ -157,7 +171,9 @@ export default function EpisodiosPage() {
           (progress?.seasons ?? []).map((s) => [s.seasonNumber, s.watchedCount]),
         );
 
-        const watchedSet = new Set<string>(watchedIdsRes?.watchedEpisodeIds ?? []);
+        const watchedMap = new Map<string, number>(
+          (watchedIdsRes?.watchedEpisodes ?? []).map((e) => [e.episodeId, e.rewatchCount]),
+        );
 
         const built: SeasonWithEpisodes[] = rawSeasons.map((s, i) => {
           const eps: RawEpisode[] = (episodeResults[i] as { episodes: RawEpisode[] }).episodes ?? [];
@@ -171,7 +187,8 @@ export default function EpisodiosPage() {
             watchedCount: wc,
             episodes: eps.map((ep) => ({
               ...ep,
-              watched: watchedSet.has(ep.id),
+              watched: watchedMap.has(ep.id),
+              rewatchCount: watchedMap.get(ep.id) ?? 0,
             })),
           };
         });
@@ -281,12 +298,19 @@ export default function EpisodiosPage() {
     const ep = seasons.flatMap((s) => s.episodes).find((e) => e.id === episodeId);
     if (ep && isUnreleased(ep.airDate)) return;
 
-    // Determina o estado optimista: inverte o estado atual
-    const optimisticWatched = !ep?.watched;
-
-    if (optimisticWatched) {
-      lastWatchedIdRef.current = episodeId;
+    // Se já está assistido, abre o modal de opções em vez de desmarcar diretamente
+    if (ep?.watched) {
+      setWatchedModalEpisodeId(episodeId);
+      return;
     }
+
+    await markEpisodeWatched(episodeId);
+  }
+
+  async function markEpisodeWatched(episodeId: string) {
+    const ep = seasons.flatMap((s) => s.episodes).find((e) => e.id === episodeId);
+
+    lastWatchedIdRef.current = episodeId;
 
     // Optimistic update — atualiza a UI antes da resposta da API
     setSeasons((prev) =>
@@ -295,7 +319,7 @@ export default function EpisodiosPage() {
         if (!hasEp) return s;
 
         const updatedEps = s.episodes.map((e) =>
-          e.id === episodeId ? { ...e, watched: optimisticWatched } : e,
+          e.id === episodeId ? { ...e, watched: true } : e,
         );
         return {
           ...s,
@@ -306,28 +330,26 @@ export default function EpisodiosPage() {
     );
 
     // Exibe o modal de "marcar anteriores" imediatamente, sem esperar a API
-    if (optimisticWatched) {
-      const hasPrevious = hasPreviousUnwatchedEpisodes(episodeId, seasons);
-      if (hasPrevious) {
-        setPendingEpisodeId(episodeId);
-      }
+    const hasPrevious = hasPreviousUnwatchedEpisodes(episodeId, seasons);
+    if (hasPrevious) {
+      setPendingEpisodeId(episodeId);
     }
 
     try {
-      const result = await api.post<{ watched: boolean }>(
+      const result = await api.post<{ watched: boolean; rewatchCount: number }>(
         '/watch/episodes/toggle',
         { episodeId },
       );
 
       // Corrige se a API retornar estado diferente do optimista (raro, mas possível)
-      if (result.watched !== optimisticWatched) {
+      if (!result.watched) {
         setSeasons((prev) =>
           prev.map((s) => {
             const hasEp = s.episodes.some((e) => e.id === episodeId);
             if (!hasEp) return s;
 
             const updatedEps = s.episodes.map((e) =>
-              e.id === episodeId ? { ...e, watched: result.watched } : e,
+              e.id === episodeId ? { ...e, watched: false, rewatchCount: 0 } : e,
             );
             return {
               ...s,
@@ -345,7 +367,7 @@ export default function EpisodiosPage() {
           if (!hasEp) return s;
 
           const updatedEps = s.episodes.map((e) =>
-            e.id === episodeId ? { ...e, watched: !optimisticWatched } : e,
+            e.id === episodeId ? { ...e, watched: ep?.watched ?? false, rewatchCount: ep?.rewatchCount ?? 0 } : e,
           );
           return {
             ...s,
@@ -355,6 +377,165 @@ export default function EpisodiosPage() {
         }),
       );
       setPendingEpisodeId(null);
+    }
+  }
+
+  async function unwatchEpisode(episodeId: string) {
+    const ep = seasons.flatMap((s) => s.episodes).find((e) => e.id === episodeId);
+
+    // Optimistic update
+    setSeasons((prev) =>
+      prev.map((s) => {
+        const hasEp = s.episodes.some((e) => e.id === episodeId);
+        if (!hasEp) return s;
+
+        const updatedEps = s.episodes.map((e) =>
+          e.id === episodeId ? { ...e, watched: false, rewatchCount: 0 } : e,
+        );
+        return {
+          ...s,
+          episodes: updatedEps,
+          watchedCount: updatedEps.filter((e) => e.watched).length,
+        };
+      }),
+    );
+
+    try {
+      await api.delete(`/watch/episodes/${episodeId}`);
+    } catch {
+      // Reverte em caso de erro
+      setSeasons((prev) =>
+        prev.map((s) => {
+          const hasEp = s.episodes.some((e) => e.id === episodeId);
+          if (!hasEp) return s;
+
+          const updatedEps = s.episodes.map((e) =>
+            e.id === episodeId ? { ...e, watched: ep?.watched ?? true, rewatchCount: ep?.rewatchCount ?? 0 } : e,
+          );
+          return {
+            ...s,
+            episodes: updatedEps,
+            watchedCount: updatedEps.filter((e) => e.watched).length,
+          };
+        }),
+      );
+    }
+  }
+
+  async function rewatchEpisode(episodeId: string) {
+    const ep = seasons.flatMap((s) => s.episodes).find((e) => e.id === episodeId);
+    const newRewatchCount = (ep?.rewatchCount ?? 0) + 1;
+
+    // Optimistic update
+    setSeasons((prev) =>
+      prev.map((s) => {
+        const hasEp = s.episodes.some((e) => e.id === episodeId);
+        if (!hasEp) return s;
+
+        return {
+          ...s,
+          episodes: s.episodes.map((e) =>
+            e.id === episodeId ? { ...e, rewatchCount: newRewatchCount } : e,
+          ),
+        };
+      }),
+    );
+
+    try {
+      const result = await api.post<{ watched: boolean; rewatchCount: number }>(
+        '/watch/episodes/rewatch',
+        { episodeId },
+      );
+
+      // Corrige com o valor real retornado pela API
+      if (result.rewatchCount !== newRewatchCount) {
+        setSeasons((prev) =>
+          prev.map((s) => {
+            const hasEp = s.episodes.some((e) => e.id === episodeId);
+            if (!hasEp) return s;
+
+            return {
+              ...s,
+              episodes: s.episodes.map((e) =>
+                e.id === episodeId ? { ...e, rewatchCount: result.rewatchCount } : e,
+              ),
+            };
+          }),
+        );
+      }
+    } catch {
+      // Reverte em caso de erro
+      setSeasons((prev) =>
+        prev.map((s) => {
+          const hasEp = s.episodes.some((e) => e.id === episodeId);
+          if (!hasEp) return s;
+
+          return {
+            ...s,
+            episodes: s.episodes.map((e) =>
+              e.id === episodeId ? { ...e, rewatchCount: ep?.rewatchCount ?? 0 } : e,
+            ),
+          };
+        }),
+      );
+    }
+  }
+
+  async function rewatchEpisodeDecrement(episodeId: string) {
+    const ep = seasons.flatMap((s) => s.episodes).find((e) => e.id === episodeId);
+    const newRewatchCount = Math.max(0, (ep?.rewatchCount ?? 0) - 1);
+
+    // Optimistic update
+    setSeasons((prev) =>
+      prev.map((s) => {
+        const hasEp = s.episodes.some((e) => e.id === episodeId);
+        if (!hasEp) return s;
+
+        return {
+          ...s,
+          episodes: s.episodes.map((e) =>
+            e.id === episodeId ? { ...e, rewatchCount: newRewatchCount } : e,
+          ),
+        };
+      }),
+    );
+
+    try {
+      const result = await api.post<{ watched: boolean; rewatchCount: number }>(
+        '/watch/episodes/rewatch-decrement',
+        { episodeId },
+      );
+
+      if (result.rewatchCount !== newRewatchCount) {
+        setSeasons((prev) =>
+          prev.map((s) => {
+            const hasEp = s.episodes.some((e) => e.id === episodeId);
+            if (!hasEp) return s;
+
+            return {
+              ...s,
+              episodes: s.episodes.map((e) =>
+                e.id === episodeId ? { ...e, rewatchCount: result.rewatchCount } : e,
+              ),
+            };
+          }),
+        );
+      }
+    } catch {
+      // Reverte em caso de erro
+      setSeasons((prev) =>
+        prev.map((s) => {
+          const hasEp = s.episodes.some((e) => e.id === episodeId);
+          if (!hasEp) return s;
+
+          return {
+            ...s,
+            episodes: s.episodes.map((e) =>
+              e.id === episodeId ? { ...e, rewatchCount: ep?.rewatchCount ?? 0 } : e,
+            ),
+          };
+        }),
+      );
     }
   }
 
@@ -614,6 +795,31 @@ export default function EpisodiosPage() {
         />
       )}
 
+      {watchedModalEpisodeId && (() => {
+        const ep = seasons.flatMap((s) => s.episodes).find((e) => e.id === watchedModalEpisodeId);
+        return (
+          <WatchedEpisodeModal
+            rewatchCount={ep?.rewatchCount ?? 0}
+            onUnwatch={() => {
+              const id = watchedModalEpisodeId;
+              setWatchedModalEpisodeId(null);
+              unwatchEpisode(id);
+            }}
+            onRewatch={() => {
+              const id = watchedModalEpisodeId;
+              setWatchedModalEpisodeId(null);
+              rewatchEpisode(id);
+            }}
+            onRewatchDecrement={() => {
+              const id = watchedModalEpisodeId;
+              setWatchedModalEpisodeId(null);
+              rewatchEpisodeDecrement(id);
+            }}
+            onCancel={() => setWatchedModalEpisodeId(null)}
+          />
+        );
+      })()}
+
       {/* Continuar acompanhando */}
       {allFlat.length > 0 && (
         <section className={styles.continueSection}>
@@ -656,7 +862,11 @@ export default function EpisodiosPage() {
                         className={`${styles.checkCircle} ${ep.watched ? styles.checkCircleWatched : ''}`}
                         aria-hidden="true"
                       >
-                        <IconCheck width={14} height={14} />
+                        {ep.watched && ep.rewatchCount > 0 ? (
+                          <span className={styles.rewatchLabel}>{ep.rewatchCount + 1}x</span>
+                        ) : (
+                          <IconCheck width={14} height={14} />
+                        )}
                       </div>
                     )}
                   </div>
@@ -764,7 +974,11 @@ export default function EpisodiosPage() {
                                 className={`${styles.checkCircle} ${ep.watched ? styles.checkCircleWatched : ''}`}
                                 aria-hidden="true"
                               >
-                                <IconCheck width={14} height={14} />
+                                {ep.watched && ep.rewatchCount > 0 ? (
+                                  <span className={styles.rewatchLabel}>{ep.rewatchCount + 1}x</span>
+                                ) : (
+                                  <IconCheck width={14} height={14} />
+                                )}
                               </div>
                             )}
                           </div>

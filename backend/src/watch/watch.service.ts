@@ -47,7 +47,7 @@ export class WatchService {
   async toggleEpisodeWatched(
     userId: string,
     episodeId: string,
-  ): Promise<{ watched: boolean }> {
+  ): Promise<{ watched: boolean; rewatchCount: number }> {
     const episode = await this.prisma.episode.findUnique({
       where: { id: episodeId },
       select: { id: true, season: { select: { showId: true } } },
@@ -71,7 +71,7 @@ export class WatchService {
       // Se não sobrou nenhum episódio assistido, volta para PLAN_TO_WATCH
       await this.checkAndRevertWatching(userId, showId);
 
-      return { watched: false };
+      return { watched: false, rewatchCount: 0 };
     }
 
     await this.prisma.watchProgress.create({
@@ -84,7 +84,91 @@ export class WatchService {
     // Verifica se todos os episódios foram assistidos e encerra
     await this.checkAndCompleteShow(userId, showId);
 
-    return { watched: true };
+    return { watched: true, rewatchCount: 0 };
+  }
+
+  async rewatchEpisode(
+    userId: string,
+    episodeId: string,
+  ): Promise<{ watched: boolean; rewatchCount: number }> {
+    const episode = await this.prisma.episode.findUnique({
+      where: { id: episodeId },
+      select: { id: true, season: { select: { showId: true } } },
+    });
+
+    if (!episode) {
+      throw new NotFoundException(WATCH_MESSAGES.EPISODE_NOT_FOUND);
+    }
+
+    const existing = await this.prisma.watchProgress.findUnique({
+      where: { userId_episodeId: { userId, episodeId } },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(WATCH_MESSAGES.EPISODE_NOT_WATCHED);
+    }
+
+    const updated = await this.prisma.watchProgress.update({
+      where: { id: existing.id },
+      data: { rewatchCount: { increment: 1 }, watchedAt: new Date() },
+      select: { rewatchCount: true },
+    });
+
+    return { watched: true, rewatchCount: updated.rewatchCount };
+  }
+
+  async unwatchEpisode(
+    userId: string,
+    episodeId: string,
+  ): Promise<{ watched: boolean; rewatchCount: number }> {
+    const episode = await this.prisma.episode.findUnique({
+      where: { id: episodeId },
+      select: { id: true, season: { select: { showId: true } } },
+    });
+
+    if (!episode) {
+      throw new NotFoundException(WATCH_MESSAGES.EPISODE_NOT_FOUND);
+    }
+
+    const showId = episode.season.showId;
+
+    const existing = await this.prisma.watchProgress.findUnique({
+      where: { userId_episodeId: { userId, episodeId } },
+    });
+
+    if (existing) {
+      await this.prisma.watchProgress.delete({
+        where: { id: existing.id },
+      });
+
+      await this.checkAndRevertWatching(userId, showId);
+    }
+
+    return { watched: false, rewatchCount: 0 };
+  }
+
+  async rewatchEpisodeDecrement(
+    userId: string,
+    episodeId: string,
+  ): Promise<{ watched: boolean; rewatchCount: number }> {
+    const existing = await this.prisma.watchProgress.findUnique({
+      where: { userId_episodeId: { userId, episodeId } },
+      select: { id: true, rewatchCount: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(WATCH_MESSAGES.EPISODE_NOT_WATCHED);
+    }
+
+    const newCount = Math.max(0, existing.rewatchCount - 1);
+
+    const updated = await this.prisma.watchProgress.update({
+      where: { id: existing.id },
+      data: { rewatchCount: newCount },
+      select: { rewatchCount: true },
+    });
+
+    return { watched: true, rewatchCount: updated.rewatchCount };
   }
 
   async markSeasonWatched(
@@ -278,16 +362,16 @@ export class WatchService {
   async getWatchedEpisodeIds(
     userId: string,
     showId: string,
-  ): Promise<Set<string>> {
+  ): Promise<Map<string, number>> {
     const rows = await this.prisma.watchProgress.findMany({
       where: {
         userId,
         episode: { season: { showId } },
       },
-      select: { episodeId: true },
+      select: { episodeId: true, rewatchCount: true },
     });
 
-    return new Set(rows.map((r) => r.episodeId));
+    return new Map(rows.map((r) => [r.episodeId, r.rewatchCount]));
   }
 
   // ---------------------------------------------------------------------------
@@ -527,15 +611,14 @@ export class WatchService {
   // ---------------------------------------------------------------------------
 
   async getUserStats(userId: string): Promise<UserStats> {
-    const [episodesWatched, moviesWatched, episodeRuntimeRows, movieRuntimeRows] =
+    const [moviesWatched, episodeRuntimeRows, movieRuntimeRows] =
       await Promise.all([
-        this.prisma.watchProgress.count({ where: { userId } }),
         this.prisma.movieWatch.count({
           where: { userId, status: 'WATCHED' },
         }),
         this.prisma.watchProgress.findMany({
           where: { userId },
-          select: { episode: { select: { runtime: true } } },
+          select: { rewatchCount: true, episode: { select: { runtime: true } } },
         }),
         this.prisma.movieWatch.findMany({
           where: { userId, status: 'WATCHED' },
@@ -543,8 +626,14 @@ export class WatchService {
         }),
       ]);
 
+    // Cada reassistida conta como uma visualização adicional
+    const totalEpisodesWatched = episodeRuntimeRows.reduce(
+      (acc, row) => acc + 1 + row.rewatchCount,
+      0,
+    );
+
     const episodeMinutes = episodeRuntimeRows.reduce((acc, row) => {
-      return acc + (row.episode.runtime ?? 25);
+      return acc + (row.episode.runtime ?? 25) * (1 + row.rewatchCount);
     }, 0);
 
     const movieMinutes = movieRuntimeRows.reduce((acc, row) => {
@@ -552,7 +641,7 @@ export class WatchService {
     }, 0);
 
     return {
-      totalEpisodesWatched: episodesWatched,
+      totalEpisodesWatched,
       totalMoviesWatched: moviesWatched,
       totalMinutesWatched: episodeMinutes + movieMinutes,
       seriesMinutesWatched: episodeMinutes,
