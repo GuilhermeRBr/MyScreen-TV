@@ -64,4 +64,15 @@ export const SHOWS_SWAGGER = {
     },
     responses: { 200: 'Lista de séries com trailerKey, page e total_pages.' },
   },
+  getRecommendations: {
+    operation: {
+      summary: 'Recomendações baseadas em uma série',
+      description:
+        'Retorna séries recomendadas pelo TMDB com base no tmdbId informado. Paginado. Não requer autenticação.',
+    },
+    responses: {
+      200: 'Lista de séries recomendadas com page e total_pages.',
+      404: 'Série não encontrada.',
+    },
+  },
 } as const;

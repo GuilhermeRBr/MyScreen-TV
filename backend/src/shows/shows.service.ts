@@ -96,4 +96,8 @@ export class ShowsService {
   async search(query: string, page = 1) {
     return this.tmdb.searchShows(query, page);
   }
+
+  async getRecommendations(tmdbId: number, page = 1) {
+    return this.tmdb.getShowRecommendations(tmdbId, page);
+  }
 }

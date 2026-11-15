@@ -495,6 +495,16 @@ export class TmdbService {
     };
   }
 
+  async getShowRecommendations(tmdbId: number, page = 1) {
+    const data = await this.tmdb.getShowRecommendations(tmdbId, page);
+    return data;
+  }
+
+  async getMovieRecommendations(tmdbId: number, page = 1) {
+    const data = await this.tmdb.getMovieRecommendations(tmdbId, page);
+    return data;
+  }
+
   // ---------------------------------------------------------------------------
 
   private isFreshCache(lastSyncedAt: Date | null): boolean {

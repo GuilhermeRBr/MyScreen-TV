@@ -1,6 +1,5 @@
 .container {
   padding: var(--space-4);
-  padding-bottom: calc(var(--nav-height) + var(--space-6));
 }
 
 .infoBlock {

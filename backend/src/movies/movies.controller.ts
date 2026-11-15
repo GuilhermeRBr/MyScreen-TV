@@ -68,4 +68,17 @@ export class MoviesController {
   getDetail(@Param('tmdbId', ParseIntPipe) tmdbId: number) {
     return this.moviesService.getMovieDetail(tmdbId);
   }
+
+  @Get(':tmdbId/recommendations')
+  @ApiOperation(MOVIES_SWAGGER.getRecommendations.operation)
+  @ApiParam({ name: 'tmdbId', type: Number, example: 27205, description: 'ID do filme no TMDB' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiResponse({ status: 200, description: MOVIES_SWAGGER.getRecommendations.responses[200] })
+  @ApiResponse({ status: 404, description: MOVIES_SWAGGER.getRecommendations.responses[404] })
+  getRecommendations(
+    @Param('tmdbId', ParseIntPipe) tmdbId: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  ) {
+    return this.moviesService.getRecommendations(tmdbId, page);
+  }
 }

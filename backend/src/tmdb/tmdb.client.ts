@@ -95,6 +95,26 @@ export class TmdbClient {
     return this.get<TmdbSearchResult<TmdbMovieSearchItem>>('/trending/movie/week');
   }
 
+  async getShowRecommendations(
+    tmdbId: number,
+    page = 1,
+  ): Promise<TmdbSearchResult<TmdbShowSearchItem>> {
+    return this.get<TmdbSearchResult<TmdbShowSearchItem>>(
+      `/tv/${tmdbId}/recommendations`,
+      { page: String(page) },
+    );
+  }
+
+  async getMovieRecommendations(
+    tmdbId: number,
+    page = 1,
+  ): Promise<TmdbSearchResult<TmdbMovieSearchItem>> {
+    return this.get<TmdbSearchResult<TmdbMovieSearchItem>>(
+      `/movie/${tmdbId}/recommendations`,
+      { page: String(page) },
+    );
+  }
+
   private async get<T>(
     path: string,
     params: Record<string, string> = {},
