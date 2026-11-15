@@ -124,13 +124,60 @@ yarn dev
 
 ---
 
+## Configuracao de e-mail (Gmail SMTP)
+
+O envio de e-mails utiliza o Gmail SMTP via Nodemailer. As credenciais sao lidas exclusivamente
+pelas variaveis de ambiente — nenhuma senha e armazenada no codigo.
+
+### Variaveis necessarias
+
+```bash
+# backend/.env
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_SECURE=false
+MAIL_USER=seu-email@gmail.com
+MAIL_PASSWORD=sua-senha-de-aplicativo
+MAIL_FROM="MyScreen TV <seu-email@gmail.com>"
+```
+
+### Como gerar uma senha de aplicativo no Google
+
+A senha de aplicativo e necessaria porque o Google bloqueia acesso SMTP com a senha comum
+da conta quando a verificacao em duas etapas esta ativa.
+
+1. Acesse [myaccount.google.com](https://myaccount.google.com).
+2. Va em **Seguranca** > **Verificacao em duas etapas** e certifique-se de que esta ativada.
+3. Na mesma pagina de Seguranca, procure por **Senhas de app**.
+4. Selecione **Outro (nome personalizado)**, digite `MyScreen TV` e clique em **Gerar**.
+5. Copie a senha de 16 caracteres gerada e use como valor de `MAIL_PASSWORD`.
+
+> A senha de aplicativo e exibida apenas uma vez. Guarde-a em local seguro.
+
+### Comportamento em desenvolvimento
+
+Quando `NODE_ENV=development`, o `EmailService` **nao realiza o envio** e apenas imprime o link
+de recuperacao no console do backend. Isso dispensa configurar credenciais de e-mail durante o desenvolvimento local.
+
+### Como testar o envio de e-mails
+
+Para testar com envio real em ambiente local:
+
+1. Configure as variaveis `MAIL_*` no `backend/.env` com suas credenciais do Gmail.
+2. Defina `NODE_ENV=production` ou `staging` no `.env`.
+3. Certifique-se de que `ENABLE_WORKERS=true` para o worker de fila processar os jobs.
+4. Chame o endpoint `POST /auth/forgot-password` com um e-mail cadastrado.
+5. O e-mail de recuperacao sera enviado em background pelo worker.
+
+---
+
 ## Filas assincronas (BullMQ + Redis)
 
 O backend usa BullMQ para processar tarefas demoradas sem bloquear a API.
 
 ### Caso de uso atual: envio de e-mails
 
-O endpoint `POST /auth/forgot-password` responde imediatamente apos enfileirar o job. O worker consome o job em background e chama o provedor Resend.
+O endpoint `POST /auth/forgot-password` responde imediatamente apos enfileirar o job. O worker consome o job em background e envia o e-mail via Gmail SMTP.
 
 Fluxo:
 
@@ -176,7 +223,7 @@ Os workers rodam no mesmo processo NestJS. Para escalar:
 
 1. Aumente `EMAIL_QUEUE_CONCURRENCY` para processar mais jobs por instancia.
 2. Suba multiplas instancias do backend apontando para o mesmo Redis — o BullMQ distribui os jobs automaticamente entre os workers.
-3. Respeite os limites de envio do seu plano Resend ao configurar a concorrencia.
+3. Respeite os limites de envio da sua conta Gmail ao configurar a concorrencia (recomendado: `EMAIL_QUEUE_CONCURRENCY=2` ou `3` para evitar bloqueios do Google).
 
 ### Comportamento durante indisponibilidade do Redis
 

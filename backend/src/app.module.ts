@@ -47,6 +47,11 @@ import { HealthModule } from './health/health.module';
       // em runtime com bullmq@5. O erro é de tipos apenas — nenhum comportamento é afetado.
       adapter: BullMQAdapter,
     }),
+    BullBoardModule.forFeature({
+      name: QUEUE_NAMES.SHOW_SYNC,
+      // @ts-expect-error: mesma razão acima — compatibilidade de tipos bullmq@5 vs @4.
+      adapter: BullMQAdapter,
+    }),
     AuthModule,
     UsersModule,
     ShowsModule,

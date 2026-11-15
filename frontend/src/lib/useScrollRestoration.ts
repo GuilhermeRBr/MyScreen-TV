@@ -31,13 +31,20 @@ export function useScrollRestoration(key: string, ready: boolean) {
 
     restoredRef.current = true;
 
-    // setTimeout de 80ms é mais confiável que rAF para aguardar o layout
-    // estabilizar depois que imagens de poster são dimensionadas
-    const timer = setTimeout(() => {
-      window.scrollTo({ top: y, behavior: 'instant' });
-    }, 80);
+    // Dois rAF garantem que o browser já calculou o layout final
+    // (após o commit do React) antes de executar o scroll.
+    let raf1: number;
+    let raf2: number;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        window.scrollTo({ top: y, behavior: 'instant' });
+      });
+    });
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, [ready]);
 }
 

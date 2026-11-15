@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { PosterCard } from '@/components/PosterCard/PosterCard';
 import { api, ApiError } from '@/lib/api';
 import { useInfiniteRecommendations } from '@/lib/useInfiniteRecommendations';
 import { useScrollRestoration, saveScrollPosition } from '@/lib/useScrollRestoration';
-import { getCacheEntry } from '@/lib/recommendationsCache';
 import styles from './MySeriesList.module.css';
-
 interface ShowSubscriptionWithProgress {
   status: string;
   show: {
@@ -28,13 +26,6 @@ export function MySeriesList() {
   const [items, setItems] = useState<ShowSubscriptionWithProgress[]>([]);
   const [subscriptionsLoaded, setSubscriptionsLoaded] = useState(false);
 
-  // Se já há cache de recomendações, renderiza o conteúdo imediatamente
-  // sem bloquear no skeleton enquanto a API de subscriptions responde.
-  const hasRecsCache = useRef(!!getCacheEntry('/shows/popular')?.items.length).current;
-  const contentReady = subscriptionsLoaded || hasRecsCache;
-
-  useScrollRestoration('scroll:series', contentReady);
-
   const excludedIds = useMemo(
     () => new Set(items.map((s) => s.show.tmdbId)),
     [items],
@@ -42,6 +33,8 @@ export function MySeriesList() {
 
   const { items: recommendations, isLoading: recLoading, sentinelRef } =
     useInfiniteRecommendations({ endpoint: '/shows/popular', excludedIds, ready: subscriptionsLoaded });
+
+  useScrollRestoration('scroll:series', subscriptionsLoaded);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +74,7 @@ export function MySeriesList() {
     };
   }, []);
 
-  if (!contentReady) {
+  if (!subscriptionsLoaded) {
     return (
       <div className={styles.container}>
         <div className={styles.grid} aria-label="Carregando séries...">

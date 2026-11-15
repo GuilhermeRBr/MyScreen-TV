@@ -32,7 +32,16 @@ const envSchema = z.object({
     .min(8, 'SYSADMIN_PASSWORD deve ter pelo menos 8 caracteres'),
   SYSADMIN_USERNAME: z.string().min(3, 'SYSADMIN_USERNAME deve ter pelo menos 3 caracteres'),
   SYSADMIN_DISPLAY_NAME: z.string().min(1, 'SYSADMIN_DISPLAY_NAME é obrigatório'),
-  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY é obrigatório'),
+  // E-mail (Gmail SMTP via Nodemailer)
+  MAIL_HOST: z.string().min(1, 'MAIL_HOST é obrigatório'),
+  MAIL_PORT: z.coerce.number().default(587),
+  MAIL_SECURE: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true')
+    .pipe(z.boolean().default(false)),
+  MAIL_USER: z.string().email('MAIL_USER deve ser um e-mail válido'),
+  MAIL_PASSWORD: z.string().min(1, 'MAIL_PASSWORD é obrigatório'),
   MAIL_FROM: z.string().min(1, 'MAIL_FROM é obrigatório'),
 
   // Redis / BullMQ

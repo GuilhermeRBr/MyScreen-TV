@@ -2,9 +2,12 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import styles from './layout.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
-import { IconDots } from '@/components/icons';
 import { BackButton } from '@/components/BackButton/BackButton';
-import { AddToWatchlistButton } from '@/components/AddToWatchlistButton/AddToWatchlistButton';
+import {
+  MovieHeaderProvider,
+  MovieWatchButton,
+  MovieOptionsButton,
+} from '@/components/MovieHeader/MovieHeader';
 import { serverFetch } from '@/lib/server-fetch';
 
 interface Movie {
@@ -34,7 +37,7 @@ async function getMovie(id: string): Promise<Movie | null> {
   }
 }
 
-async function getWatchStatus(movieId: string): Promise<WatchStatus> {
+async function getWatchStatus(movieId: string): Promise<{ status: WatchStatus; rewatchCount: number }> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
   try {
@@ -43,11 +46,11 @@ async function getWatchStatus(movieId: string): Promise<WatchStatus> {
       { cache: 'no-store' },
     );
 
-    if (!res.ok) return null;
-    const data = (await res.json()) as { status: WatchStatus };
-    return data.status;
+    if (!res.ok) return { status: null, rewatchCount: 0 };
+    const data = (await res.json()) as { status: WatchStatus; rewatchCount: number };
+    return { status: data.status, rewatchCount: data.rewatchCount ?? 0 };
   } catch {
-    return null;
+    return { status: null, rewatchCount: 0 };
   }
 }
 
@@ -77,39 +80,36 @@ export default async function FilmeLayout({
 
   return (
     <div className="page-container">
-      {/* Backdrop */}
-      <div className={styles.backdrop}>
-        {backdropUrl && (
-          <Image
-            src={backdropUrl}
-            alt={movie.title}
-            fill
-            className={styles.backdropImage}
-            sizes="(max-width: 480px) 100vw, (max-width: 1024px) 100vw, 960px"
-            priority
-          />
-        )}
-        <div className={styles.backdropOverlay} />
+      <MovieHeaderProvider movieId={movie.id} initialStatus={watchStatus.status} initialRewatchCount={watchStatus.rewatchCount}>
+        {/* Backdrop */}
+        <div className={styles.backdrop}>
+          {backdropUrl && (
+            <Image
+              src={backdropUrl}
+              alt={movie.title}
+              fill
+              className={styles.backdropImage}
+              sizes="(max-width: 480px) 100vw, (max-width: 1024px) 100vw, 960px"
+              priority
+            />
+          )}
+          <div className={styles.backdropOverlay} />
 
-        {/* Barra topo */}
-        <div className={styles.topBar}>
-          <BackButton fallbackHref="/filmes" label="Voltar" />
-          <span className={styles.movieTitle}>{movie.title}</span>
-          <button className={styles.backButton} aria-label="Mais opções">
-            <IconDots width={20} height={20} />
-          </button>
+          {/* Barra topo */}
+          <div className={styles.topBar}>
+            <BackButton fallbackHref="/filmes" label="Voltar" />
+            <span className={styles.movieTitle}>{movie.title}</span>
+            <MovieOptionsButton />
+          </div>
+
+          <div className={styles.progressLine} aria-hidden="true" />
+
+          {/* Botão de lista — sobreposto à linha, canto direito */}
+          <div className={styles.watchlistButtonWrapper}>
+            <MovieWatchButton />
+          </div>
         </div>
-
-        <div className={styles.progressLine} aria-hidden="true" />
-
-        {/* Botão de lista — sobreposto à linha, canto direito */}
-        <div className={styles.watchlistButtonWrapper}>
-          <AddToWatchlistButton
-            movieId={movie.id}
-            initialStatus={watchStatus}
-          />
-        </div>
-      </div>
+      </MovieHeaderProvider>
 
       {/* Meta */}
       <div className={styles.meta}>

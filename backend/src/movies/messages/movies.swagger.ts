@@ -42,4 +42,15 @@ export const MOVIES_SWAGGER = {
     },
     responses: { 200: 'Lista de filmes com trailerKey, page e total_pages.' },
   },
+  getRecommendations: {
+    operation: {
+      summary: 'Recomendações baseadas em um filme',
+      description:
+        'Retorna filmes recomendados pelo TMDB com base no tmdbId informado. Paginado. Não requer autenticação.',
+    },
+    responses: {
+      200: 'Lista de filmes recomendados com page e total_pages.',
+      404: 'Filme não encontrado.',
+    },
+  },
 } as const;

@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Reset de cache após alteração no TmdbService",
+  "description": "Sempre que tmdb.service.ts for editado, verifica se a lógica de sync foi alterada e lembra de criar uma migration SQL que reseta lastSyncedAt em shows e movies.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/tmdb/tmdb.service.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "O arquivo tmdb.service.ts foi editado. Verifique se a alteração mudou a lógica de sincronização de dados (campos mapeados, campos lidos da API, campos salvos no banco). Se sim, é obrigatório criar uma nova migration SQL em backend/prisma/migrations com timestamp atual no formato YYYYMMDDHHMMSS_reset_sync_cache/migration.sql contendo:\nUPDATE shows SET \"lastSyncedAt\" = '2000-01-01';\nUPDATE movies SET \"lastSyncedAt\" = '2000-01-01';\nIsso garante que todos os registros existentes sejam re-sincronizados com os dados corretos. Os nomes das tabelas são shows e movies (minúsculas, sem aspas). Se a alteração não mudou nenhum campo sincronizado (ex: apenas refactor, log, comentário), não é necessário criar a migration."
+  }
+}
