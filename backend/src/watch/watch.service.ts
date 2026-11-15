@@ -1,8 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { ShowSubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TmdbService } from '../tmdb/tmdb.service';
 import { WATCH_MESSAGES } from './messages/watch.messages';
+import { QUEUE_NAMES } from '../queue/queue.constants';
+import { SHOW_SYNC_JOB_NAMES, SyncSeasonsPayload } from '../shows/jobs/show-sync.job';
 
 export interface SeasonProgress {
   seasonId: string;
@@ -32,6 +36,8 @@ export class WatchService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tmdb: TmdbService,
+    @InjectQueue(QUEUE_NAMES.SHOW_SYNC)
+    private readonly showSyncQueue: Queue<SyncSeasonsPayload>,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -364,7 +370,16 @@ export class WatchService {
   }
 
   async addShowToListByTmdbId(userId: string, tmdbId: number): Promise<void> {
-    const show = await this.tmdb.upsertShow(tmdbId);
+    const { show, pendingSeasonNumbers } = await this.tmdb.upsertShowShallow(tmdbId);
+
+    if (pendingSeasonNumbers.length > 0) {
+      await this.showSyncQueue.add(
+        SHOW_SYNC_JOB_NAMES.SYNC_SEASONS,
+        { showId: show.id, showTmdbId: tmdbId, seasonNumbers: pendingSeasonNumbers },
+        { jobId: `sync-seasons-${tmdbId}` },
+      );
+    }
+
     await this.prisma.userShowSubscription.upsert({
       where: { userId_showId: { userId, showId: show.id } },
       create: { userId, showId: show.id, status: ShowSubscriptionStatus.PLAN_TO_WATCH },

@@ -6,6 +6,13 @@ import { Show, Season, Episode, Movie } from '@prisma/client';
 // Cache de 6 meses conforme termos da TMDB
 const SYNC_CACHE_MS = 6 * 30 * 24 * 60 * 60 * 1000;
 
+/** Resultado de upsertShowShallow — inclui os números de temporada a enfileirar. */
+export interface UpsertShowShallowResult {
+  show: Show;
+  /** Números de temporada (season_number > 0) ainda não sincronizados. */
+  pendingSeasonNumbers: number[];
+}
+
 @Injectable()
 export class TmdbService {
   private readonly logger = new Logger(TmdbService.name);
@@ -19,13 +26,24 @@ export class TmdbService {
   // Shows
   // ---------------------------------------------------------------------------
 
-  async upsertShow(tmdbId: number): Promise<Show> {
+  /**
+   * Sincroniza apenas os dados principais da série e o elenco (operação rápida,
+   * executada de forma síncrona na requisição do usuário).
+   *
+   * As temporadas e episódios são delegados ao worker de background via
+   * ShowSyncProcessor — o chamador é responsável por enfileirar o job
+   * com os `pendingSeasonNumbers` retornados.
+   *
+   * Retorna o show salvo e a lista de temporadas que precisam ser enfileiradas.
+   * Se o cache estiver fresco, retorna `pendingSeasonNumbers: []`.
+   */
+  async upsertShowShallow(tmdbId: number): Promise<UpsertShowShallowResult> {
     const existing = await this.prisma.show.findUnique({
       where: { tmdbId },
     });
 
     if (existing && this.isFreshCache(existing.lastSyncedAt)) {
-      return existing;
+      return { show: existing, pendingSeasonNumbers: [] };
     }
 
     this.logger.log(`Sincronizando série tmdbId=${tmdbId}`);
@@ -142,14 +160,11 @@ export class TmdbService {
       }
     }
 
-    // Upsert temporadas e episódios sequencialmente para evitar race condition
-    // no unique constraint (seasonId, episodeNumber)
-    const seasonsToSync = tmdbShow.seasons.filter((s) => s.season_number > 0);
-    for (const s of seasonsToSync) {
-      await this.upsertSeason(show.id, tmdbId, s.season_number);
-    }
+    const pendingSeasonNumbers = tmdbShow.seasons
+      .filter((s) => s.season_number > 0)
+      .map((s) => s.season_number);
 
-    return show;
+    return { show, pendingSeasonNumbers };
   }
 
   async upsertSeason(

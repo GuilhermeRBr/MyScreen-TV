@@ -1,21 +1,36 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { TmdbService } from '../tmdb/tmdb.service';
 import { SHOWS_MESSAGES } from './messages/shows.messages';
+import { QUEUE_NAMES } from '../queue/queue.constants';
+import { SHOW_SYNC_JOB_NAMES, SyncSeasonsPayload } from './jobs/show-sync.job';
 
 @Injectable()
 export class ShowsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tmdb: TmdbService,
+    @InjectQueue(QUEUE_NAMES.SHOW_SYNC)
+    private readonly showSyncQueue: Queue<SyncSeasonsPayload>,
   ) {}
 
-  async findOrSync(tmdbId: number) {
-    return this.tmdb.upsertShow(tmdbId);
-  }
-
   async getShowDetail(tmdbId: number) {
-    const show = await this.tmdb.upsertShow(tmdbId);
+    // Sincroniza só o show e o elenco (rápido — 2 chamadas à TMDB em paralelo).
+    // As temporadas/episódios são enfileirados para processamento em background.
+    const { show, pendingSeasonNumbers } =
+      await this.tmdb.upsertShowShallow(tmdbId);
+
+    if (pendingSeasonNumbers.length > 0) {
+      await this.showSyncQueue.add(
+        SHOW_SYNC_JOB_NAMES.SYNC_SEASONS,
+        { showId: show.id, showTmdbId: tmdbId, seasonNumbers: pendingSeasonNumbers },
+        // jobId determinístico: evita enfileirar o mesmo show duas vezes
+        // quando dois usuários abrem a mesma série nova simultaneamente.
+        { jobId: `sync-seasons-${tmdbId}` },
+      );
+    }
 
     const [cast, seasons] = await Promise.all([
       this.prisma.showCast.findMany({
