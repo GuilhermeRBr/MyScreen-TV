@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import styles from './page.module.css';
 import { tmdbImage } from '@/lib/tmdb-image';
 import { IconStar, IconClock, IconUser, IconLayers, IconFilmStrip } from '@/components/icons';
+import { HorizontalRow } from '@/components/HorizontalRow/HorizontalRow';
 
 interface ShowDetail {
   id: string;
@@ -182,6 +183,14 @@ export default async function SobrePage({
           </ul>
         </section>
       )}
+
+      {/* Recomendações */}
+      <HorizontalRow
+        title="Recomendações"
+        endpoint={`/shows/${show.tmdbId}/recommendations`}
+        hrefPrefix="/show"
+        hrefSuffix="/sobre"
+      />
 
     </div>
   );

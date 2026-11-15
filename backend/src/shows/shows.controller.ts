@@ -90,4 +90,17 @@ export class ShowsController {
   ) {
     return this.showsService.getSeasonEpisodes(tmdbId, seasonNumber);
   }
+
+  @Get(':tmdbId/recommendations')
+  @ApiOperation(SHOWS_SWAGGER.getRecommendations.operation)
+  @ApiParam({ name: 'tmdbId', type: Number, example: 1396, description: 'ID da série no TMDB' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiResponse({ status: 200, description: SHOWS_SWAGGER.getRecommendations.responses[200] })
+  @ApiResponse({ status: 404, description: SHOWS_SWAGGER.getRecommendations.responses[404] })
+  getRecommendations(
+    @Param('tmdbId', ParseIntPipe) tmdbId: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  ) {
+    return this.showsService.getRecommendations(tmdbId, page);
+  }
 }

@@ -49,4 +49,8 @@ export class MoviesService {
   async search(query: string, page = 1) {
     return this.tmdb.searchMovies(query, page);
   }
+
+  async getRecommendations(tmdbId: number, page = 1) {
+    return this.tmdb.getMovieRecommendations(tmdbId, page);
+  }
 }

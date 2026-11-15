@@ -70,6 +70,7 @@ const mockTmdbClient = {
     episodes: [],
   }),
   getMovie: jest.fn(),
+  getMovieCredits: jest.fn().mockResolvedValue({ cast: [] }),
 };
 
 describe('TmdbService', () => {
@@ -89,24 +90,25 @@ describe('TmdbService', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // upsertShow
+  // upsertShowShallow
   // ---------------------------------------------------------------------------
 
-  describe('upsertShow', () => {
+  describe('upsertShowShallow', () => {
     it('deve buscar da TMDB quando show nao existe no banco', async () => {
       mockPrisma.show.findUnique.mockResolvedValue(null);
       mockPrisma.show.upsert.mockResolvedValue({ id: 'show-uuid', tmdbId: 1396, name: 'Breaking Bad' });
-      mockPrisma.season.findFirst.mockResolvedValue(null);
-      mockPrisma.season.upsert.mockResolvedValue({ id: 'season-uuid' });
 
-      await service.upsertShow(1396);
+      const result = await service.upsertShowShallow(1396);
 
       expect(mockTmdbClient.getShow).toHaveBeenCalledWith(1396);
       expect(mockPrisma.show.upsert).toHaveBeenCalledTimes(1);
+      // Temporadas nao sao sincronizadas aqui — apenas retornadas como pendentes
+      expect(mockPrisma.season.findFirst).not.toHaveBeenCalled();
+      expect(result.pendingSeasonNumbers).toEqual([1]);
     });
 
     it('deve usar cache e nao chamar a TMDB se lastSyncedAt for recente', async () => {
-      const recentDate = new Date(); // agora = cache fresco
+      const recentDate = new Date();
       mockPrisma.show.findUnique.mockResolvedValue({
         id: 'show-uuid',
         tmdbId: 1396,
@@ -114,13 +116,13 @@ describe('TmdbService', () => {
         lastSyncedAt: recentDate,
       });
 
-      await service.upsertShow(1396);
+      const result = await service.upsertShowShallow(1396);
 
       expect(mockTmdbClient.getShow).not.toHaveBeenCalled();
+      expect(result.pendingSeasonNumbers).toEqual([]);
     });
 
     it('deve sincronizar novamente se cache estiver expirado', async () => {
-      // Data mais antiga que 6 meses
       const oldDate = new Date('2020-01-01');
       mockPrisma.show.findUnique.mockResolvedValue({
         id: 'show-uuid',
@@ -134,12 +136,11 @@ describe('TmdbService', () => {
         tmdbId: 1396,
         name: 'Breaking Bad',
       });
-      mockPrisma.season.findFirst.mockResolvedValue(null);
-      mockPrisma.season.upsert.mockResolvedValue({ id: 'season-uuid' });
 
-      await service.upsertShow(1396);
+      const result = await service.upsertShowShallow(1396);
 
       expect(mockTmdbClient.getShow).toHaveBeenCalledWith(1396);
+      expect(result.pendingSeasonNumbers).toEqual([1]);
     });
   });
 

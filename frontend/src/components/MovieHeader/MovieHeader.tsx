@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { IconPlus, IconCheck, IconDots, IconTrash } from '@/components/icons';
 import { ConfirmModal } from '@/components/ConfirmModal/ConfirmModal';
+import { WatchedEpisodeModal } from '@/components/WatchedEpisodeModal/WatchedEpisodeModal';
 import { api } from '@/lib/api';
 import buttonStyles from '@/components/AddToWatchlistButton/AddToWatchlistButton.module.css';
 import menuStyles from '@/components/MovieOptionsMenu/MovieOptionsMenu.module.css';
@@ -21,9 +22,13 @@ type WatchStatus = 'WATCHLIST' | 'WATCHED' | null;
 interface MovieHeaderContextValue {
   movieId: string;
   status: WatchStatus;
+  rewatchCount: number;
   isPending: boolean;
   handleWatchButtonClick: () => void;
   handleRemoveConfirmed: () => void;
+  handleUnwatch: () => void;
+  handleRewatch: () => void;
+  handleRewatchDecrement: () => void;
 }
 
 const MovieHeaderContext = createContext<MovieHeaderContextValue | null>(null);
@@ -34,7 +39,7 @@ function useMovieHeader() {
   return ctx;
 }
 
-// --- Provider ---
+// --- Funções de API ---
 
 async function fetchStatus(movieId: string): Promise<WatchStatus> {
   try {
@@ -56,15 +61,42 @@ async function addToWatchlist(movieId: string): Promise<boolean> {
   }
 }
 
-async function toggleWatched(movieId: string): Promise<WatchStatus> {
+async function toggleWatched(movieId: string): Promise<{ status: WatchStatus; rewatchCount: number }> {
   try {
-    const data = await api.post<{ watched: boolean }>(
+    const data = await api.post<{ watched: boolean; rewatchCount: number }>(
       '/watch/movies/toggle',
       { movieId },
     );
-    return data.watched ? 'WATCHED' : 'WATCHLIST';
+    return {
+      status: data.watched ? 'WATCHED' : 'WATCHLIST',
+      rewatchCount: data.rewatchCount,
+    };
   } catch {
-    return null;
+    return { status: null, rewatchCount: 0 };
+  }
+}
+
+async function rewatchMovie(movieId: string): Promise<number> {
+  try {
+    const data = await api.post<{ watched: boolean; rewatchCount: number }>(
+      '/watch/movies/rewatch',
+      { movieId },
+    );
+    return data.rewatchCount;
+  } catch {
+    return 0;
+  }
+}
+
+async function rewatchMovieDecrement(movieId: string): Promise<number> {
+  try {
+    const data = await api.post<{ watched: boolean; rewatchCount: number }>(
+      '/watch/movies/rewatch-decrement',
+      { movieId },
+    );
+    return data.rewatchCount;
+  } catch {
+    return 0;
   }
 }
 
@@ -77,38 +109,83 @@ async function removeFromList(movieId: string): Promise<boolean> {
   }
 }
 
+// --- Provider ---
+
 export function MovieHeaderProvider({
   movieId,
   initialStatus,
+  initialRewatchCount = 0,
   children,
 }: {
   movieId: string;
   initialStatus: WatchStatus;
+  initialRewatchCount?: number;
   children: ReactNode;
 }) {
   const [status, setStatus] = useState<WatchStatus>(initialStatus);
+  const [rewatchCount, setRewatchCount] = useState(initialRewatchCount);
   const [isPending, startTransition] = useTransition();
+  const [showWatchedModal, setShowWatchedModal] = useState(false);
   const router = useRouter();
 
   function handleWatchButtonClick() {
+    if (status === 'WATCHED') {
+      // Já assistido — abre o modal de opções
+      setShowWatchedModal(true);
+      return;
+    }
+
     if (status === null) {
       startTransition(async () => {
         const ok = await addToWatchlist(movieId);
         if (ok) setStatus('WATCHLIST');
       });
     } else {
+      // WATCHLIST → marca como assistido
       startTransition(async () => {
         const next = await toggleWatched(movieId);
-        if (next !== null) setStatus(next);
+        if (next.status !== null) {
+          setStatus(next.status);
+          setRewatchCount(next.rewatchCount);
+        }
       });
     }
   }
 
+  function handleUnwatch() {
+    setShowWatchedModal(false);
+    startTransition(async () => {
+      const next = await toggleWatched(movieId);
+      if (next.status !== null) {
+        setStatus(next.status);
+        setRewatchCount(0);
+      }
+    });
+  }
+
+  function handleRewatch() {
+    setShowWatchedModal(false);
+    startTransition(async () => {
+      const count = await rewatchMovie(movieId);
+      setRewatchCount(count);
+    });
+  }
+
+  function handleRewatchDecrement() {
+    setShowWatchedModal(false);
+    startTransition(async () => {
+      const count = await rewatchMovieDecrement(movieId);
+      setRewatchCount(count);
+    });
+  }
+
   function handleRemoveConfirmed() {
+    setShowWatchedModal(false);
     startTransition(async () => {
       const ok = await removeFromList(movieId);
       if (ok) {
         setStatus(null);
+        setRewatchCount(0);
         router.refresh();
       }
     });
@@ -119,12 +196,26 @@ export function MovieHeaderProvider({
       value={{
         movieId,
         status,
+        rewatchCount,
         isPending,
         handleWatchButtonClick,
         handleRemoveConfirmed,
+        handleUnwatch,
+        handleRewatch,
+        handleRewatchDecrement,
       }}
     >
       {children}
+
+      {showWatchedModal && (
+        <WatchedEpisodeModal
+          rewatchCount={rewatchCount}
+          onUnwatch={handleUnwatch}
+          onRewatch={handleRewatch}
+          onRewatchDecrement={handleRewatchDecrement}
+          onCancel={() => setShowWatchedModal(false)}
+        />
+      )}
     </MovieHeaderContext.Provider>
   );
 }
@@ -132,10 +223,11 @@ export function MovieHeaderProvider({
 // --- Botão de assistido / watchlist (canto inferior direito do backdrop) ---
 
 export function MovieWatchButton() {
-  const { status, isPending, handleWatchButtonClick } = useMovieHeader();
+  const { status, rewatchCount, isPending, handleWatchButtonClick } = useMovieHeader();
 
   const isOnList = status !== null;
   const isWatched = status === 'WATCHED';
+  const hasRewatches = isWatched && rewatchCount > 0;
 
   return (
     <button
@@ -153,7 +245,7 @@ export function MovieWatchButton() {
       disabled={isPending}
       aria-label={
         isWatched
-          ? 'Marcar como não assistido'
+          ? 'Filme assistido — clique para opções'
           : isOnList
             ? 'Marcar como assistido'
             : 'Adicionar à minha lista'
@@ -161,6 +253,8 @@ export function MovieWatchButton() {
     >
       {isPending ? (
         <span className={buttonStyles.spinner} aria-hidden="true" />
+      ) : hasRewatches ? (
+        <span className={buttonStyles.rewatchLabel}>{rewatchCount + 1}x</span>
       ) : isOnList ? (
         <IconCheck width={20} height={20} />
       ) : (
@@ -213,7 +307,6 @@ export function MovieOptionsButton() {
 
         {open && (
           <>
-            {/* Overlay invisível para fechar ao clicar fora */}
             <div
               style={{
                 position: 'fixed',

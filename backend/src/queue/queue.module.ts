@@ -77,6 +77,26 @@ import { QUEUE_NAMES } from './queue.constants';
         },
       },
     }),
+
+    // Declara a fila de sincronização de temporadas/episódios de séries
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.SHOW_SYNC,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 10000, // 10 s, 20 s, 40 s
+        },
+        removeOnComplete: {
+          age: 24 * 60 * 60,
+          count: 200,
+        },
+        removeOnFail: {
+          age: 7 * 24 * 60 * 60,
+          count: 100,
+        },
+      },
+    }),
   ],
   exports: [BullModule],
 })

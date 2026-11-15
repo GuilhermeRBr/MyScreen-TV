@@ -1,6 +1,5 @@
 .container {
   padding: var(--space-4);
-  padding-bottom: calc(var(--nav-height) + var(--space-6));
 }
 
 .infoBlock {
@@ -81,16 +80,9 @@
 }
 
 .castList {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-3);
-}
-
-@media (min-width: 768px) {
-  .castList {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (min-width: 1024px) {

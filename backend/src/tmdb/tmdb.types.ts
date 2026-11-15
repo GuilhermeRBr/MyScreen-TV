@@ -64,12 +64,26 @@ export interface TmdbCredits {
   cast: TmdbCastMember[];
 }
 
+// Usado por /movie/{id}/credits
 export interface TmdbCastMember {
   id: number;
   name: string;
   profile_path: string | null;
   character: string;
   order: number;
+}
+
+// Usado por /tv/{id}/aggregate_credits
+export interface TmdbAggregateCastMember {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  roles: Array<{ character: string; episode_count: number }>;
+  order: number;
+}
+
+export interface TmdbAggregateCredits {
+  cast: TmdbAggregateCastMember[];
 }
 
 export interface TmdbSearchResult<T> {

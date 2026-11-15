@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import styles from './page.module.css';
 import { IconStar, IconClock, IconUser } from '@/components/icons';
 import { tmdbImage } from '@/lib/tmdb-image';
+import { HorizontalRow } from '@/components/HorizontalRow/HorizontalRow';
 
 interface CastMember {
   id: string;
@@ -162,6 +163,13 @@ export default async function FilmePage({
           </ul>
         </section>
       )}
+      {/* Recomendações */}
+      <HorizontalRow
+        title="Recomendações"
+        endpoint={`/movies/${movie.tmdbId}/recommendations`}
+        hrefPrefix="/filme"
+      />
+
     </div>
   );
 }

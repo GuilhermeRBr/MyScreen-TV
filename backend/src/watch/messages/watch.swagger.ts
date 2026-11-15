@@ -2,6 +2,28 @@
  * Documentação Swagger do módulo Watch.
  */
 export const WATCH_SWAGGER = {
+  batchMarkSeasons: {
+    operation: {
+      summary: 'Marcar várias temporadas como assistidas de uma vez',
+      description:
+        'Recebe uma lista de UUIDs internos de temporadas e marca todos os seus episódios como assistidos em uma única operação atômica. Episódios já assistidos são ignorados. Atualiza o status de assinatura da série automaticamente.',
+    },
+    responses: {
+      201: 'Temporadas marcadas. Retorna a quantidade de registros criados.',
+      401: 'Não autenticado.',
+    },
+  },
+  batchMarkEpisodes: {
+    operation: {
+      summary: 'Marcar vários episódios como assistidos de uma vez',
+      description:
+        'Recebe uma lista de UUIDs internos de episódios e os marca como assistidos em uma única operação atômica. Episódios já assistidos são ignorados. Atualiza o status de assinatura da série automaticamente.',
+    },
+    responses: {
+      201: 'Episódios marcados. Retorna a quantidade de registros criados.',
+      401: 'Não autenticado.',
+    },
+  },
   toggleEpisode: {
     operation: {
       summary: 'Marcar/desmarcar episódio como assistido',
@@ -228,6 +250,64 @@ export const WATCH_SWAGGER = {
     responses: {
       200: 'Record<string, boolean> com chaves no formato "movie-123" ou "show-456".',
       401: 'Não autenticado.',
+    },
+  },
+  rewatchMovie: {
+    operation: {
+      summary: 'Marcar filme como reassistido',
+      description: 'Incrementa o contador de reassistidos (rewatchCount) de um filme já assistido.',
+    },
+    responses: {
+      201: 'Contador incrementado. Retorna o novo valor de rewatchCount.',
+      401: 'Não autenticado.',
+      404: 'Filme não encontrado ou não está como WATCHED.',
+    },
+  },
+  rewatchMovieDecrement: {
+    operation: {
+      summary: 'Decrementar contador de reassistidos de filme',
+      description: 'Decrementa em 1 o contador de reassistidos (rewatchCount) de um filme. O contador não vai abaixo de zero.',
+    },
+    responses: {
+      201: 'Contador decrementado. Retorna o novo valor de rewatchCount.',
+      401: 'Não autenticado.',
+      404: 'Filme não encontrado ou não está como WATCHED.',
+    },
+  },
+  rewatchEpisode: {
+    operation: {
+      summary: 'Marcar episódio como reassistido',
+      description:
+        'Incrementa o contador de reassistidos (rewatchCount) de um episódio já assistido. O episódio deve ter sido assistido previamente.',
+    },
+    responses: {
+      201: 'Contador incrementado. Retorna o novo valor de rewatchCount.',
+      401: 'Não autenticado.',
+      404: 'Episódio não encontrado ou não assistido.',
+    },
+  },
+  rewatchEpisodeDecrement: {
+    operation: {
+      summary: 'Decrementar contador de reassistidos',
+      description:
+        'Decrementa em 1 o contador de reassistidos (rewatchCount) de um episódio. O contador não vai abaixo de zero.',
+    },
+    responses: {
+      201: 'Contador decrementado. Retorna o novo valor de rewatchCount.',
+      401: 'Não autenticado.',
+      404: 'Episódio não encontrado ou não assistido.',
+    },
+  },
+  unwatchEpisode: {
+    operation: {
+      summary: 'Desmarcar episódio como assistido',
+      description:
+        'Remove o registro de WatchProgress do episódio, zerando completamente o histórico de visualizações (incluindo rewatchCount).',
+    },
+    responses: {
+      200: 'Episódio desmarcado. Retorna watched: false.',
+      401: 'Não autenticado.',
+      404: 'Episódio não encontrado.',
     },
   },
 } as const;
