@@ -37,7 +37,7 @@ async function getMovie(id: string): Promise<Movie | null> {
   }
 }
 
-async function getWatchStatus(movieId: string): Promise<WatchStatus> {
+async function getWatchStatus(movieId: string): Promise<{ status: WatchStatus; rewatchCount: number }> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
   try {
@@ -46,11 +46,11 @@ async function getWatchStatus(movieId: string): Promise<WatchStatus> {
       { cache: 'no-store' },
     );
 
-    if (!res.ok) return null;
-    const data = (await res.json()) as { status: WatchStatus };
-    return data.status;
+    if (!res.ok) return { status: null, rewatchCount: 0 };
+    const data = (await res.json()) as { status: WatchStatus; rewatchCount: number };
+    return { status: data.status, rewatchCount: data.rewatchCount ?? 0 };
   } catch {
-    return null;
+    return { status: null, rewatchCount: 0 };
   }
 }
 
@@ -80,7 +80,7 @@ export default async function FilmeLayout({
 
   return (
     <div className="page-container">
-      <MovieHeaderProvider movieId={movie.id} initialStatus={watchStatus}>
+      <MovieHeaderProvider movieId={movie.id} initialStatus={watchStatus.status} initialRewatchCount={watchStatus.rewatchCount}>
         {/* Backdrop */}
         <div className={styles.backdrop}>
           {backdropUrl && (

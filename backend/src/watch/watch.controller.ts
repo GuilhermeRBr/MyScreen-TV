@@ -205,6 +205,30 @@ export class WatchController {
     return this.watchService.toggleMovieWatched(user.sub, dto.movieId);
   }
 
+  @Post('movies/rewatch')
+  @ApiOperation(WATCH_SWAGGER.rewatchMovie.operation)
+  @ApiResponse({ status: 201, description: WATCH_SWAGGER.rewatchMovie.responses[201] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.rewatchMovie.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.rewatchMovie.responses[404] })
+  rewatchMovie(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ToggleMovieDto,
+  ) {
+    return this.watchService.rewatchMovie(user.sub, dto.movieId);
+  }
+
+  @Post('movies/rewatch-decrement')
+  @ApiOperation(WATCH_SWAGGER.rewatchMovieDecrement.operation)
+  @ApiResponse({ status: 201, description: WATCH_SWAGGER.rewatchMovieDecrement.responses[201] })
+  @ApiResponse({ status: 401, description: WATCH_SWAGGER.rewatchMovieDecrement.responses[401] })
+  @ApiResponse({ status: 404, description: WATCH_SWAGGER.rewatchMovieDecrement.responses[404] })
+  rewatchMovieDecrement(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ToggleMovieDto,
+  ) {
+    return this.watchService.rewatchMovieDecrement(user.sub, dto.movieId);
+  }
+
   @Post('movies/watchlist')
   @ApiOperation(WATCH_SWAGGER.addToWatchlist.operation)
   @ApiResponse({ status: 201, description: WATCH_SWAGGER.addToWatchlist.responses[201] })

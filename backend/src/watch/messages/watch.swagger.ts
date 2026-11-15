@@ -252,6 +252,28 @@ export const WATCH_SWAGGER = {
       401: 'Não autenticado.',
     },
   },
+  rewatchMovie: {
+    operation: {
+      summary: 'Marcar filme como reassistido',
+      description: 'Incrementa o contador de reassistidos (rewatchCount) de um filme já assistido.',
+    },
+    responses: {
+      201: 'Contador incrementado. Retorna o novo valor de rewatchCount.',
+      401: 'Não autenticado.',
+      404: 'Filme não encontrado ou não está como WATCHED.',
+    },
+  },
+  rewatchMovieDecrement: {
+    operation: {
+      summary: 'Decrementar contador de reassistidos de filme',
+      description: 'Decrementa em 1 o contador de reassistidos (rewatchCount) de um filme. O contador não vai abaixo de zero.',
+    },
+    responses: {
+      201: 'Contador decrementado. Retorna o novo valor de rewatchCount.',
+      401: 'Não autenticado.',
+      404: 'Filme não encontrado ou não está como WATCHED.',
+    },
+  },
   rewatchEpisode: {
     operation: {
       summary: 'Marcar episódio como reassistido',

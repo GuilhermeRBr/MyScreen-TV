@@ -396,7 +396,7 @@ export class WatchService {
   async toggleMovieWatched(
     userId: string,
     movieId: string,
-  ): Promise<{ watched: boolean }> {
+  ): Promise<{ watched: boolean; rewatchCount: number }> {
     const movie = await this.prisma.movie.findUnique({
       where: { id: movieId },
       select: { id: true },
@@ -413,9 +413,9 @@ export class WatchService {
     if (existing?.status === 'WATCHED') {
       await this.prisma.movieWatch.update({
         where: { id: existing.id },
-        data: { status: 'WATCHLIST', watchedAt: null },
+        data: { status: 'WATCHLIST', watchedAt: null, rewatchCount: 0 },
       });
-      return { watched: false };
+      return { watched: false, rewatchCount: 0 };
     }
 
     await this.prisma.movieWatch.upsert({
@@ -424,7 +424,51 @@ export class WatchService {
       update: { status: 'WATCHED', watchedAt: new Date() },
     });
 
-    return { watched: true };
+    return { watched: true, rewatchCount: 0 };
+  }
+
+  async rewatchMovie(
+    userId: string,
+    movieId: string,
+  ): Promise<{ watched: boolean; rewatchCount: number }> {
+    const existing = await this.prisma.movieWatch.findUnique({
+      where: { userId_movieId: { userId, movieId } },
+    });
+
+    if (!existing || existing.status !== 'WATCHED') {
+      throw new NotFoundException(WATCH_MESSAGES.MOVIE_NOT_FOUND);
+    }
+
+    const updated = await this.prisma.movieWatch.update({
+      where: { id: existing.id },
+      data: { rewatchCount: { increment: 1 }, watchedAt: new Date() },
+      select: { rewatchCount: true },
+    });
+
+    return { watched: true, rewatchCount: updated.rewatchCount };
+  }
+
+  async rewatchMovieDecrement(
+    userId: string,
+    movieId: string,
+  ): Promise<{ watched: boolean; rewatchCount: number }> {
+    const existing = await this.prisma.movieWatch.findUnique({
+      where: { userId_movieId: { userId, movieId } },
+    });
+
+    if (!existing || existing.status !== 'WATCHED') {
+      throw new NotFoundException(WATCH_MESSAGES.MOVIE_NOT_FOUND);
+    }
+
+    const newCount = Math.max(0, existing.rewatchCount - 1);
+
+    const updated = await this.prisma.movieWatch.update({
+      where: { id: existing.id },
+      data: { rewatchCount: newCount },
+      select: { rewatchCount: true },
+    });
+
+    return { watched: true, rewatchCount: updated.rewatchCount };
   }
 
   async addToWatchlist(userId: string, movieId: string): Promise<void> {
@@ -594,15 +638,16 @@ export class WatchService {
   async getMovieWatchStatus(
     userId: string,
     movieId: string,
-  ): Promise<{ status: string | null; watchedAt: Date | null }> {
+  ): Promise<{ status: string | null; watchedAt: Date | null; rewatchCount: number }> {
     const watch = await this.prisma.movieWatch.findUnique({
       where: { userId_movieId: { userId, movieId } },
-      select: { status: true, watchedAt: true },
+      select: { status: true, watchedAt: true, rewatchCount: true },
     });
 
     return {
       status: watch?.status ?? null,
       watchedAt: watch?.watchedAt ?? null,
+      rewatchCount: watch?.rewatchCount ?? 0,
     };
   }
 
@@ -622,7 +667,7 @@ export class WatchService {
         }),
         this.prisma.movieWatch.findMany({
           where: { userId, status: 'WATCHED' },
-          select: { movie: { select: { runtime: true } } },
+          select: { rewatchCount: true, movie: { select: { runtime: true } } },
         }),
       ]);
 
@@ -637,12 +682,12 @@ export class WatchService {
     }, 0);
 
     const movieMinutes = movieRuntimeRows.reduce((acc, row) => {
-      return acc + (row.movie.runtime ?? 120);
+      return acc + (row.movie.runtime ?? 120) * (1 + row.rewatchCount);
     }, 0);
 
     return {
       totalEpisodesWatched,
-      totalMoviesWatched: moviesWatched,
+      totalMoviesWatched: moviesWatched + movieRuntimeRows.reduce((acc, row) => acc + row.rewatchCount, 0),
       totalMinutesWatched: episodeMinutes + movieMinutes,
       seriesMinutesWatched: episodeMinutes,
       moviesMinutesWatched: movieMinutes,
