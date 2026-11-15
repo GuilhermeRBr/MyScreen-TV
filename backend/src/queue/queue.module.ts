@@ -42,8 +42,11 @@ import { QUEUE_NAMES } from './queue.constants';
           // Autenticação opcional
           ...(password ? { password } : {}),
           ...(username ? { username } : {}),
-          // TLS obrigatório em produção
-          ...(tls ? { tls: {} } : {}),
+          // TLS obrigatório em produção.
+          // rejectUnauthorized: false é necessário para provedores Redis
+          // gerenciados (Upstash, Redis Cloud, Railway) que usam certificados
+          // autoassinados ou de CA não reconhecida pelo Node.js por padrão.
+          ...(tls ? { tls: { rejectUnauthorized: false } } : {}),
           // Necessário para BullMQ — não falha imediatamente em reconexão
           maxRetriesPerRequest: null,
           enableReadyCheck: false,

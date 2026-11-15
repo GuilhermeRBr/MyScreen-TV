@@ -16,10 +16,16 @@ export class EmailService implements OnModuleInit {
     this.mailFrom = config.get<string>('MAIL_FROM', { infer: true })!;
     this.isDev = config.get<string>('NODE_ENV', { infer: true }) !== 'production';
 
+    const port = config.get<number>('MAIL_PORT', { infer: true }) ?? 587;
+    const secure = config.get<boolean>('MAIL_SECURE', { infer: true }) ?? false;
+
     this.transporter = nodemailer.createTransport({
       host: config.get<string>('MAIL_HOST', { infer: true }),
-      port: config.get<number>('MAIL_PORT', { infer: true }),
-      secure: config.get<boolean>('MAIL_SECURE', { infer: true }),
+      port,
+      secure,
+      // Na porta 587 (STARTTLS) o Gmail exige upgrade TLS explícito.
+      // Com secure=false e requireTLS=false, alguns hosts recusam a autenticação.
+      requireTLS: !secure,
       auth: {
         user: config.get<string>('MAIL_USER', { infer: true }),
         pass: config.get<string>('MAIL_PASSWORD', { infer: true }),
